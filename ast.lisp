@@ -15,7 +15,7 @@
    (children
     :initarg :children
     :initform (list)
-    :reader children
+    :accessor children
     :documentation "Children of this AST node.")
    #+(or)(operational-semantics
     :initarg :operational-semantics
@@ -35,10 +35,15 @@
 
 (defvar *printing-program-node* nil)
 
+(defgeneric print-program-operator (op children stream))
+
+(defmethod print-program-operator (op children stream)
+  (format stream "~a" (g:name op))
+  (unless (null children)
+    (format stream "(~{~a~^,~})" children)))
+
 (defun print-program-node (n stream)
-  (format stream "~a" (g:name (operator n)))
-  (unless (null (children n))
-    (format stream "(~{~a~^,~})" (children n))))
+  (print-program-operator (operator n) (children n) stream))
 
 (defmethod print-object ((n program-node) stream)
   (if *printing-program-node*
@@ -46,6 +51,12 @@
       (let ((*printing-program-node* t))
         (print-unreadable-object (n stream :type t)
           (print-program-node n stream)))))
+
+(defun copy-program (program)
+  "Returns a copy of the given program node."
+  (make-instance 'program-node :production (production program)
+                               :operator (operator program)
+                               :children (map 'list #'copy-program (children program))))
 
 (defgeneric nth-child (n thing)
   (:documentation "Retrieves the nth child of the thing"))
@@ -74,6 +85,12 @@
 (defgeneric semantics-for-production (semantics production)
   (:documentation "Maps from a production to a list of state transformation semantic functions."))
 
+(defgeneric relational-semantics-for-production (semantics production)
+  (:documentation "Maps from a production to CHC-based relational semantics."))
+
+(defgeneric relational-semantics-for-non-terminal (semantics non-terminal)
+  (:documentation "Maps from a non-terminal to the semantics relation function declaration."))
+
 (defun compile-program (node semantics)
   (with-slots (production) node
     (when (null production) (error "Cannot compile a program node without a production."))
@@ -96,3 +113,52 @@
         (when (or (not (null result)) valid)
           (return-from execute-program result)))))
   (error "No applicable semantics: ~a" (g:name (operator node))))
+
+(defun subst-application (relation old-fn-name new-name-computer when arg-transformer)
+  (when (typep relation 'smt::expression)
+    (when (and (string= (smt:name relation) old-fn-name)
+               (apply when (smt:children relation)))
+      (setf (slot-value relation 'smt:name) (apply new-name-computer (smt:children relation)))
+      (setf (slot-value relation 'smt:children) (apply arg-transformer (smt:children relation)))
+      (setf (slot-value relation 'smt:child-sorts) (map 'list #'smt:sort (smt:children relation)))
+      (setf (slot-value relation 'smt:arity) (length (smt:children relation))))
+    (setf (slot-value relation 'smt:children)
+          (map 'list #'(lambda (c) (subst-application c old-fn-name new-name-computer when arg-transformer))
+               (smt:children relation))))
+  relation)
+
+(defun as-smt-query (node semantics rel-name)
+  ;; Convert children
+  (let (smt child-names rel)
+    (dolist (c (children node))
+      (let ((n (symbol-name (gensym "node"))))
+        (push n child-names)
+        (setf smt (append smt (as-smt-query c semantics n)))))
+
+    (setf child-names (nreverse child-names))
+    ;; Grab our semantics TODO - handle multiple semantics per production
+    (setf rel (first (relational-semantics-for-production semantics (production node))))
+        
+    ;; Substitute relations
+    (dolist (d (map 'list #'(lambda (c) (relational-semantics-for-non-terminal semantics (g:instance (production c)))) (children node)))
+      (subst-application (smt:definition rel)
+                         (smt:name d)
+                         #'(lambda (ix &rest args)
+                             (declare (ignore args))
+                             (nth (1- ix) child-names))
+                         (constantly t)
+                         #'(lambda (ix &rest args)
+                             (declare (ignore ix))
+                             args)))
+
+    ;; Update our name
+    (subst-application (smt:definition rel)
+                       (smt:name rel)
+                       (constantly rel-name)
+                       (constantly t)
+                       #'(lambda (&rest args) args))
+    (setf (slot-value rel 'smt:name) rel-name)
+
+    ;; Return SMT forms
+    (append smt (list (smt:to-smt rel)))))
+    
