@@ -89,7 +89,7 @@
 
 (defun productions-for-instance (grammar non-terminal)
   "Finds all productions in GRAMMAR with the non-terminal NON-TERMINAL on the LHS."
-  (remove-if-not #'(lambda (p) (eql non-terminal (instance p))) (productions grammar)))
+  (remove-if-not #'(lambda (p) (equal (name non-terminal) (name (instance p)))) (productions grammar)))
 
 (defun make-rtg (&key non-terminals initial operators productions)
   "Creates an RTG, creating non-terminals, operators, and productions as needed.

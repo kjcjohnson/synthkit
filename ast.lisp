@@ -42,7 +42,9 @@
   (unless (null children)
     (format stream "(~{~a~^,~})" children)))
 
-(defun print-program-node (n stream)
+(defgeneric print-program-node (n stream))
+
+(defmethod print-program-node (n stream)
   (print-program-operator (operator n) (children n) stream))
 
 (defmethod print-object ((n program-node) stream)
@@ -82,7 +84,7 @@
   "Computes the size of NODE (number of nodes in the tree)"
   (1+ (reduce #'+ (map 'list #'program-size (children node)))))
 
-(defgeneric semantics-for-production (semantics production)
+(defgeneric operational-semantics-for-production (semantics production node)
   (:documentation "Maps from a production to a list of state transformation semantic functions."))
 
 (defgeneric relational-semantics-for-production (semantics production)
@@ -91,27 +93,45 @@
 (defgeneric relational-semantics-for-non-terminal (semantics non-terminal)
   (:documentation "Maps from a non-terminal to the semantics relation function declaration."))
 
+(defvar *program-execution-exit-hook*)
+(defun abort-program-execution ()
+  (funcall *program-execution-exit-hook*))
+
 (defun compile-program (node semantics)
   (with-slots (production) node
     (when (null production) (error "Cannot compile a program node without a production."))
     (let ((input-state-var (gensym "INPUT"))
           (output-state-var (gensym "OUTPUT")))
       `(lambda (,input-state-var)
-         ,(dolist (s (semantics-for-production semantics production))
+         ,(dolist (s (operational-semantics-for-production semantics production node))
             `(let ((,output-state-var (funcall ,s ,input-state-var)))
                (unless (null ,output-state-var) (return ,output-state-var))))
          (error "No applicable semantics for production: ~a" ,production)))))
       
-
 (defun execute-program (semantics node input-state)
-  (dolist (sem (semantics-for-production semantics (production node)))
+  (let (result abort-exit)
+    (tagbody
+       (let ((*program-execution-exit-hook* #'(lambda () (go abort-execution))))
+         (setf result (%execute-program semantics node input-state)))
+       (go finish-execution)
+     abort-execution
+       (setf abort-exit t)
+     finish-execution)
+    (if abort-exit
+        (progn
+          ;(format *trace-output* "; ABORT EXIT: ~a~%" node)
+          (values nil nil))
+        (values result t))))
+
+(defun %execute-program (semantics node input-state)
+  (dolist (sem (operational-semantics-for-production semantics (production node) node))
     (let ((child-semantics (map 'list
                                 #'(lambda (c)
-                                    (lambda (is) (funcall #'execute-program semantics c is)))
+                                    (lambda (is) (funcall #'%execute-program semantics c is)))
                                 (children node))))
       (multiple-value-bind (result valid) (apply sem input-state child-semantics)
         (when (or (not (null result)) valid)
-          (return-from execute-program result)))))
+          (return-from %execute-program result)))))
   (error "No applicable semantics: ~a" (g:name (operator node))))
 
 (defun subst-application (relation old-fn-name new-name-computer when arg-transformer)

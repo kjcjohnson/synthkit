@@ -1,0 +1,7 @@
+# VS ignores
+Debug
+Release
+bin
+obj
+.vs
+*.user

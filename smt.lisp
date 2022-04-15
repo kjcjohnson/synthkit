@@ -2,6 +2,21 @@
 ;;; smt - SMT-LIB2 functionality
 ;;;
 (in-package #:com.kjcjohnson.synthkit.smt)
+  
+;;
+;; Sorts: Int, Bool, String
+;; Declaring variables of these types
+;;
+(defclass sort ()
+  ((name :reader name :initarg :name :initform (error "Sort name is required."))))
+
+(defmethod print-object ((sort sort) stream)
+  (print-unreadable-object (sort stream :type t)
+    (prin1 (name sort) stream)))
+
+(defparameter *int-sort* (make-instance 'sort :name "Int"))
+(defparameter *bool-sort* (make-instance 'sort :name "Bool"))
+(defparameter *string-sort* (make-instance 'sort :name "String"))
 
 ;;
 ;; Solvers and solving
@@ -14,7 +29,9 @@
                                     :program #P"d:/bin/cvc4-1.8-win64-opt.exe"
                                     :arguments (list "--lang" "smt2"
                                                      "--produce-models"
-                                                     "--incremental")))
+                                                     "--incremental"
+                                                     "--tlimit-per" "10000"
+                                                     )))
 
 (defmacro with-solver ((solver solver-spec) &body body)
   (let ((form (gensym))
@@ -34,6 +51,7 @@
                                 :collect ,form)
                           ,status))))
          ;; Ensure the process is terminated.
+         ;(format *trace-output* "; Terminating SMT process...~%")
          (uiop:terminate-process (cl-smt-lib/process-two-way-stream:process ,solver))))))
 
 (defun make-solver (solver-spec)
@@ -50,20 +68,37 @@
     ;; Ensure the process is terminated.
     (uiop:terminate-process (cl-smt-lib/process-two-way-stream:process solver))))
 
+(defun declare-constants (solver formula)
+  "Declares all constants in the given formula."
+  (let ((constants (find-constants formula)))
+    (dolist (c constants)
+      (cl-smt-lib:write-to-smt solver `((,(intern "declare-const") ,(intern (name c)) ,(intern (name (sort c)))))))))
+
 (defun solve (solver-spec &rest assertions)
   "Solves the given SMT query."
   (with-solver (smt solver-spec)
     (let ((constants (reduce #'append (map 'list #'find-constants assertions))))
       (dolist (c constants)
         (cl-smt-lib:write-to-smt smt `((|declare-const| ,(intern (name c)) ,(intern (name (sort c))))))))
-    (apply #'add smt assertions) 
-    (cl-smt-lib:write-to-smt smt `((|check-sat|) (|get-model|) (|exit|)))))
+    (apply #'add smt assertions)
+    (let ((sat (check-sat smt)))
+      (prog1
+          (if (eql :sat sat) (get-model smt) sat)
+        (cl-smt-lib:write-to-smt smt `((|exit|)))))))
 
 (defun push-scope (solver)
-  (cl-smt-lib:write-to-smt solver `((|push| 1))))
+  (cl-smt-lib:write-to-smt solver `((,(intern "push") 1))))
 
 (defun pop-scope (solver)
-  (cl-smt-lib:write-to-smt solver `((|pop| 1))))
+  (cl-smt-lib:write-to-smt solver `((,(intern "pop") 1))))
+
+(defmacro with-scope ((solver) &body body)
+  "Executes BODY in a new SMT scope."
+  `(progn
+     (push-scope ,solver)
+     (unwind-protect
+          (progn ,@body)
+       (pop-scope ,solver))))
 
 (defun add (solver &rest assertions)
   (let ((as (intern "assert")))
@@ -81,7 +116,27 @@
           (t :unknown))))
 
 (defun get-model (solver)
-  (cl-smt-lib:write-to-smt solver `((|get-model|))))
+  (cl-smt-lib:write-to-smt solver `((,(intern "get-model"))))
+  (let ((output (cl-smt-lib:read-from-smt solver t)))
+    (assert (string= "model" (symbol-name (first output))))
+    (map 'list #'(lambda (dfn)
+                   (destructuring-bind (df-kw name args type value) dfn
+                     (declare (ignore args))
+                     (assert (string= "define-fun" (symbol-name df-kw)))
+                     (cons (variable name (make-instance 'sort :name (symbol-name type))) value)))
+         (rest output))))
+
+(defun set-model (solver model)
+  "Defines constants for each variable in the model"
+  (cl-smt-lib:write-to-smt solver
+                           (map 'list #'(lambda (m)
+                                          (destructuring-bind (var . value) m
+                                            (check-type var constant)
+                                            (list (intern "define-const")
+                                                  (intern (name var))
+                                                  (intern (name (sort var)))
+                                                  value)))
+                                model)))
 
 (defclass smt-node ()
   ())
@@ -166,21 +221,6 @@
   (value lit))
 
 (defmethod to-smt (l) l) ; dump anything directly if no applicable method
-  
-;;
-;; Sorts: Int, Bool, String
-;; Declaring variables of these types
-;;
-(defclass sort ()
-  ((name :reader name :initarg :name :initform (error "Sort name is required."))))
-
-(defmethod print-object ((sort sort) stream)
-  (print-unreadable-object (sort stream :type t)
-    (prin1 (name sort) stream)))
-
-(defparameter *int-sort* (make-instance 'sort :name "Int"))
-(defparameter *bool-sort* (make-instance 'sort :name "Bool"))
-(defparameter *string-sort* (make-instance 'sort :name "String"))
 
 (defun maybe-quote (name)
   (if (symbolp name)
@@ -357,8 +397,8 @@
                  :name "not"
                  :sort *bool-sort*
                  :arity 1
-                 :children expr
-                 :child-sorts (sort expr)))
+                 :children (list expr)
+                 :child-sorts (list (sort expr))))
 
 (defun and (&rest exprs)
   (make-instance 'expression
@@ -368,13 +408,13 @@
                  :children exprs
                  :child-sorts (map 'list #'sort exprs)))
 
-(defun or (expr1 expr2)
+(defun or (&rest exprs)
   (make-instance 'expression
                  :name "or"
                  :sort *bool-sort*
-                 :arity 2
-                 :children (list expr1 expr2)
-                 :child-sorts (list (sort expr1) (sort expr2))))
+                 :arity (length exprs)
+                 :children exprs
+                 :child-sorts (map 'list #'sort exprs)))
 
 (defun xor (expr1 expr2)
   (make-instance 'expression
@@ -396,8 +436,8 @@
   (and (implies expr1 expr2) (implies expr2 expr1)))
 
 (defun ite (exprb exprt expre)
-  (assert (eql (sort exprt) (sort expre)))
-  (assert (eql (sort exprb) *bool-sort*))
+  (assert (equal (name (sort exprt)) (name (sort expre))))
+  (assert (equal (name (sort exprb)) (name *bool-sort*)))
   (make-instance 'expression
                  :name "ite"
                  :sort (sort exprt)

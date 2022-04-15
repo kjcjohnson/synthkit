@@ -3,7 +3,8 @@
 ;;;
 (defpackage #:com.kjcjohnson.synthkit.utilities
   (:use #:cl)
-  (:export #:choose-uniformly-at-random))
+  (:export #:choose-uniformly-at-random
+           #:copy-instance))
 
 (defpackage #:com.kjcjohnson.synthkit.smt
   (:use #:cl)
@@ -13,9 +14,12 @@
            #:add
            )
   (:export #:name #:children #:to-smt #:definition #:sort #:child-sorts #:arity
-           #:*int-sort* #:*bool-sort* #:*string-sort*
+           #:*int-sort* #:*bool-sort* #:*string-sort* #:variable
            #:$int #:$bool #:$string #:$function #:$exists #:$forall #:$true #:$false #:$apply
-           #:+ #:- #:< #:> #:* #:= #:not #:and #:or #:xor #:iff #:implies #:ite))
+           #:+ #:- #:< #:> #:* #:= #:not #:and #:or #:xor #:iff #:implies #:ite
+           #:with-solver #:make-solver #:close-solver #:check-sat #:get-model
+           #:push-scope #:pop-scope #:with-scope
+           #:add #:declare-constants #:dump-commands #:set-model))
 
 (defpackage #:com.kjcjohnson.synthkit.grammar
   (:use #:cl)
@@ -24,6 +28,7 @@
            #:initial-non-terminal
            #:productions-for-instance
            #:non-terminal
+           #:non-terminals
            #:operator
            #:arity
            #:production
@@ -41,7 +46,7 @@
            #:production
            #:operator
            #:print-program-operator
-           #:semantics-for-production
+           #:operational-semantics-for-production
            #:relational-semantics-for-production
            #:relational-semantics-for-non-terminal
            #:children
@@ -50,16 +55,28 @@
            #:program-size
            #:copy-program
            #:compile-program
-           #:execute-program))
+           #:execute-program
+           #:as-smt-query))
+
+(defpackage #:com.kjcjohnson.synthkit.vsa
+  (:use #:cl)
+  (:local-nicknames (#:ast #:com.kjcjohnson.synthkit.ast)
+                    (#:g #:com.kjcjohnson.synthkit.grammar)
+                    (#:kl/c #:com.kjcjohnson.kale.collections)
+                    (#:kl/oo #:com.kjcjohnson.kale.oo)))
 
 (defpackage #:com.kjcjohnson.synthkit.semgus
   (:use #:cl)
   (:local-nicknames (#:g #:com.kjcjohnson.synthkit.grammar)
-                    (#:a #:com.kjcjohnson.synthkit.ast)
-                    (#:smt #:com.kjcjohnson.synthkit.smt))
+                    (#:ast #:com.kjcjohnson.synthkit.ast)
+                    (#:smt #:com.kjcjohnson.synthkit.smt)
+                    (#:u #:com.kjcjohnson.synthkit.utilities))
   (:export #:semgus-problem
            #:grammar
            #:semantics
+           #:defsemantics
+           #:relational-semantics
+           #:operational-semantics
            #:specification
            #:io-specification
            #:examples
@@ -70,7 +87,15 @@
            #:do-examples
            #:formula-specification
            #:formula
-           #:relation-name))
+           #:relation-name
+           #:cegis-specification
+           #:find-counter-example-for-specification
+           #:find-counter-example
+           #:counter-examples
+           #:add-counter-example
+           #:add-counter-example-for-specification
+           #:ensure-cegis-problem
+           ))
 
 (defpackage #:com.kjcjohnson.synthkit.tdp
   (:use #:cl)
