@@ -447,7 +447,7 @@ input state and semantic functions for each child term"
 
 (defun com.kjcjohnson.synthkit.semgus-user::match (&key term binders)
   "Creates a match term"
-  (declare (ignore operator arguments child))
+  (declare (ignore term binders))
   ;; currently not supported
   nil)
 
@@ -458,6 +458,7 @@ input state and semantic functions for each child term"
   nil)
 
 (defun com.kjcjohnson.synthkit.semgus-user::lambda (&key arguments body)
+  (declare (ignore arguments body))
   nil)
 
 ;;;
@@ -504,13 +505,16 @@ input state and semantic functions for each child term"
 ;;;
 (defun com.kjcjohnson.synthkit.semgus-user::rank (&key argument-sorts return-sort)
   "Creates a function rank"
+  (declare (ignore argument-sorts return-sort))
   nil)
 
 (defun com.kjcjohnson.synthkit.semgus-user::declare-function (name &key rank)
   "Adds an auxiliary function declaration"
+  (declare (ignore name rank))
   nil)
 
 (defun com.kjcjohnson.synthkit.semgus-user::define-function
     (name &key rank definition)
   "Adds an auxiliary function definition"
+  (declare (ignore name rank definition))
   nil)
