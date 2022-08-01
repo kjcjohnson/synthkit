@@ -15,7 +15,10 @@
    (specification
     :initarg :specification
     :initform (error "A specification is required.")
-    :reader specification)))
+    :reader specification)
+   (context
+    :initarg :context
+    :reader context)))
 
 ;;
 ;; Specification types

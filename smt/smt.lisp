@@ -250,7 +250,7 @@
 
 (defun variable (name sort)
   "Returns a variable of the given name and sort."
-  (make-instance 'constant :name (string name) :sort sort))
+  (make-instance 'constant :name name :sort sort))
 
 (defun int-variable (name)
   "Returns an integer variable of the given name."

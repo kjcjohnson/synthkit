@@ -19,7 +19,12 @@
            #:+ #:- #:< #:> #:* #:= #:not #:and #:or #:xor #:iff #:implies #:ite
            #:with-solver #:make-solver #:close-solver #:check-sat #:get-model
            #:push-scope #:pop-scope #:with-scope
-           #:add #:declare-constants #:dump-commands #:set-model))
+           #:add #:declare-constants #:dump-commands #:set-model
+
+           #:*smt* #:init-smt
+           #:ensure-identifier #:ensure-sort #:identifier-string
+
+           #:is-application?))
 
 (defpackage #:com.kjcjohnson.synthkit.grammar
   (:use #:cl)
@@ -62,8 +67,11 @@
   (:use #:cl)
   (:local-nicknames (#:ast #:com.kjcjohnson.synthkit.ast)
                     (#:g #:com.kjcjohnson.synthkit.grammar)
+                    (#:kl #:com.kjcjohnson.kale)
                     (#:kl/c #:com.kjcjohnson.kale.collections)
-                    (#:kl/oo #:com.kjcjohnson.kale.oo)))
+                    (#:kl/oo #:com.kjcjohnson.kale.oo))
+  (:export #:filter
+           #:prune))
 
 (defpackage #:com.kjcjohnson.synthkit.semgus
   (:use #:cl)
@@ -72,12 +80,17 @@
                     (#:smt #:com.kjcjohnson.synthkit.smt)
                     (#:u #:com.kjcjohnson.synthkit.utilities))
   (:export #:semgus-problem
+           #:load-semgus-problem
            #:grammar
            #:semantics
            #:defsemantics
            #:relational-semantics
            #:operational-semantics
            #:specification
+           #:context
+           #:chcs
+           #:name
+           #:constructor
            #:io-specification
            #:examples
            #:add-example
@@ -95,6 +108,7 @@
            #:add-counter-example
            #:add-counter-example-for-specification
            #:ensure-cegis-problem
+           #:constraint
            ))
 
 (defpackage #:com.kjcjohnson.synthkit.tdp

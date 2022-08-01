@@ -38,7 +38,7 @@
 (defgeneric print-program-operator (op children stream))
 
 (defmethod print-program-operator (op children stream)
-  (format stream "~a" (g:name op))
+  (format stream "~a" (smt:identifier-string (g:name op)))
   (unless (null children)
     (format stream "(~{~a~^,~})" children)))
 

@@ -8,17 +8,25 @@
   :license "TBD"
   :depends-on ("cl-smt-lib"
                "closer-mop"
+               "str"
                "com.kjcjohnson.kale")
   :components ((:file "package")
                (:file "utilities" :depends-on ("package"))
-               (:file "smt" :depends-on ("package"))
+               (:module "smt"
+                :depends-on ("package")
+                :serial t
+                :components ((:file "smt")
+                             (:file "context")
+                             (:file "predicates")))
                (:file "grammar" :depends-on ("package" "utilities"))
                (:file "ast" :depends-on ("package" "grammar" "smt"))
                (:module "semgus"
                 :depends-on ("package" "grammar" "ast" "smt" "utilities")
+                :serial t
                 :components ((:file "semgus")
                              (:file "semantics")
-                             (:file "cegis" :depends-on ("semantics"))))
+                             (:file "reader")
+                             (:file "cegis")))
                (:module "vsa"
                 :depends-on ("package" "ast" "grammar")
                 :components ((:file "program-node")
@@ -29,15 +37,8 @@
                              (:file "union-program-node"
                               :depends-on ("program-node"))
                              (:file "leaf-program-node"
-                              :depends-on ("program-node"))))))
-
-(asdf:defsystem "com.kjcjohnson.synthkit/semgus/interop"
-  :description "Iterop utilities for SemGuS and kl-synthkit"
-  :version "0.0.1"
-  :author "Keith Johnson <keith.johnson@wisc.edu>"
-  :license "TBD"
-  :depends-on ("com.kjcjohnson.synthkit" "bike")
-  :components ((:module "semgus"
-                :components ((:module "interop"
-                              :components ((:file "package")
-                                           (:file "interop")))))))
+                              :depends-on ("program-node"))
+                             (:file "utilities"
+                              :depends-on ("program-node"
+                                           "union-program-node"
+                                           "union-program-node"))))))

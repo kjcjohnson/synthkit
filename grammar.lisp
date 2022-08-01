@@ -10,7 +10,8 @@
     :reader non-terminals)
    (operators
     :initarg :operators
-    :initform (list))
+    :initform (list)
+    :reader operators)
    (initial-non-terminal
     :initarg :initial
     :reader initial-non-terminal)
@@ -112,7 +113,7 @@
                      (setf initial nt-as-object))
                    nt-as-object)))
            (ensure-operator (op arity)
-             (let* ((op-as-string (string op))
+             (let* ((op-as-string op);(string op))
                     (op-as-object (gethash op-as-string ops)))
                (if (null op-as-object)
                    (setf (gethash op-as-string ops)

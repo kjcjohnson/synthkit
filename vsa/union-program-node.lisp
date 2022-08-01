@@ -1,5 +1,6 @@
 (in-package #:com.kjcjohnson.synthkit.vsa)
 (kl/oo:import-classes-from #:kl/c)
+(kl/oo:import-classes-from #:com.kjcjohnson.synthkit.vsa)
 
 ;;;
 ;;; Union program node enumerator
@@ -55,7 +56,9 @@
   
   ;; Creates a new union program node
   (public constructor (programs)
-          (setf _programs programs))
+          (setf _programs (remove-if #'(lambda (p)
+                                         (typep p 'empty-program-node))
+                                     programs)))
 
   ;; Enumerator over all programs in this node
   (public get-enumerator ()
