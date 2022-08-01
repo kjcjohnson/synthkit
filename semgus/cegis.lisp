@@ -56,7 +56,7 @@
                                            (relation-name spec)))
     ; (format *trace-output* "; NEG: ~a~%" (smt:not (formula spec)))
     (smt:declare-constants solver (formula spec))
-    (smt:add solver (smt:not (formula spec)))
+    (smt:add solver (smt:$not (formula spec)))
     ;(smt:add solver can we negate the formula somehow?
     (let ((q-res (smt:check-sat solver)))
       (cond

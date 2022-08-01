@@ -338,7 +338,7 @@
 ;;
 ;; Expression operators
 ;;
-(defun + (expr1 expr2)
+(defun $+ (expr1 expr2)
   "Adds two expressions."
   (make-instance 'expression
                  :name "+"
@@ -347,7 +347,7 @@
                  :children (list expr1 expr2)
                  :child-sorts (list (sort expr1) (sort expr2))))
 
-(defun - (expr1 expr2)
+(defun $- (expr1 expr2)
   "Subtracts two expressions."
   (make-instance 'expression
                  :name "-"
@@ -356,7 +356,7 @@
                  :children (list expr1 expr2)
                  :child-sorts (list (sort expr1) (sort expr2))))
 
-(defun * (expr1 expr2)
+(defun $* (expr1 expr2)
   "Multiplies two expressions."
   (make-instance 'expression
                  :name "*"
@@ -365,7 +365,7 @@
                  :children (list expr1 expr2)
                  :child-sorts (list (sort expr1) (sort expr2))))
 
-(defun < (expr1 expr2)
+(defun $< (expr1 expr2)
   "Compares two expressions."
   (make-instance 'expression
                  :name "<"
@@ -374,7 +374,7 @@
                  :children (list expr1 expr2)
                  :child-sorts (list (sort expr1) (sort expr2))))
 
-(defun > (expr1 expr2)
+(defun $> (expr1 expr2)
   "Compares two expressions."
   (make-instance 'expression
                  :name ">"
@@ -383,7 +383,7 @@
                  :children (list expr1 expr2)
                  :child-sorts (list (sort expr1) (sort expr2))))
 
-(defun = (expr1 expr2)
+(defun $= (expr1 expr2)
   "Compares two expressions."
   (make-instance 'expression
                  :name "="
@@ -392,7 +392,7 @@
                  :children (list expr1 expr2)
                  :child-sorts (list (sort expr1) (sort expr2))))
 
-(defun not (expr)
+(defun $not (expr)
   (make-instance 'expression
                  :name "not"
                  :sort *bool-sort*
@@ -400,7 +400,7 @@
                  :children (list expr)
                  :child-sorts (list (sort expr))))
 
-(defun and (&rest exprs)
+(defun $and (&rest exprs)
   (make-instance 'expression
                  :name "and"
                  :sort *bool-sort*
@@ -408,7 +408,7 @@
                  :children exprs
                  :child-sorts (map 'list #'sort exprs)))
 
-(defun or (&rest exprs)
+(defun $or (&rest exprs)
   (make-instance 'expression
                  :name "or"
                  :sort *bool-sort*
@@ -416,7 +416,7 @@
                  :children exprs
                  :child-sorts (map 'list #'sort exprs)))
 
-(defun xor (expr1 expr2)
+(defun $xor (expr1 expr2)
   (make-instance 'expression
                  :name "xor"
                  :sort *bool-sort*
@@ -424,7 +424,7 @@
                  :children (list expr1 expr2)
                  :child-sorts (list (sort expr1) (sort expr2))))
 
-(defun implies (expr1 expr2)
+(defun $implies (expr1 expr2)
   (make-instance 'expression
                  :name "=>"
                  :sort *bool-sort*
@@ -432,10 +432,10 @@
                  :children (list expr1 expr2)
                  :child-sorts (list (sort expr1) (sort expr2))))
 
-(defun iff (expr1 expr2)
-  (and (implies expr1 expr2) (implies expr2 expr1)))
+(defun $iff (expr1 expr2)
+  (and ($implies expr1 expr2) ($implies expr2 expr1)))
 
-(defun ite (exprb exprt expre)
+(defun $ite (exprb exprt expre)
   (assert (equal (name (sort exprt)) (name (sort expre))))
   (assert (equal (name (sort exprb)) (name *bool-sort*)))
   (make-instance 'expression

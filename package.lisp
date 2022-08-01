@@ -8,15 +8,13 @@
 
 (defpackage #:com.kjcjohnson.synthkit.smt
   (:use #:cl)
-  (:shadow #:sort #:variable
-           #:+ #:- #:< #:> #:* #:=
-           #:not #:and #:or #:xor
-           #:add
-           )
+  (:shadow #:sort #:variable)
   (:export #:name #:children #:to-smt #:definition #:sort #:child-sorts #:arity
            #:*int-sort* #:*bool-sort* #:*string-sort* #:variable
            #:$int #:$bool #:$string #:$function #:$exists #:$forall #:$true #:$false #:$apply
-           #:+ #:- #:< #:> #:* #:= #:not #:and #:or #:xor #:iff #:implies #:ite
+           #:$+ #:$- #:$< #:$> #:$* #:$=
+           #:$not #:$and #:$or #:$xor
+           #:$iff #:$implies #:$ite
            #:with-solver #:make-solver #:close-solver #:check-sat #:get-model
            #:push-scope #:pop-scope #:with-scope
            #:add #:declare-constants #:dump-commands #:set-model
