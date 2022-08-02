@@ -20,6 +20,11 @@
     :initarg :context
     :reader context)))
 
+(defun configure-smt (problem &optional (context smt:*smt*))
+  "Configures the SMT context for this problem"
+  (dolist (aux (auxiliary-functions (context problem)))
+    (smt::set-function-definition (car aux) (cdr aux) context)))
+
 ;;
 ;; Specification types
 ;;

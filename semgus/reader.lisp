@@ -9,17 +9,27 @@
 (defvar *semgus-context* nil "Information about problem being parsed")
 
 (defclass semgus-context ()
-  ((grammar :accessor grammar :initarg :grammar)
-   (chcs :accessor chcs :initarg :chcs)
-   (head-relations :accessor head-relations :initarg :head-relations)
-   (constraints :accessor constraints :initarg :constraints)
-   (root-relation :accessor root-relation :initarg :root-relation)
-   (term-name :accessor term-name :initarg :term-name)
-   (term-type :accessor term-type :initarg :term-type))
+  ((grammar :accessor grammar
+            :initarg :grammar)
+   (chcs :accessor chcs
+         :initarg :chcs)
+   (head-relations :accessor head-relations
+                   :initarg :head-relations)
+   (constraints :accessor constraints
+                :initarg :constraints)
+   (root-relation :accessor root-relation
+                  :initarg :root-relation)
+   (term-name :accessor term-name
+              :initarg :term-name)
+   (term-type :accessor term-type
+              :initarg :term-type)
+   (auxiliary-functions :accessor auxiliary-functions
+                        :initarg :auxiliary-functions))
   (:default-initargs
    :chcs nil
    :head-relations nil
-   :constraints nil))
+   :constraints nil
+   :auxiliary-functions nil))
 
 (defclass semgus-chc ()
   ((head :accessor head :initarg :head)
@@ -101,7 +111,7 @@ input state and semantic functions for each child term"
         (child-semantic-fns (map 'list
                                  #'(lambda (x) (declare (ignore x)) (gensym "SEM"))
                                  (body chc))))
-    (eval
+    (compile nil
      `(lambda (input-state ,@child-semantic-fns)
         (declare (ignorable input-state))
         (let ,(output-variables chc)
@@ -116,7 +126,7 @@ input state and semantic functions for each child term"
                                         (output-variables chc)
                                         term-output-vars)
             (values ,(first (output-variables chc)) t)))))))
-         
+
 (defun operationalize-expression (expression input-vars output-vars child-vars)
   "Operationalizes a CHC constraint into executable code"
   (cond
@@ -179,7 +189,7 @@ input state and semantic functions for each child term"
 
     ;; Case four: known operators
     ((typep expression 'smt::expression)
-     (let ((fn (gethash (smt:name expression) *op-table*)))
+     (let ((fn (smt:get-compiled-function (smt:name expression))))
        (if fn
            `(funcall ,fn ,@(map 'list #'(lambda (x)
                                           (operationalize-expression x
@@ -190,78 +200,6 @@ input state and semantic functions for each child term"
            (format *trace-output*
                    "; Missing operational definition for: ~a~%"
                    (smt:name expression)))))))
-
-(defun fast-string-replace (str old new)
-  "Does a fast string replacement (because CL-PPCRE is slow)."
-  (declare (simple-string str old new)
-           (optimize (speed 3)))
-  (let ((ix (search old str)))
-    (if (null ix)
-        str
-        (concatenate 'string
-                     (subseq str 0 ix)
-                     new
-                     (subseq str (+ ix (length old)))))))
-
-(defun operation-map ()
-  "Maps SMT functions to CL functions."
-  (smt:init-smt)
-  (let ((ht (make-hash-table)))
-    (flet ((add-op (smt-name cl-fun)
-             (setf (gethash (smt:ensure-identifier smt-name)
-                            ht)
-                   cl-fun)))
-      (add-op "+" #'+)
-      (add-op "-" #'-)
-      (add-op "ite" #'(lambda (condition consequence alternative)
-                        (if condition consequence alternative)))
-      (add-op "not" #'not)
-      (add-op "and" #'(lambda (&rest args) (every #'identity args)))
-      (add-op "or" #'(lambda (&rest args) (some #'identity args)))
-      (add-op "<" #'<)
-      
-      ;; Strings
-      (add-op "str.++" #'(lambda (str1 str2)
-                           (concatenate 'string str1 str2)))
-      (add-op "str.replace" #'fast-string-replace);(lambda (x y z)
-                                ;(str:replace-first y z x)))
-      (add-op "str.at" #'(lambda (str ix)
-                           (if (and (< ix (length str)) (>= ix 0))
-                               (string (char str ix))
-                               "")))
-      (add-op "str.from_int" #'(lambda (int)
-                                 (princ-to-string int)))
-      (add-op "str.substr" #'(lambda (str start end)
-                               (str:substring start end str)))
-      (add-op "str.len" #'(lambda (str)
-                            (length (the string str))))
-      (add-op "str.to_int" #'(lambda (str)
-                               (or (parse-integer str :junk-allowed t) -1)))
-      (add-op "str.indexof" #'(lambda (str what start)
-                                (if (or (minusp start) (> start (length str)))
-                                    -1
-                                    (let ((val (search what str :start2 start)))
-                                      (if (null val)
-                                          -1
-                                          val)))))
-      (add-op "str.prefixof" #'(lambda (str1 str2)
-                                 (str:starts-with? str1 str2)))
-      (add-op "str.suffixof" #'(lambda (str1 str2)
-                                 (str:ends-with? str1 str2)))
-      (add-op "str.contains" #'(lambda (str1 str2)
-                                 (str:contains? str2 str1)))
-
-      ;; BV
-      (add-op "bvnot" #'bit-not)
-      (add-op "bvand" #'bit-and)
-      (add-op "bvor" #'bit-ior)
-      (add-op "bvxor" #'bit-xor)
-
-      )
-    ht))
-
-
-(defparameter *op-table* (operation-map))
 
 (defun constraints-to-pbe ()
   "Extracts a PBE specification from the constraints"
@@ -458,8 +396,7 @@ input state and semantic functions for each child term"
   nil)
 
 (defun com.kjcjohnson.synthkit.semgus-user::lambda (&key arguments body)
-  (declare (ignore arguments body))
-  nil)
+  (smt::make-lambda-binder arguments body))
 
 ;;;
 ;;; Synthfun and Grammar handling
@@ -516,5 +453,8 @@ input state and semantic functions for each child term"
 (defun com.kjcjohnson.synthkit.semgus-user::define-function
     (name &key rank definition)
   "Adds an auxiliary function definition"
-  (declare (ignore name rank definition))
+  (declare (ignore rank))
+  (push (cons name definition) (auxiliary-functions *semgus-context*))
+  ;; TODO: maybe, maybe not?
+  (smt:set-function-definition name definition)
   nil)

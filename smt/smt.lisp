@@ -190,6 +190,17 @@
    (sort :initform *bool-sort*)
    (children :initarg children :initform (error "Children (single child) is required."))))
 
+(defclass lambda-binder (smt-node)
+  ((arguments :reader arguments
+              :initarg :arguments
+              :initform (error "Arguments are required."))
+   (body :reader body
+         :initarg :body
+         :initform (error "Body is required."))))
+
+(defun make-lambda-binder (arguments body)
+  "Creates a lambda binder term, with ARGUMENTS and BODY."
+  (make-instance 'lambda-binder :arguments arguments :body body))
 
 (defmethod print-object ((constant constant) stream)
   (print-unreadable-object (constant stream :type t)

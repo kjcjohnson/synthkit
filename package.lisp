@@ -11,7 +11,8 @@
   (:shadow #:sort #:variable)
   (:export #:name #:children #:to-smt #:definition #:sort #:child-sorts #:arity
            #:*int-sort* #:*bool-sort* #:*string-sort* #:variable
-           #:$int #:$bool #:$string #:$function #:$exists #:$forall #:$true #:$false #:$apply
+           #:$int #:$bool #:$string #:$function
+           #:$exists #:$forall #:$true #:$false #:$apply
            #:$+ #:$- #:$< #:$> #:$* #:$=
            #:$not #:$and #:$or #:$xor
            #:$iff #:$implies #:$ite
@@ -21,6 +22,9 @@
 
            #:*smt* #:init-smt
            #:ensure-identifier #:ensure-sort #:identifier-string
+
+           #:get-function-definition #:set-function-definition
+           #:get-compiled-function
 
            #:is-application?))
 

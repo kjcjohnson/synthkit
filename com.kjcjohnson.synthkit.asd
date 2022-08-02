@@ -9,6 +9,7 @@
   :depends-on ("cl-smt-lib"
                "closer-mop"
                "str"
+               "bit-smasher"
                "com.kjcjohnson.kale")
   :components ((:file "package")
                (:file "utilities" :depends-on ("package"))
@@ -16,7 +17,13 @@
                 :depends-on ("package")
                 :serial t
                 :components ((:file "smt")
+                             (:file "theory-core")
+                             (:file "theory-ints")
+                             (:file "theory-strings")
+                             (:file "theory-bitvectors")
+                             (:file "theory-dispatch")
                              (:file "context")
+                             (:file "compiler")
                              (:file "predicates")))
                (:file "grammar" :depends-on ("package" "utilities"))
                (:file "ast" :depends-on ("package" "grammar" "smt"))
