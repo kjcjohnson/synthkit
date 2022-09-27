@@ -10,6 +10,7 @@
                "closer-mop"
                "str"
                "bit-smasher"
+               "trivial-garbage"
                "com.kjcjohnson.kale")
   :components ((:file "package")
                (:file "utilities" :depends-on ("package"))
@@ -17,14 +18,18 @@
                 :depends-on ("package")
                 :serial t
                 :components ((:file "smt")
+                             (:file "types")
                              (:file "theory-core")
                              (:file "theory-ints")
                              (:file "theory-strings")
                              (:file "theory-bitvectors")
                              (:file "theory-dispatch")
+                             (:file "datatypes")
                              (:file "context")
                              (:file "compiler")
-                             (:file "predicates")))
+                             (:file "evaluator")
+                             (:file "predicates")
+                             (:file "states")))
                (:file "grammar" :depends-on ("package" "utilities"))
                (:file "ast" :depends-on ("package" "grammar" "smt"))
                (:module "semgus"

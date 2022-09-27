@@ -43,6 +43,14 @@
   (setf (gethash (ensure-identifier "String" ctx) (sort-forward ctx))
         *string-sort*))
 
+(defun get-sort (sort-id &optional (ctx *smt*))
+  "Gets a sort by ID"
+  (gethash (ensure-identifier sort-id ctx) (sort-forward ctx)))
+
+(defun (setf get-sort) (sort sort-id &optional (ctx *smt*))
+  "Sets a sort by ID"
+  (setf (gethash (ensure-identifier sort-id ctx) (sort-forward ctx)) sort))
+
 ;;;
 ;;; Handling identifiers
 ;;;
@@ -141,3 +149,18 @@
   (let ((defn (get-function-definition fn-name context)))
     (unless (null defn)
       (compiled-definition defn context))))
+
+;;;
+;;; Datatype handling
+;;;
+(defun add-datatype-constructor (datatype constructor &optional (context *smt*))
+  "Adds a datatype constructor function to the context."
+  (setf (gethash (ensure-identifier (name constructor))
+                 (function-definitions context))
+        (make-instance 'function-definition
+                       :name (ensure-identifier (name constructor))
+                       :definition nil
+                       :compiled-definition #'(lambda (&rest args)
+                                                (make-datatype-instance datatype
+                                                                        constructor
+                                                                        args)))))

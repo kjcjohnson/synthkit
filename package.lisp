@@ -24,7 +24,17 @@
            #:ensure-identifier #:ensure-sort #:identifier-string
 
            #:get-function-definition #:set-function-definition
-           #:get-compiled-function
+           #:get-compiled-function #:evaluate-expression
+
+           #:get-sort
+           #:datatype #:datatype-constructor #:constructors
+           #:add-datatype-constructor
+           #:datatype=
+
+           #:state #:make-state #:copy-state #:get-value #:state=
+           #:evaluate-state #:make-temp-state #:canonicalize-state
+
+           #:get-constant-type
 
            #:is-application?))
 
@@ -63,7 +73,8 @@
            #:copy-program
            #:compile-program
            #:execute-program
-           #:as-smt-query))
+           #:as-smt-query
+           #:*execution-counter*))
 
 (defpackage #:com.kjcjohnson.synthkit.vsa
   (:use #:cl)
@@ -117,4 +128,4 @@
   (:use #:cl)
   (:local-nicknames (#:g #:com.kjcjohnson.synthkit.grammar)
                     (#:a #:com.kjcjohnson.synthkit.ast)
-                    (#:semgus #:com.kjcjohnson.synthkit.semgus))) 
+                    (#:semgus #:com.kjcjohnson.synthkit.semgus)))

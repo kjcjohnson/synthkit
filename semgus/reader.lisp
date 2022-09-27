@@ -96,9 +96,9 @@
           doing
              (push
               (operationalize-chc chc)
-              (gethash prod opsem)))
+              (gethash (g:operator prod) opsem)))
     #'(lambda (prod)
-        (gethash prod opsem))))
+        (gethash (g:operator prod) opsem))))
 
 (defun operationalize-chc (chc)
   "Creates a semantic function for a CHC. The result is a function that takes an
@@ -118,16 +118,22 @@ input state and semantic functions for each child term"
           (declare (ignorable ,@(output-variables chc)))
           (let (,@(map 'list
                        #'(lambda (sem-fn out-var)
-                           `(,out-var (funcall ,sem-fn input-state)))
+                           `(,out-var (smt:get-value
+                                       (funcall ,sem-fn input-state)
+                                       :output)))
                        child-semantic-fns
                        term-output-vars))
             ,(operationalize-expression (constraint chc)
                                         (input-variables chc)
                                         (output-variables chc)
                                         term-output-vars)
-            (values ,(first (output-variables chc)) t)))))))
+            (values (smt:make-temp-state
+                     (list
+                      :output
+                      ,(first (output-variables chc))))
+                    t)))))))
 
-(defun operationalize-expression (expression input-vars output-vars child-vars)
+(defun operationalize-expression (expression input-vars output-vars child-vars &key assigning)
   "Operationalizes a CHC constraint into executable code"
   (cond
     ;; Base cases. Constants, variables, and literals
@@ -140,7 +146,7 @@ input state and semantic functions for each child term"
 
     ((and (typep expression 'smt::constant)
           (find (smt:name expression) input-vars))
-     `(cdr (assoc ',(smt:name expression) input-state)))
+     `(smt:get-value input-state ',(smt:name expression)))
 
     ((and (typep expression 'smt::constant)
           (or (find (smt:name expression) output-vars)
@@ -155,16 +161,19 @@ input state and semantic functions for each child term"
      expression)
 
     ;; Case two: single assignment
-    ((and (typep expression 'smt::expression)
+    ((and (not assigning)
+          (typep expression 'smt::expression)
           (eql (smt:name expression) (smt:ensure-identifier "=")))
      (let ((arg1 (operationalize-expression (first (smt:children expression))
                                             input-vars
                                             output-vars
-                                            child-vars))
+                                            child-vars
+                                            :assigning t))
            (arg2 (operationalize-expression (second (smt:children expression))
                                             input-vars
                                             output-vars
-                                            child-vars)))
+                                            child-vars
+                                            :assigning t)))
        (cond
          ((or (find arg1 output-vars)
               (find arg2 child-vars))
@@ -199,7 +208,11 @@ input state and semantic functions for each child term"
                                 (smt:children expression)))
            (format *trace-output*
                    "; Missing operational definition for: ~a~%"
-                   (smt:name expression)))))))
+                   (smt:name expression)))))
+
+    (t (format *trace-output*
+               "; CHC Operationalizer fall-through on: ~a~%"
+               expression))))
 
 (defun constraints-to-pbe ()
   "Extracts a PBE specification from the constraints"
@@ -209,9 +222,13 @@ input state and semantic functions for each child term"
           when (null exs) do
             (warn "Unable to convert all constraints to PBE constraints.")
           when (not (null exs)) do
-            (add-example spec
-                         (cdr (assoc :inputs exs))
-                         (cdr (assoc :output exs))))
+            (let ((input-state (cdr (assoc :inputs exs)))
+                  (output-state (cdr (assoc :output exs))))
+              (add-example spec
+                           (smt:evaluate-state input-state)
+                           (smt:evaluate-state output-state)
+                           :rel-input input-state
+                           :rel-output output-state)))
     spec))
 
 (defun constraint-to-pbe (constraint)
@@ -228,15 +245,16 @@ input state and semantic functions for each child term"
        (let ((termchild (nth (term-index root-rel) (smt:children constraint))))
          (when (and (typep termchild 'smt::expression)
                     (eql (smt:name termchild) sf-term))
-           (let ((inputs (map 'list
-                              #'(lambda (ix name)
-                                  (cons
-                                   name
-                                   (nth ix (smt:children constraint))))
-                              (input-indexes root-rel)
-                              (input-names root-rel)))
-                 (output (nth (first (output-indexes root-rel))
-                              (smt:children constraint))))
+           (let ((inputs (smt:make-state
+                          (loop for ix in (input-indexes root-rel)
+                                for name in (input-names root-rel)
+                                collect name
+                                collect (nth ix (smt:children constraint)))))
+                 (output (smt:make-state
+                          (list
+                           :output
+                           (nth (first (output-indexes root-rel))
+                                (smt:children constraint))))))
              (list (cons :inputs inputs) (cons :output output))))))
 
       ;; Existentially quantified from SyGuS conversion
@@ -257,9 +275,15 @@ input state and semantic functions for each child term"
              
              (if (eql output-var (smt:name (first (smt:children equality))))
                  (list (cons :inputs inputs)
-                       (cons :output (second (smt:children equality))))
+                       (cons :output
+                             (smt:make-state
+                              (list
+                               :output (second (smt:children equality))))))
                  (list (cons :inputs inputs)
-                       (cons :output (first (smt:children equality)))))))))
+                       (cons :output
+                             (smt:make-state
+                              (list
+                               :output (first (smt:children equality)))))))))))
        
       
         (t
@@ -458,3 +482,22 @@ input state and semantic functions for each child term"
   ;; TODO: maybe, maybe not?
   (smt:set-function-definition name definition)
   nil)
+
+;;;
+;;; Datatypes
+;;;
+(defun com.kjcjohnson.synthkit.semgus-user::declare-datatype (name &key arity)
+  "Adds a datatype declaration (with no constructors yet)."
+  (declare (ignore arity))
+  (setf name (smt:ensure-identifier (smt:name name))) ; NAME comes in as a SORT
+  (setf (smt:get-sort name) (make-instance 'smt:datatype :name name)))
+
+(defun com.kjcjohnson.synthkit.semgus-user::add-datatype-constructor
+    (&key datatype name children)
+  "Adds a constructor to a datatype."
+  (let ((constructor (make-instance 'smt:datatype-constructor
+                                    :name name
+                                    :children children)))
+    (unless (typep datatype 'smt:datatype)
+      (error "Not a datatype: ~a" datatype))
+    (smt:add-datatype-constructor datatype constructor)))

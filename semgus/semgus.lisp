@@ -32,12 +32,17 @@
   ((examples
     :initarg :examples
     :initform (list)
-    :reader examples)))
+    :reader examples)
+   (relational-examples
+    :initarg :rel-examples
+    :initform (list)
+    :reader relational-examples)))
 
-(defun add-example (spec input output)
+(defun add-example (spec input output &key rel-input rel-output)
   "Adds the given INPUT and OUTPUT as an example in SPEC."
   (declare (type io-specification spec))
-  (push (cons input output) (slot-value spec 'examples)))
+  (push (cons input output) (slot-value spec 'examples))
+  (push (cons rel-input rel-output) (slot-value spec 'relational-examples)))
 
 (defun example-input (example)
   "Gets the input value from the given example"

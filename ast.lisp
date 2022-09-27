@@ -93,6 +93,11 @@
 (defgeneric relational-semantics-for-non-terminal (semantics non-terminal)
   (:documentation "Maps from a non-terminal to the semantics relation function declaration."))
 
+(defgeneric canonicalize-result (semantics output)
+  (:documentation "Processes the output of a program into a canonical state.")
+  (:method (semantics output) output)
+  (:method (semantics (output smt:state)) (smt:canonicalize-state output)))
+
 (defvar *program-execution-exit-hook*)
 (defun abort-program-execution ()
   (funcall *program-execution-exit-hook*))
@@ -107,8 +112,11 @@
             `(let ((,output-state-var (funcall ,s ,input-state-var)))
                (unless (null ,output-state-var) (return ,output-state-var))))
          (error "No applicable semantics for production: ~a" ,production)))))
-      
+
+(defvar *execution-counter* 0)
+
 (defun execute-program (semantics node input-state)
+  (incf *execution-counter*)
   (let (result abort-exit)
     (tagbody
        (let ((*program-execution-exit-hook* #'(lambda () (go abort-execution))))
@@ -121,7 +129,7 @@
         (progn
           ;(format *trace-output* "; ABORT EXIT: ~a~%" node)
           (values nil nil))
-        (values result t))))
+        (values (canonicalize-result semantics result) t))))
 
 (defun %execute-program (semantics node input-state)
   (dolist (sem (operational-semantics-for-production semantics (production node) node))

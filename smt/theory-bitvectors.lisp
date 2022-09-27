@@ -58,3 +58,10 @@
   (clip
    (bit-smasher:bit-sum bv1 bv2)
    bv1))
+
+(defun bv-sub (bv1 bv2)
+  "Bit vector subtraction (modulo length)"
+  (declare (type bit-vector bv1 bv2))
+  (clip
+   (bit-smasher:bit-difference bv1 bv2)
+   bv1))

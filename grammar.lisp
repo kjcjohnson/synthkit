@@ -58,6 +58,10 @@
     :reader arity
     :documentation "This operator's arity: the number of children it has.")))
 
+(defmethod print-object ((o operator) stream)
+  (print-unreadable-object (o stream :type t)
+    (format stream "~a" (name o))))
+
 (defclass production (named-grammar-element)
   ((operator
     :initarg :operator

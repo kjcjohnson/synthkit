@@ -38,15 +38,16 @@
 
 (defun core-= (left right)
   "Core equality"
-  (assert (or (subtypep (type-of left) (type-of right))
-              (subtypep (type-of right) (type-of left)))
+  (assert (eql (get-constant-type left) (get-constant-type right))
           (left right)
           "Cannot compare arguments of different types: ~a and ~a"
           left right)
   (etypecase left
     (number (= left right))
     (boolean (eql left right))
-    (bit-vector (equal left right))))
+    (string (string= left right))
+    (bit-vector (equal left right))
+    (datatype-instance (datatype= left right))))
 
 (defun core-distinct (left right)
   "Core distinct"
@@ -55,8 +56,7 @@
 (defun core-ite (condition consequence alternative)
   "Core if-then-else"
   (declare (type boolean condition))
-  (assert (or (subtypep (type-of consequence) (type-of alternative))
-              (subtypep (type-of alternative) (type-of consequence)))
+  (assert (eql (get-constant-type consequence) (get-constant-type alternative))
           (consequence alternative)
           "ITE branches must have the same types: ~a and ~a"
           consequence alternative)
