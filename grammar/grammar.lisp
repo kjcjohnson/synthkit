@@ -19,7 +19,18 @@
    (productions
     :initarg :productions
     :initform (list)
-    :reader productions)))
+    :reader productions)
+   (extra-data
+    :initform (make-hash-table)
+    :reader %extra-data)))
+
+(defun extra-data (grammar key &optional default)
+  "Retrieves a piece of extra data from a grammar."
+  (gethash key (%extra-data grammar) default))
+
+(defun (setf extra-data) (data grammar key)
+  "Sets a piece of extra data in a grammar."
+  (setf (gethash key (%extra-data grammar)) data))
 
 (defmacro do-non-terminals ((var grammar) &body body)
   `(dolist (,var (non-terminals ,grammar))

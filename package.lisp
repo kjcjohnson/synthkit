@@ -53,6 +53,9 @@
            #:occurrences
            #:name
            #:make-rtg
+           #:extra-data
+
+           #:distance-to-leaves #:compute-distance-to-leaves
            ))
 
 (defpackage #:com.kjcjohnson.synthkit.ast

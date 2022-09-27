@@ -30,7 +30,11 @@
                              (:file "evaluator")
                              (:file "predicates")
                              (:file "states")))
-               (:file "grammar" :depends-on ("package" "utilities"))
+               (:module "grammar"
+                :depends-on ("package" "utilities")
+                :serial t
+                :components ((:file "grammar")
+                             (:file "distance-to-leaves")))
                (:file "ast" :depends-on ("package" "grammar" "smt"))
                (:module "semgus"
                 :depends-on ("package" "grammar" "ast" "smt" "utilities")
