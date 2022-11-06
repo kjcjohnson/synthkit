@@ -36,9 +36,11 @@
 (defun prune (program-enumerable inputs semantics &key (test #'equal))
   "Prunes programs based on observational equivalence."
   ;; Compute observational equivalence
-  (let ((distinct (dictionary:new :test test)))
+  (let ((distinct (dictionary:new :test test))
+        (input-count 0))
     (kl:foreach (child in (ensure-list program-enumerable))
       (kl:foreach (candidate in child)
+        (incf input-count)
         (let ((outputs (map 'list #'(lambda (input)
                                       (ast:execute-program semantics
                                                            candidate
@@ -52,6 +54,7 @@
                                         distinct
                                         outputs)))
                 (&dictionary:add distinct outputs candidate))))))
+    '(format t "~&;PRUNE IN: ~s OUT: ~s~%" input-count (length (&dictionary:value-list distinct)))
     (create-most-reasonable-program-node-for-list
      (map 'list
           #'(lambda (p)
