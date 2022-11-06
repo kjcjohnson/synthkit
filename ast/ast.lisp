@@ -3,87 +3,6 @@
 ;;;
 (in-package #:com.kjcjohnson.synthkit.ast)
 
-(defclass program-node ()
-  ((operator
-    :initarg :operator
-    :reader operator
-    :documentation "Operator for this AST node.")
-   (production
-    :initarg :production
-    :reader production
-    :documentation "Production for this AST node.")
-   (children
-    :initarg :children
-    :initform (list)
-    :accessor children
-    :documentation "Children of this AST node.")
-   #+(or)(operational-semantics
-    :initarg :operational-semantics
-    :initform nil
-    :accessor operational-semantics
-    :documentation "This node's operational semantics - a list of state transformer functions")))
-
-(defmethod initialize-instance :after ((n program-node) &key)
-  ;; Must have either operator or production set
-  (assert (or (slot-boundp n 'operator) (slot-boundp n 'production)))
-  (when (not (slot-boundp n 'operator))
-    (setf (slot-value n 'operator) (g:operator (slot-value n 'production))))
-  (if (not (slot-boundp n 'production))
-      (setf (slot-value n 'production) nil)
-      (assert (eql (slot-value n 'operator) (g:operator (slot-value n 'production)))))
-  (assert (= (g:arity (slot-value n 'operator)) (length (slot-value n 'children)))))
-
-(defvar *printing-program-node* nil)
-
-(defgeneric print-program-operator (op children stream))
-
-(defmethod print-program-operator (op children stream)
-  (format stream "~a" (smt:identifier-string (g:name op)))
-  (unless (null children)
-    (format stream "(~{~a~^,~})" children)))
-
-(defgeneric print-program-node (n stream))
-
-(defmethod print-program-node (n stream)
-  (print-program-operator (operator n) (children n) stream))
-
-(defmethod print-object ((n program-node) stream)
-  (if *printing-program-node*
-      (print-program-node n stream)
-      (let ((*printing-program-node* t))
-        (print-unreadable-object (n stream :type t)
-          (print-program-node n stream)))))
-
-(defun copy-program (program)
-  "Returns a copy of the given program node."
-  (make-instance 'program-node :production (production program)
-                               :operator (operator program)
-                               :children (map 'list #'copy-program (children program))))
-
-(defgeneric nth-child (n thing)
-  (:documentation "Retrieves the nth child of the thing"))
-
-(defgeneric (setf nth-child) (value n thing)
-  (:documentation "Sets the nth child of the thing"))
-
-(defmethod nth-child (n (thing program-node))
-  (nth n (children thing)))
-
-(defmethod (setf nth-child) (value n (thing program-node))
-  (setf (nth n (children thing)) value))
-
-(defmacro swap-nth-child (place n thing)
-  `(psetf ,place (nth-child ,n ,thing)
-          (nth-child ,n ,thing) ,place))
-
-;; (defmacro dochildren (var node &body body)
-;;   "Calls FN on all children of NODE, recursively"
-;;   (dolist (c (children node))
-    
-(defun program-size (node)
-  "Computes the size of NODE (number of nodes in the tree)"
-  (1+ (reduce #'+ (map 'list #'program-size (children node)))))
-
 (defgeneric operational-semantics-for-production (semantics production node)
   (:documentation "Maps from a production to a list of state transformation semantic functions."))
 
@@ -131,13 +50,36 @@
           (values nil nil))
         (values (canonicalize-result semantics result) t))))
 
+(defvar *self-recursion-counter* 0
+  "Counts recursion depth to find probably-non-terminating programs.")
+(defparameter *self-recursion-limit* 200)
+
 (defun %execute-program (semantics node input-state)
+
+  ;;; Short-circuit and yell if we attempt to execute a hole as a program
+  (when (typep node 'program-hole)
+    (error "Attempting to execute hole: ~a" node))
+  
   (dolist (sem (operational-semantics-for-production semantics (production node) node))
     (let ((child-semantics (map 'list
                                 #'(lambda (c)
-                                    (lambda (is) (funcall #'%execute-program semantics c is)))
-                                (children node))))
-      (multiple-value-bind (result valid) (apply sem input-state child-semantics)
+                                    (lambda (is)
+                                      (values
+                                       (funcall #'%execute-program semantics c is)
+                                       t)))
+                                (children node)))
+          (self-semantics #'(lambda (is)
+                              (let ((*self-recursion-counter*
+                                      (1+ *self-recursion-counter*)))
+                                (if (or (> *self-recursion-counter*
+                                           *self-recursion-limit*)
+                                        (smt:state= input-state is))
+                                    (abort-program-execution)
+                                    (values
+                                     (funcall #'%execute-program semantics node is)
+                                     t))))))
+      (multiple-value-bind (result valid)
+          (apply sem input-state self-semantics child-semantics)
         (when (or (not (null result)) valid)
           (return-from %execute-program result)))))
   (error "No applicable semantics: ~a" (g:name (operator node))))
