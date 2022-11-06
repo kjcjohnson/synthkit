@@ -11,6 +11,8 @@
                "str"
                "bit-smasher"
                "trivial-garbage"
+               "trivia"
+               "graph"
                "com.kjcjohnson.kale")
   :components ((:file "package")
                (:file "utilities" :depends-on ("package"))
@@ -35,12 +37,25 @@
                 :serial t
                 :components ((:file "grammar")
                              (:file "distance-to-leaves")))
-               (:file "ast" :depends-on ("package" "grammar" "smt"))
+               (:module "ast"
+                :depends-on ("package" "grammar" "smt")
+                :serial t
+                :components ((:file "atom")
+                             (:file "node")
+                             (:file "hole")
+                             (:file "ast")))
+                             
                (:module "semgus"
                 :depends-on ("package" "grammar" "ast" "smt" "utilities")
                 :serial t
                 :components ((:file "semgus")
                              (:file "semantics")
+                             (:module "operationalizer"
+                              :serial t
+                              :components ((:file "package")
+                                           (:file "expressions")
+                                           (:file "codegen")
+                                           (:file "operationalizer")))
                              (:file "reader")
                              (:file "cegis")))
                (:module "vsa"

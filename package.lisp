@@ -33,6 +33,7 @@
 
            #:state #:make-state #:copy-state #:get-value #:state=
            #:evaluate-state #:make-temp-state #:canonicalize-state
+           #:get-first-value
 
            #:get-constant-type
 
@@ -49,6 +50,7 @@
            #:operator
            #:arity
            #:production
+           #:productions
            #:instance
            #:occurrences
            #:name
@@ -62,7 +64,9 @@
   (:use #:cl)
   (:local-nicknames (#:g #:com.kjcjohnson.synthkit.grammar)
                     (#:smt #:com.kjcjohnson.synthkit.smt))
-  (:export #:program-node
+  (:export #:program-atom
+           #:program-node
+           #:program-hole
            #:production
            #:operator
            #:print-program-operator
@@ -73,6 +77,7 @@
            #:nth-child
            #:swap-nth-child
            #:program-size
+           #:has-hole?
            #:copy-program
            #:compile-program
            #:execute-program
@@ -94,7 +99,8 @@
   (:local-nicknames (#:g #:com.kjcjohnson.synthkit.grammar)
                     (#:ast #:com.kjcjohnson.synthkit.ast)
                     (#:smt #:com.kjcjohnson.synthkit.smt)
-                    (#:u #:com.kjcjohnson.synthkit.utilities))
+                    (#:u #:com.kjcjohnson.synthkit.utilities)
+                    (#:? #:trivia))
   (:export #:semgus-problem
            #:load-semgus-problem
            #:grammar
@@ -125,6 +131,12 @@
            #:add-counter-example-for-specification
            #:ensure-cegis-problem
            #:constraint
+
+           ;; CHC-related exports
+           #:arguments #:body #:head #:head-relations
+           #:input-variables #:output-variables #:term-name #:variables
+           #:input-indexes #:output-indexes #:term-index
+            #:output-names #:input-names
            ))
 
 (defpackage #:com.kjcjohnson.synthkit.tdp
