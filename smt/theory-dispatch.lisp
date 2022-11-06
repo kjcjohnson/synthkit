@@ -21,6 +21,8 @@
           ("+" . ,#'ints-+)
           ("-" . ,#'ints--)
           ("<" . ,#'ints-<)
+          (">" . ,#'ints->)
+          ("*" . ,#'ints-*)
           
           ;; String functions
           ("str.++"       . ,#'str-++)

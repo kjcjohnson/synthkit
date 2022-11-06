@@ -16,15 +16,13 @@
   (declare (type boolean other))
   (not other))
 
-(defun core-or (left right)
+(defun core-or (&rest args)
   "Core or function"
-  (declare (type boolean left right))
-  (or left right))
+  (funcall #'some #'identity args))
 
-(defun core-and (left right)
+(defun core-and (&rest args)
   "Core and function"
-  (declare (type boolean left right))
-  (and left right))
+  (funcall #'every #'identity args))
 
 (defun core-=> (left right)
   "Core implication"

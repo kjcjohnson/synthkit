@@ -251,6 +251,8 @@
 
 (defun find-constants (expr)
   "Finds all (unique) constants in an expression."
+  (unless (subtypep (type-of expr) 'smt-node)
+    (return-from find-constants nil))
   (let ((result nil))
     (if (zerop (arity expr))
         (when (typep expr 'constant) (pushnew expr result :key #'name :test #'equal))

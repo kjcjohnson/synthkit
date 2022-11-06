@@ -35,9 +35,9 @@
 
 (defun %state-arguments-to-alist (args)
   "Converts argument list into an alist. Always returns a fresh list."
-  (when (= 1 (length args))
+  (when (and (= 1 (length args))         ; A list in a list?
+             (listp (cdr (first args)))) ; Or just a one-element a-list?
     (setf args (first args)))
-
   (let (arglist)
     (if (consp (first args))
         (setf arglist (copy-list args)) ; Assume already in alist form
@@ -99,6 +99,11 @@
   (let ((pair (assoc var (mapping state))))
     (values (cdr pair) (not (null pair)))))
 
+(defun get-first-value (state)
+  "Gets the first state value. HACK TO MAKE DUET WORK."
+  (declare (type state state))
+  (cdr (first (mapping state))))
+
 (defun copy-state (state &rest modifications)
   "Copies a state and optionally replaces variables, specified in pairs:VAR VALUE."
   (declare (type state state))
@@ -114,14 +119,16 @@
 
 (defun state= (state1 state2)
   "Checks two states for equality. Both states must have identical variables."
-  (declare (type state state1 state2))
+  (declare (type (or state null) state1 state2))
+  (when (or (null state1) (null state2))
+    (return-from state= (eql state1 state2)))
 
   ;;; Short-circuit if both states are canonical instances
   (when (and (is-canonical-state? state1)
              (is-canonical-state? state2))
     (return-from state= (eql state1 state2)))
 
-  (warn "Comparing non-canonical states")
+  ;;(warn "Comparing non-canonical states")
   ;;; Otherwise, check if the keys are same
   (when (set-exclusive-or (mapping state1) (mapping state2) :key #'car)
     (return-from state= nil))
