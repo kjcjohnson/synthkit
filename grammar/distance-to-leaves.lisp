@@ -29,7 +29,7 @@ to MOST-POSITIVE-FIXNUM."
       (dolist (prod (productions grammar))
         (if (zerop (arity prod))
             (compare-and-set prod 0)
-            (compare-and-set prod (1+ (reduce #'min
+            (compare-and-set prod (1+ (reduce #'max
                                               (occurrences prod)
                                               :key #'(lambda (nt)
                                                        (gethash nt table)))))))
