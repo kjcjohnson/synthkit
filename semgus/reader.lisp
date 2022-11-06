@@ -47,7 +47,9 @@
    (term-index :accessor term-index :initarg :term-index)
    (input-indexes :accessor input-indexes :initarg :input-indexes)
    (output-indexes :accessor output-indexes :initarg :output-indexes)
-   (input-names :accessor input-names :initarg :input-names)))
+   (term-name :accessor term-name :initarg :term-name)
+   (input-names :accessor input-names :initarg :input-names)
+   (output-names :accessor output-names :initarg :output-names)))
 
 (defclass semgus-chc-constructor ()
   ((name :accessor name :initarg :name)
@@ -65,7 +67,7 @@
   (find (name (constructor chc))
         (g::productions grammar)
         :test (lambda (name prod)
-                ;(format t "~S : ~S~%" name (g:name (g:operator prod)))
+                ;;(format t "~S : ~S~%" name (g:name (g:operator prod)))
                 (eql name (g:name (g:operator prod))))))
 
 (defun load-semgus-problem (filename)
@@ -94,16 +96,26 @@
     (loop for chc in (chcs *semgus-context*)
           for prod = (production-for-chc chc (grammar *semgus-context*))
           doing
-             (push
-              (operationalize-chc chc)
-              (gethash (g:operator prod) opsem)))
+             (if (null prod)
+                 (warn "No production in grammar for CHC with operator: ~a"
+                       (name (constructor chc)))
+                 (push
+                  (operationalize-chc chc)
+                  (gethash (g:operator prod) opsem))))
+
     #'(lambda (prod)
-        (gethash (g:operator prod) opsem))))
+        (if (null (g:name prod))
+            ;; Special case: NT-to-NT productions
+            (list #'(lambda (is self child)
+                      (declare (ignore self))
+                      (funcall child is)))
+            (gethash (g:operator prod) opsem)))))
 
 (defun operationalize-chc (chc)
   "Creates a semantic function for a CHC. The result is a function that takes an
 input state and semantic functions for each child term"
-  ;; Note: this is naive and assumes functional semantics
+  (com.kjcjohnson.synthkit.semgus.operationalizer:operationalize-chc+ chc smt:*smt* *semgus-context*))
+#|  ;; Note: this is naive and assumes functional semantics
   ;;       we assume the inputs will always be the same as the input state
   (let ((term-output-vars (map 'list
                                #'(lambda (b) (car (last (arguments b))))
@@ -111,7 +123,7 @@ input state and semantic functions for each child term"
         (child-semantic-fns (map 'list
                                  #'(lambda (x) (declare (ignore x)) (gensym "SEM"))
                                  (body chc))))
-    (compile nil
+    (let ((lambda-form
      `(lambda (input-state ,@child-semantic-fns)
         (declare (ignorable input-state))
         (let ,(output-variables chc)
@@ -131,7 +143,9 @@ input state and semantic functions for each child term"
                      (list
                       :output
                       ,(first (output-variables chc))))
-                    t)))))))
+                    t))))))
+      (compile nil lambda-form))))
+|#
 
 (defun operationalize-expression (expression input-vars output-vars child-vars &key assigning)
   "Operationalizes a CHC constraint into executable code"
@@ -178,13 +192,21 @@ input state and semantic functions for each child term"
          ((or (find arg1 output-vars)
               (find arg2 child-vars))
           `(setf ,arg1 ,arg2))
+         
          ((or (find arg2 output-vars)
               (find arg1 child-vars))
           `(setf ,arg2 ,arg1))
 
-         ((typep arg1 'symbol)
-          `(setf ,arg1 ,arg2)
-          `(setf ,arg2 ,arg1)))))
+         ((and (typep arg1 'symbol)
+               (not (null arg1))
+               (not (eq arg1 t)))
+          `(setf ,arg1 ,arg2))
+         
+         ((and (typep arg2 'symbol)
+               (not (null arg2))
+               (not (eq arg2 t)))
+          `(setf ,arg2 ,arg1))
+         (t (error "Tried to do an assignment operator, but not assignable")))))
 
     ;; Case three: sequenced operations
     ((and (typep expression 'smt::expression)
@@ -251,10 +273,12 @@ input state and semantic functions for each child term"
                                 collect name
                                 collect (nth ix (smt:children constraint)))))
                  (output (smt:make-state
-                          (list
-                           :output
-                           (nth (first (output-indexes root-rel))
-                                (smt:children constraint))))))
+                          (loop for output-ix in (output-indexes root-rel)
+                                for output-name in (output-names root-rel)
+                                collecting
+                                (cons output-name
+                                      (elt (smt:children constraint)
+                                           output-ix))))))
              (list (cons :inputs inputs) (cons :output output))))))
 
       ;; Existentially quantified from SyGuS conversion
@@ -276,14 +300,16 @@ input state and semantic functions for each child term"
              (if (eql output-var (smt:name (first (smt:children equality))))
                  (list (cons :inputs inputs)
                        (cons :output
-                             (smt:make-state
+                             (smt:make-state ; SyGuS will only have one output var
                               (list
-                               :output (second (smt:children equality))))))
+                               (first (output-names root-rel))
+                               (second (smt:children equality))))))
                  (list (cons :inputs inputs)
                        (cons :output
                              (smt:make-state
                               (list
-                               :output (first (smt:children equality)))))))))))
+                               (first (output-names root-rel))
+                               (first (smt:children equality)))))))))))
        
       
         (t
@@ -370,9 +396,13 @@ input state and semantic functions for each child term"
                       :argument-sorts (signature head)
                       :input-indexes input-indexes 
                       :output-indexes output-indexes
+                      :term-name (nth term-index (arguments head))
                       :input-names (map 'list
                                         #'(lambda (i) (nth i (arguments head)))
-                                        input-indexes)) ;; TOD: warn if no match
+                                        input-indexes) ;; TOD: warn if no match
+                      :output-names (map 'list
+                                         #'(lambda (i) (nth i (arguments head)))
+                                         output-indexes))
        (head-relations *semgus-context*)))))
                     
 
@@ -437,6 +467,9 @@ input state and semantic functions for each child term"
   (let ((grammar (g:make-rtg :non-terminals non-terminals
                              :productions productions)))
     grammar))
+
+(defparameter com.kjcjohnson.synthkit.semgus-user::nil nil
+  "Nil can appear as an operator in productions that are an NT-to-NT production.")
 
 (defun com.kjcjohnson.synthkit.semgus-user::synth-fun (name &key term-type grammar)
   "Creates a synthesis problem"
