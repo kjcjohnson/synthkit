@@ -40,8 +40,8 @@
 
 #+synthkit-disable-smt-solver
 (defmacro with-solver ((solver solver-spec) &body body)
-  (format t "~&; SMT solving disabled in synthkit~%")
   `(let ((solver nil))
+     (format t "~&; SMT solving disabled in synthkit~%")
      ,@body))
 
 #-synthkit-disable-smt-solver
