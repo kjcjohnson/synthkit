@@ -32,7 +32,7 @@
                                                      "--incremental"
                                                      "--tlimit-per" "10000"
                                                      )))
-(format t "~&***** FEATURES: ~s~%" *features*)
+
 (defun assert-smt-solver-enabled ()
   "Checks if SMT solving is enabled."
   #+synthkit-disable-smt-solver
@@ -50,7 +50,6 @@
         (result (gensym))
         (status (gensym)))
     `(with-open-stream (,solver (apply #'cl-smt-lib:make-smt (program ,solver-spec) (arguments ,solver-spec)))
-       (format t "~&; SMT solving NOT disabled in synthkit~%")
        (unwind-protect
             (progn
               (let ((,result (progn
