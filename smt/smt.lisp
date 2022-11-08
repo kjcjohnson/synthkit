@@ -39,9 +39,13 @@
   (error "SMT solver support is disabled."))
 
 #+synthkit-disable-smt-solver
-(defmacro with-solver ((solver solver-spec) &body body)
-  `(let ((solver nil))
-     ,@body))
+(let ((once nil))
+  (defmacro with-solver ((solver solver-spec) &body body)
+    (unless once
+      (format *trace-output* "~&; SMT solving disabled in synthkit~%")
+      (setf once t))
+    `(let ((solver nil))
+       ,@body)))
 
 #-synthkit-disable-smt-solver
 (defmacro with-solver ((solver solver-spec) &body body)
