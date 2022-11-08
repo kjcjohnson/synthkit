@@ -2,7 +2,7 @@
 ;;; smt - SMT-LIB2 functionality
 ;;;
 (in-package #:com.kjcjohnson.synthkit.smt)
-  
+
 ;;
 ;; Sorts: Int, Bool, String
 ;; Declaring variables of these types
@@ -33,6 +33,17 @@
                                                      "--tlimit-per" "10000"
                                                      )))
 
+(defun assert-smt-solver-enabled ()
+  "Checks if SMT solving is enabled."
+  #+synthkit-disable-smt-solver
+  (error "SMT solver support is disabled."))
+
+#+synthkit-disable-smt-solver
+(defmacro with-solver ((solver solver-spec) &body body)
+  `(let ((solver nil))
+     ,@body))
+
+#-synthkit-disable-smt-solver
 (defmacro with-solver ((solver solver-spec) &body body)
   (let ((form (gensym))
         (result (gensym))
@@ -45,7 +56,7 @@
                 (close (cl-smt-lib/process-two-way-stream:output ,solver))
                 (let ((,status (uiop:wait-process (cl-smt-lib/process-two-way-stream:process ,solver))))
                   (unless (zerop ,status) (error "SMT solver failed with exit status ~S" ,status))
-                  (values ,result 
+                  (values ,result
                           (loop :for ,form = (cl-smt-lib:read-from-smt ,solver t nil :eof)
                                 :while (cl:not (equal :eof ,form))
                                 :collect ,form)
@@ -55,9 +66,11 @@
          (uiop:terminate-process (cl-smt-lib/process-two-way-stream:process ,solver))))))
 
 (defun make-solver (solver-spec)
+  (assert-smt-solver-enabled)
   (apply #'cl-smt-lib:make-smt (program solver-spec) (arguments solver-spec)))
 
-(defun close-solver (solver)  
+(defun close-solver (solver)
+  (assert-smt-solver-enabled)
   (close (cl-smt-lib/process-two-way-stream:output solver))
   (let ((status (uiop:wait-process (cl-smt-lib/process-two-way-stream:process solver))))
     (unless (zerop status) (error "SMT solver failed with exit status ~S" status)))
@@ -70,12 +83,14 @@
 
 (defun declare-constants (solver formula)
   "Declares all constants in the given formula."
+  (assert-smt-solver-enabled)
   (let ((constants (find-constants formula)))
     (dolist (c constants)
       (cl-smt-lib:write-to-smt solver `((,(intern "declare-const") ,(intern (name c)) ,(intern (name (sort c)))))))))
 
 (defun solve (solver-spec &rest assertions)
   "Solves the given SMT query."
+  (assert-smt-solver-enabled)
   (with-solver (smt solver-spec)
     (let ((constants (reduce #'append (map 'list #'find-constants assertions))))
       (dolist (c constants)
@@ -87,9 +102,11 @@
         (cl-smt-lib:write-to-smt smt `((|exit|)))))))
 
 (defun push-scope (solver)
+  (assert-smt-solver-enabled)
   (cl-smt-lib:write-to-smt solver `((,(intern "push") 1))))
 
 (defun pop-scope (solver)
+  (assert-smt-solver-enabled)
   (cl-smt-lib:write-to-smt solver `((,(intern "pop") 1))))
 
 (defmacro with-scope ((solver) &body body)
@@ -101,14 +118,17 @@
        (pop-scope ,solver))))
 
 (defun add (solver &rest assertions)
+  (assert-smt-solver-enabled)
   (let ((as (intern "assert")))
     (dolist (a assertions)
       (cl-smt-lib:write-to-smt solver `((,as ,(to-smt a)))))))
 
 (defun dump-commands (solver commands)
+  (assert-smt-solver-enabled)
     (cl-smt-lib:write-to-smt solver commands))
 
 (defun check-sat (solver)
+  (assert-smt-solver-enabled)
   (cl-smt-lib:write-to-smt solver `((,(intern "check-sat"))))
   (let ((result (cl-smt-lib:read-from-smt solver t)))
     (cond ((eql (intern "sat") result) :sat)
@@ -116,6 +136,7 @@
           (t :unknown))))
 
 (defun get-model (solver)
+  (assert-smt-solver-enabled)
   (cl-smt-lib:write-to-smt solver `((,(intern "get-model"))))
   (let ((output (cl-smt-lib:read-from-smt solver t)))
     (assert (string= "model" (symbol-name (first output))))
@@ -128,6 +149,7 @@
 
 (defun set-model (solver model)
   "Defines constants for each variable in the model"
+  (assert-smt-solver-enabled)
   (cl-smt-lib:write-to-smt solver
                            (map 'list #'(lambda (m)
                                           (destructuring-bind (var . value) m
@@ -147,7 +169,7 @@
    (arity :reader arity :initarg :arity :initform (error "Arity is required."))
    (children :reader children :initarg :children :initform (error "Children are required."))
    (child-sorts :reader child-sorts :initarg :child-sorts :initform (error "Child sorts are required."))))
-   
+
 (defclass constant (expression)
   ((arity :initarg nil :initform 0)
    (children :initarg nil :initform nil)
@@ -227,7 +249,7 @@
         (,@(map 'list
                 #'(lambda (x) (intern (name x))) (argument-sorts fn)))
         ,(intern (name (return-sort fn))))))
-  
+
 (defmethod to-smt ((lit literal))
   (value lit))
 
