@@ -32,7 +32,7 @@
                                                      "--incremental"
                                                      "--tlimit-per" "10000"
                                                      )))
-
+(format t "~&***** FEATURES: ~s~%" *features*)
 (defun assert-smt-solver-enabled ()
   "Checks if SMT solving is enabled."
   #+synthkit-disable-smt-solver
@@ -42,7 +42,7 @@
 (let ((once nil))
   (defmacro with-solver ((solver solver-spec) &body body)
     (unless once
-      (format *trace-output* "~&; SMT solving disabled in synthkit~%")
+      (warn "~&; SMT solving disabled in synthkit~%")
       (setf once t))
     `(let ((solver nil))
        ,@body)))
