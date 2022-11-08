@@ -40,13 +40,15 @@
 
 #+synthkit-disable-smt-solver
 (defmacro with-solver ((solver solver-spec) &body body)
-  (warn "~&; SMT solving disabled in synthkit~%")
+  (eval-when (:compile-toplevel :load-toplevel)
+    (warn "~&; SMT solving disabled in synthkit~%"))
   `(let ((solver nil))
      ,@body))
 
 #-synthkit-disable-smt-solver
 (defmacro with-solver ((solver solver-spec) &body body)
-  (warn "~&; SMT solving NOT disabled in synthkit~%")
+  (eval-when (:compile-toplevel :load-toplevel)
+    (warn "~&; SMT solving NOT disabled in synthkit~%"))
   (let ((form (gensym))
         (result (gensym))
         (status (gensym)))
