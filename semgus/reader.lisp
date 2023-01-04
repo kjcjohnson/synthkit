@@ -107,8 +107,10 @@
                  (push
                   (operationalize-chc chc)
                   (gethash (g:operator prod) subtable)))
-          do (pushnew descriptor
-                      (gethash (g:term-type (g:instance prod)) desc-map))
+          unless (null prod)
+            do (pushnew descriptor
+                        (gethash (g:term-type (g:instance prod)) desc-map))
+          end
           do (setf (gethash descriptor opsem) subtable))
     
     (values
