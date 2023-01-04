@@ -17,8 +17,8 @@
                    :initarg :head-relations)
    (constraints :accessor constraints
                 :initarg :constraints)
-   (root-relation :accessor root-relation
-                  :initarg :root-relation)
+   (root-relations :accessor root-relations
+                   :initarg :root-relations)
    (term-name :accessor term-name
               :initarg :term-name)
    (term-type :accessor term-type
@@ -80,161 +80,61 @@
                           (read stream nil :eof))
             until (eql sexpr :eof)
             doing (eval sexpr)))
-    (make-instance 'semgus-problem
-                   :specification (constraints-to-pbe)
-                   :semantics (make-instance 'default-semantics
-                                             :operational
-                                             (operationalize-semantics)
-                                             :relational nil
-                                             :relation-definitions nil)
-                   :grammar (grammar *semgus-context*)
-                   :context *semgus-context*)))
+    (multiple-value-bind (op-fn desc-map)
+        (operationalize-semantics)
+      (make-instance 'semgus-problem
+                     :specification (constraints-to-pbe)
+                     :semantics (make-instance 'default-semantics
+                                               :operational op-fn
+                                               :descriptor-map desc-map
+                                               :relational nil
+                                               :relation-definitions nil)
+                     :grammar (grammar *semgus-context*)
+                     :context *semgus-context*))))
 
 (defun operationalize-semantics ()
   "Operationalizes semantics - or, at least, tries to."
-  (let ((opsem (make-hash-table)))
+  (let ((opsem (make-hash-table))
+        (desc-map (make-hash-table)))
     (loop for chc in (chcs *semgus-context*)
           for prod = (production-for-chc chc (grammar *semgus-context*))
+          for descriptor = (name (head chc))
+          for subtable = (gethash descriptor opsem (make-hash-table))
           doing
              (if (null prod)
                  (warn "No production in grammar for CHC with operator: ~a"
                        (name (constructor chc)))
                  (push
                   (operationalize-chc chc)
-                  (gethash (g:operator prod) opsem))))
-
-    #'(lambda (prod)
-        (if (null (g:name prod))
-            ;; Special case: NT-to-NT productions
-            (list #'(lambda (is self child)
-                      (declare (ignore self))
-                      (funcall child is)))
-            (gethash (g:operator prod) opsem)))))
+                  (gethash (g:operator prod) subtable)))
+          do (pushnew descriptor
+                      (gethash (g:term-type (g:instance prod)) desc-map))
+          do (setf (gethash descriptor opsem) subtable))
+    
+    (values
+     #'(lambda (descriptor prod)
+         (if (null (g:name prod))
+             ;; Special case: NT-to-NT productions
+             (list (make-instance 'ast:calling-card
+                                  :builder-function
+                                  #'(lambda (sem-fns node node-children)
+                                      (declare (ignore node node-children))
+                                      (first sem-fns)) ;; Just return the child fn
+                                  :descriptor-requests
+                                  (list
+                                   (make-instance 'ast:semantics-descriptor-request
+                                                  :descriptor descriptor
+                                                  :node-id 0))))
+             (let ((subtable (gethash descriptor opsem)))
+               (unless subtable
+                 (error "No semantics for descriptor: ~s" descriptor))
+               (gethash (g:operator prod) subtable))))
+     desc-map)))
 
 (defun operationalize-chc (chc)
   "Creates a semantic function for a CHC. The result is a function that takes an
 input state and semantic functions for each child term"
   (com.kjcjohnson.synthkit.semgus.operationalizer:operationalize-chc+ chc smt:*smt* *semgus-context*))
-#|  ;; Note: this is naive and assumes functional semantics
-  ;;       we assume the inputs will always be the same as the input state
-  (let ((term-output-vars (map 'list
-                               #'(lambda (b) (car (last (arguments b))))
-                               (body chc)))
-        (child-semantic-fns (map 'list
-                                 #'(lambda (x) (declare (ignore x)) (gensym "SEM"))
-                                 (body chc))))
-    (let ((lambda-form
-     `(lambda (input-state ,@child-semantic-fns)
-        (declare (ignorable input-state))
-        (let ,(output-variables chc)
-          (declare (ignorable ,@(output-variables chc)))
-          (let (,@(map 'list
-                       #'(lambda (sem-fn out-var)
-                           `(,out-var (smt:get-value
-                                       (funcall ,sem-fn input-state)
-                                       :output)))
-                       child-semantic-fns
-                       term-output-vars))
-            ,(operationalize-expression (constraint chc)
-                                        (input-variables chc)
-                                        (output-variables chc)
-                                        term-output-vars)
-            (values (smt:make-temp-state
-                     (list
-                      :output
-                      ,(first (output-variables chc))))
-                    t))))))
-      (compile nil lambda-form))))
-|#
-
-(defun operationalize-expression (expression input-vars output-vars child-vars &key assigning)
-  "Operationalizes a CHC constraint into executable code"
-  (cond
-    ;; Base cases. Constants, variables, and literals
-    ((and (typep expression 'smt::expression)
-          (eql (smt:name expression) (smt:ensure-identifier "true")))
-     't)
-    ((and (typep expression 'smt::expression)
-          (eql (smt:name expression) (smt:ensure-identifier "false")))
-     'nil)
-
-    ((and (typep expression 'smt::constant)
-          (find (smt:name expression) input-vars))
-     `(smt:get-value input-state ',(smt:name expression)))
-
-    ((and (typep expression 'smt::constant)
-          (or (find (smt:name expression) output-vars)
-              (find (smt:name expression) child-vars)))
-     (smt:name expression))
-
-    ((stringp expression)
-     expression)
-    ((numberp expression)
-     expression)
-    ((bit-vector-p expression)
-     expression)
-
-    ;; Case two: single assignment
-    ((and (not assigning)
-          (typep expression 'smt::expression)
-          (eql (smt:name expression) (smt:ensure-identifier "=")))
-     (let ((arg1 (operationalize-expression (first (smt:children expression))
-                                            input-vars
-                                            output-vars
-                                            child-vars
-                                            :assigning t))
-           (arg2 (operationalize-expression (second (smt:children expression))
-                                            input-vars
-                                            output-vars
-                                            child-vars
-                                            :assigning t)))
-       (cond
-         ((or (find arg1 output-vars)
-              (find arg2 child-vars))
-          `(setf ,arg1 ,arg2))
-         
-         ((or (find arg2 output-vars)
-              (find arg1 child-vars))
-          `(setf ,arg2 ,arg1))
-
-         ((and (typep arg1 'symbol)
-               (not (null arg1))
-               (not (eq arg1 t)))
-          `(setf ,arg1 ,arg2))
-         
-         ((and (typep arg2 'symbol)
-               (not (null arg2))
-               (not (eq arg2 t)))
-          `(setf ,arg2 ,arg1))
-         (t (error "Tried to do an assignment operator, but not assignable")))))
-
-    ;; Case three: sequenced operations
-    ((and (typep expression 'smt::expression)
-          (eql (smt:name expression) (smt:ensure-identifier "and")))
-     `(progn
-        ,@(map 'list #'(lambda (x) (operationalize-expression x
-                                                              input-vars
-                                                              output-vars
-                                                              child-vars))
-               (smt:children expression))))
-
-    ;; Case four: known operators
-    ((typep expression 'smt::expression)
-     (let ((fn (smt:get-compiled-function (smt:name expression))))
-       (if fn
-           `(funcall ,fn ,@(map 'list #'(lambda (x)
-                                          (operationalize-expression x
-                                                                     input-vars
-                                                                     output-vars
-                                                                     child-vars))
-                                (smt:children expression)))
-           (format *trace-output*
-                   "; Missing operational definition for: ~a~%"
-                   (smt:name expression)))))
-
-    (t (format *trace-output*
-               "; CHC Operationalizer fall-through on: ~a~%"
-               expression))))
 
 (defun constraints-to-pbe ()
   "Extracts a PBE specification from the constraints"
@@ -244,42 +144,45 @@ input state and semantic functions for each child term"
           when (null exs) do
             (warn "Unable to convert all constraints to PBE constraints.")
           when (not (null exs)) do
-            (let ((input-state (cdr (assoc :inputs exs)))
-                  (output-state (cdr (assoc :output exs))))
+            (let ((input-state (getf exs :inputs))
+                  (output-state (getf exs :output))
+                  (descriptor (getf exs :descriptor)))
               (add-example spec
                            (smt:evaluate-state input-state)
                            (smt:evaluate-state output-state)
+                           descriptor
                            :rel-input input-state
                            :rel-output output-state)))
     spec))
 
 (defun constraint-to-pbe (constraint)
   "Tries to extract a PBE specification from a constraint"
-  (let ((appl-name (if (typep constraint 'smt::expression)
-                       (smt:name constraint)
-                       nil))
-        (root-rel (root-relation *semgus-context*))
-        (sf-term (term-name *semgus-context*)))
+  (let* ((appl-name (if (typep constraint 'smt::expression)
+                        (smt:name constraint)
+                        nil))
+         (root-rels (root-relations *semgus-context*))
+         (sf-term (term-name *semgus-context*))
+         (appl-root (find appl-name root-rels :test #'eql :key #'name)))
     (cond
       ;; Standard SemGuS-style PBE
-      ((eql appl-name (name root-rel))
+      (appl-root
        ;; Check if we're applying to the synth-fun term
-       (let ((termchild (nth (term-index root-rel) (smt:children constraint))))
+       (let ((termchild (nth (term-index appl-root) (smt:children constraint))))
          (when (and (typep termchild 'smt::expression)
                     (eql (smt:name termchild) sf-term))
            (let ((inputs (smt:make-state
-                          (loop for ix in (input-indexes root-rel)
-                                for name in (input-names root-rel)
+                          (loop for ix in (input-indexes appl-root)
+                                for name in (input-names appl-root)
                                 collect name
                                 collect (nth ix (smt:children constraint)))))
                  (output (smt:make-state
-                          (loop for output-ix in (output-indexes root-rel)
-                                for output-name in (output-names root-rel)
+                          (loop for output-ix in (output-indexes appl-root)
+                                for output-name in (output-names appl-root)
                                 collecting
                                 (cons output-name
                                       (elt (smt:children constraint)
                                            output-ix))))))
-             (list (cons :inputs inputs) (cons :output output))))))
+             (list :inputs inputs :output output :descriptor (name appl-root))))))
 
       ;; Existentially quantified from SyGuS conversion
       ((and (typep constraint 'smt::quantifier)
@@ -292,24 +195,29 @@ input state and semantic functions for each child term"
        (let ((output-var (first (smt::arguments constraint)))
              (rel-appl (first (smt::children (first (smt::children constraint)))))
              (equality (second (smt::children (first (smt:children constraint))))))
-         (let ((inputs (cdr (assoc :inputs (constraint-to-pbe rel-appl)))))
+         (let* ((pbe-info (constraint-to-pbe rel-appl))
+                (inputs (getf pbe-info :inputs))
+                (descriptor (getf pbe-info :descriptor)))
            (when (and (not (null inputs))
                       (typep equality 'smt::expression)
                       (eql (smt:name equality) (smt:ensure-identifier "=")))
-             
-             (if (eql output-var (smt:name (first (smt:children equality))))
-                 (list (cons :inputs inputs)
-                       (cons :output
-                             (smt:make-state ; SyGuS will only have one output var
-                              (list
-                               (first (output-names root-rel))
-                               (second (smt:children equality))))))
-                 (list (cons :inputs inputs)
-                       (cons :output
-                             (smt:make-state
-                              (list
-                               (first (output-names root-rel))
-                               (first (smt:children equality)))))))))))
+
+             (let ((root-rel (find descriptor root-rels :test #'eql :key #'name)))
+               (if (eql output-var (smt:name (first (smt:children equality))))
+                   (list :descriptor descriptor
+                         :inputs inputs
+                         :output
+                         (smt:make-state ; SyGuS will only have one output var
+                          (list
+                           (first (output-names root-rel))
+                           (second (smt:children equality)))))
+                   (list :descriptor descriptor
+                         :inputs inputs
+                         :output
+                         (smt:make-state
+                          (list
+                           (first (output-names root-rel))
+                           (first (smt:children equality)))))))))))
        
       
         (t
@@ -463,9 +371,17 @@ input state and semantic functions for each child term"
 (defun com.kjcjohnson.synthkit.semgus-user::grammar
     (&key non-terminals productions non-terminal-types)
   "Creates a grammar"
-  (declare (ignore non-terminal-types))
   (let ((grammar (g:make-rtg :non-terminals non-terminals
                              :productions productions)))
+    (loop for nt-name in non-terminals
+          for tt in non-terminal-types
+          for nt = (find nt-name
+                         (g:non-terminals grammar)
+                         :key #'g:name
+                         :test #'string=)
+          unless nt do (error "Cannot look up NT: ~a" nt) end
+          doing
+             (setf (g:term-type nt) tt))
     grammar))
 
 (defparameter com.kjcjohnson.synthkit.semgus-user::nil nil
@@ -480,11 +396,9 @@ input state and semantic functions for each child term"
           (remove-if-not #'(lambda (x) (eql term-type (term-type x)))
                          (head-relations *semgus-context*))))
     (when (endp possible-root-relations)
-      (warn "No possible root relations for synth-fun ~a. Make sure CHCs are defined." (smt:identifier-string name)))
-    (when (> (length possible-root-relations) 1)
-      (warn "More than one possible root relation for synth-fun ~a. One will be chosen 'arbitrarity'." (smt:identifier-string name)))
-
-    (setf (root-relation *semgus-context*) (first possible-root-relations))))
+      (warn "No possible root relations for synth-fun ~a. Make sure CHCs are defined."
+            (smt:identifier-string name)))
+    (setf (root-relations *semgus-context*) possible-root-relations)))
 
 (defun com.kjcjohnson.synthkit.semgus-user::constraint (term)
   "Adds a constraint to the problem"

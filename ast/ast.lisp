@@ -3,7 +3,10 @@
 ;;;
 (in-package #:com.kjcjohnson.synthkit.ast)
 
-(defgeneric operational-semantics-for-production (semantics production node)
+(defgeneric semantics-descriptors-for-non-terminal (semantics non-terminal)
+  (:documentation "Gets a list of semantics descriptors valid for NON-TERMINAL."))
+
+(defgeneric operational-semantics-for-production (semantics descriptor production)
   (:documentation "Maps from a production to a list of state transformation semantic functions."))
 
 (defgeneric relational-semantics-for-production (semantics production)
@@ -17,72 +20,16 @@
   (:method (semantics output) output)
   (:method (semantics (output smt:state)) (smt:canonicalize-state output)))
 
-(defvar *program-execution-exit-hook*)
-(defun abort-program-execution ()
-  (funcall *program-execution-exit-hook*))
-
 (defun compile-program (node semantics)
   (with-slots (production) node
     (when (null production) (error "Cannot compile a program node without a production."))
     (let ((input-state-var (gensym "INPUT"))
           (output-state-var (gensym "OUTPUT")))
       `(lambda (,input-state-var)
-         ,(dolist (s (operational-semantics-for-production semantics production node))
+         ,(dolist (s (operational-semantics-for-production semantics production))
             `(let ((,output-state-var (funcall ,s ,input-state-var)))
                (unless (null ,output-state-var) (return ,output-state-var))))
          (error "No applicable semantics for production: ~a" ,production)))))
-
-(defvar *execution-counter* 0)
-
-(defun execute-program (semantics node input-state)
-  (incf *execution-counter*)
-  (let (result abort-exit)
-    (tagbody
-       (let ((*program-execution-exit-hook* #'(lambda () (go abort-execution))))
-         (setf result (%execute-program semantics node input-state)))
-       (go finish-execution)
-     abort-execution
-       (setf abort-exit t)
-     finish-execution)
-    (if abort-exit
-        (progn
-          ;(format *trace-output* "; ABORT EXIT: ~a~%" node)
-          (values nil nil))
-        (values (canonicalize-result semantics result) t))))
-
-(defvar *self-recursion-counter* 0
-  "Counts recursion depth to find probably-non-terminating programs.")
-(defparameter *self-recursion-limit* 200)
-
-(defun %execute-program (semantics node input-state)
-
-  ;;; Short-circuit and yell if we attempt to execute a hole as a program
-  (when (typep node 'program-hole)
-    (error "Attempting to execute hole: ~a" node))
-  
-  (dolist (sem (operational-semantics-for-production semantics (production node) node))
-    (let ((child-semantics (map 'list
-                                #'(lambda (c)
-                                    (lambda (is)
-                                      (values
-                                       (funcall #'%execute-program semantics c is)
-                                       t)))
-                                (children node)))
-          (self-semantics #'(lambda (is)
-                              (let ((*self-recursion-counter*
-                                      (1+ *self-recursion-counter*)))
-                                (if (or (> *self-recursion-counter*
-                                           *self-recursion-limit*)
-                                        (smt:state= input-state is))
-                                    (abort-program-execution)
-                                    (values
-                                     (funcall #'%execute-program semantics node is)
-                                     t))))))
-      (multiple-value-bind (result valid)
-          (apply sem input-state self-semantics child-semantics)
-        (when (or (not (null result)) valid)
-          (return-from %execute-program result)))))
-  (error "No applicable semantics: ~a" (g:name (operator node))))
 
 (defun subst-application (relation old-fn-name new-name-computer when arg-transformer)
   (when (typep relation 'smt::expression)

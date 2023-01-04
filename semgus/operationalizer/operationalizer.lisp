@@ -9,6 +9,7 @@
    (input-formals :initarg :input-formals :reader input-formals)
    (output-formals :initarg :output-formals :reader output-formals)
    (term-symbol :initarg :term-symbol :reader term-symbol)
+   (head-symbol :initarg :head-symbol :reader head-symbol)
    (is-head-input? :initarg :is-head-input? :reader is-head-input?))
   (:default-initargs :is-head-input? nil))
 
@@ -354,24 +355,21 @@
 (defun %build-operational-function (input-symbols
                                     output-symbols
                                     auxiliary-symbols
-                                    term-symbols
                                     ordering
                                     node-table
                                     index-table
-                                    name)
+                                    name
+                                    child-signatures)
   "Builds an operational definition."
   (with-codegen-data ()
     (let ((lblock (gensym "BLOCK"))
           (is-var (gensym "INPUT"))
-          (cs-vars (map 'list #'(lambda (x)
-                                  (declare (ignore x))
-                                  (gensym "CS"))
-                        term-symbols)))
+          (cs-var (gensym "CS")))
       (with-data-slots
         (setf block-name lblock))
-      `(lambda (,is-var ,@cs-vars)
-         (declare (ignorable ,is-var ,@cs-vars))
-         (declare (optimize (speed 3)))
+      `(lambda (,is-var ,cs-var)
+         (declare (ignorable ,is-var ,cs-var))
+         (declare (optimize (debug 3)))
          (block ,lblock
            ;;
            ;; Declare all variables up front.
@@ -404,11 +402,11 @@
                                      t))))
                        
                        ((typep node 'uninterpreted-signature)
-                        (let ((us-pos (position (term-symbol node) term-symbols)))
+                        (let ((us-pos (position node child-signatures)))
                           `(multiple-value-bind (output-state successful?)
                                (funcall
                                 (the (function (smt:state) smt:state)
-                                     ,(elt cs-vars us-pos))
+                                     (elt (the list ,cs-var) ,us-pos))
                                 ,(if (is-head-input? node)
                                      is-var
                                      `(smt:make-temp-state
@@ -421,7 +419,12 @@
                                                       ,actual)))))
                              ;; Bail if child relation failed
                              (unless successful?
-                               (format t "~s   ~s~%" successful? output-state)
+                               (format t
+                                       "~s  ~s -> ~s [~s]~%"
+                                       successful?
+                                       ,is-var
+                                       output-state
+                                       ,(nth us-pos child-signatures))
                                (return-from ,lblock (values nil nil)))
                              ;; Assign output variables
                              ,@(loop for actual in (outputs node)
@@ -468,21 +471,43 @@
       (error 'operationalization-error :message "Usage table incomplete."))
 
     (let* ((node-table (%build-semantic-node-table conjuncts
-                                                  child-signatures
-                                                  usage-table
-                                                  index-table))
+                                                   child-signatures
+                                                   usage-table
+                                                   index-table))
            (ordering (%sort-usages usage-table node-table index-table))
 
            (opfun (%build-operational-function input-symbols
                                                output-symbols
                                                auxiliary-symbols
-                                               term-symbols
                                                ordering
                                                node-table
                                                index-table
-                                               name)))
+                                               name
+                                               child-signatures)))
       ;;(format *trace-output* "; GFn: ~&~s~%" opfun)
-      (compile nil opfun))))
+      (let ((semfn (compile nil opfun)))
+        (make-instance 'ast:calling-card
+                       :builder-function
+                       #'(lambda (sem-fns node node-children)
+                           (declare (ignore node node-children))
+                           #'(lambda (input-state)
+                               (multiple-value-bind (result valid?)
+                                   (funcall semfn input-state sem-fns)
+                                 (values result valid?))))
+                       :descriptor-requests
+                       (map 'list
+                            #'(lambda (sig)
+                                (make-instance 'ast:semantics-descriptor-request
+                                               :node-id
+                                               (let ((id
+                                                       (position (term-symbol sig)
+                                                                 term-symbols)))
+                                                 (if (zerop id)
+                                                     :self
+                                                     (1- id)))
+                                               :descriptor
+                                               (head-symbol sig)))
+                            child-signatures))))))
 
 (defun %extract-conjuncts (formula ctx)
   "Extracts conjuncts as a list from FORMULA, an SMT expression."
@@ -516,6 +541,7 @@
                      :input-formals (input-names head)
                      :output-formals (output-names head)
                      :term-symbol (elt (arguments relation) (term-index head))
+                     :head-symbol (name head)
                      :is-head-input? (every #'eql inputs (input-names head))))))
 
 (defun operationalize-chc+ (chc smt-ctx semgus-ctx)

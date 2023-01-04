@@ -13,6 +13,7 @@
                "trivial-garbage"
                "trivia"
                "graph"
+               "alexandria"
                "com.kjcjohnson.kale")
   :components ((:file "package")
                (:file "utilities" :depends-on ("package"))
@@ -43,7 +44,9 @@
                 :components ((:file "atom")
                              (:file "node")
                              (:file "hole")
-                             (:file "ast")))
+                             (:file "ast")
+                             (:file "calling-card")
+                             (:file "execution")))
                              
                (:module "semgus"
                 :depends-on ("package" "grammar" "ast" "smt" "utilities")

@@ -4,18 +4,23 @@
 (in-package #:com.kjcjohnson.synthkit.semgus)
 
 (defclass default-semantics ()
-  ((operational-semantics
-    :initarg :operational
-    :reader operational-semantics)
-   (relational-semantics
-    :initarg :relational
-    :reader relational-semantics)
-   (relation-definitions
-    :initarg :relation-definitions
-    :reader relation-definitions)))
+  ((operational-semantics :initarg :operational
+                          :reader operational-semantics)
+   (semantics-descriptor-map :initarg :descriptor-map
+                             :reader semantics-descriptor-map)
+   (relational-semantics :initarg :relational
+                         :reader relational-semantics)
+   (relation-definitions :initarg :relation-definitions
+                         :reader relation-definitions)))
 
-(defmethod ast:operational-semantics-for-production ((sem default-semantics) production node)
-  (funcall (operational-semantics sem) production))
+(defmethod ast:semantics-descriptors-for-non-terminal ((sem default-semantics)
+                                                       non-terminal)
+  (gethash (g:term-type non-terminal) (semantics-descriptor-map sem)))
+
+(defmethod ast:operational-semantics-for-production ((sem default-semantics)
+                                                     descriptor
+                                                     production)
+  (funcall (operational-semantics sem) descriptor production))
 
 (defmethod ast:relational-semantics-for-production ((sem default-semantics) production)
   (funcall (relational-semantics sem) production))

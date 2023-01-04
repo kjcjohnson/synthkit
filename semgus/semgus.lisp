@@ -38,24 +38,29 @@
     :initform (list)
     :reader relational-examples)))
 
-(defun add-example (spec input output &key rel-input rel-output)
+(defun add-example (spec input output descriptor &key rel-input rel-output)
   "Adds the given INPUT and OUTPUT as an example in SPEC."
   (declare (type io-specification spec))
-  (push (cons input output) (slot-value spec 'examples))
+  (push (list input output descriptor) (slot-value spec 'examples))
   (push (cons rel-input rel-output) (slot-value spec 'relational-examples)))
 
 (defun example-input (example)
   "Gets the input value from the given example"
-  (car example))
+  (first example))
 
 (defun example-output (example)
   "Gets the output value from the given example"
-  (cdr example))
+  (second example))
 
-(defmacro with-example ((input-var output-var example) &body body)
+(defun example-descriptor (example)
+  "Gets the descriptor for the given example"
+  (third example))
+
+(defmacro with-example ((input-var output-var descriptor-var example) &body body)
   "Runs BODY with input-var and output-var bound to the example's input and output."
   `(let ((,input-var (example-input ,example))
-         (,output-var (example-output ,example)))
+         (,output-var (example-output ,example))
+         (,descriptor-var (example-descriptor ,example)))
      ,@body))
 
 (defmacro do-examples ((input-var output-var spec) &body body)

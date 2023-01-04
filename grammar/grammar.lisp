@@ -15,7 +15,6 @@
    (initial-non-terminal
     :initarg :initial
     :reader initial-non-terminal)
-   #|typing-assignment|#
    (productions
     :initarg :productions
     :initform (list)
@@ -55,7 +54,9 @@
     :documentation "Name of this grammar element.")))
 
 (defclass non-terminal (named-grammar-element)
-  ())
+  ((term-type :initarg :term-type
+              :accessor term-type
+              :documentation "Term type associated with this non-terminal")))
 
 (defmethod print-object ((nt non-terminal) stream)
   (print-unreadable-object (nt stream :type t)

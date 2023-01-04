@@ -45,6 +45,7 @@
   (:export #:regular-tree-grammar
            #:initial-non-terminal
            #:productions-for-instance
+           #:term-type
            #:non-terminal
            #:non-terminals
            #:operator
@@ -63,13 +64,23 @@
 (defpackage #:com.kjcjohnson.synthkit.ast
   (:use #:cl)
   (:local-nicknames (#:g #:com.kjcjohnson.synthkit.grammar)
-                    (#:smt #:com.kjcjohnson.synthkit.smt))
+                    (#:smt #:com.kjcjohnson.synthkit.smt)
+                    (#:a #:alexandria))
   (:export #:program-atom
            #:program-node
            #:program-hole
+
+           #:semantics-descriptor-requests
+           #:semantic-builder-function
+           #:semantics-descriptor-request-descriptor
+           #:semantics-descriptor-request-node-id
+           #:calling-card
+           #:semantics-descriptor-request
+           
            #:production
            #:operator
            #:print-program-operator
+           #:semantics-descriptors-for-non-terminal
            #:operational-semantics-for-production
            #:relational-semantics-for-production
            #:relational-semantics-for-non-terminal
@@ -100,6 +111,7 @@
                     (#:ast #:com.kjcjohnson.synthkit.ast)
                     (#:smt #:com.kjcjohnson.synthkit.smt)
                     (#:u #:com.kjcjohnson.synthkit.utilities)
+                    (#:a #:alexandria)
                     (#:? #:trivia))
   (:export #:semgus-problem
            #:load-semgus-problem
@@ -118,6 +130,7 @@
            #:add-example
            #:example-input
            #:example-output
+           #:example-descriptor
            #:with-example
            #:do-examples
            #:formula-specification
