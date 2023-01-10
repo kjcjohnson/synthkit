@@ -30,7 +30,8 @@
   (incf *execution-counter*)
   (let (result abort-exit)
     (tagbody
-       (let ((*program-execution-exit-hook* #'(lambda () (go abort-execution))))
+       (let ((*program-execution-exit-hook* #'(lambda () (go abort-execution)))
+             (*self-recursion-counter* 0))
          (setf result (%execute-program semantics descriptor node input-state)))
        (go finish-execution)
      abort-execution
@@ -62,7 +63,10 @@
             ((smt:state= self-recursion-initial-input-state input-state)
              (abort-program-execution)))
           (incf *self-recursion-counter*))
-        (%execute-program semantics descriptor child-node input-state))))
+        (multiple-value-prog1
+            (%execute-program semantics descriptor child-node input-state)
+          (when (eql node-id :self)
+            (decf *self-recursion-counter*))))))
 
 (defun build-semantics-without-node-id (semantics descriptor)
   "Builds a semantic function when a specific node id is not requested"
