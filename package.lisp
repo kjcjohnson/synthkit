@@ -8,6 +8,7 @@
 
 (defpackage #:com.kjcjohnson.synthkit.smt
   (:use #:cl)
+  (:local-nicknames (#:a #:alexandria))
   (:shadow #:sort #:variable)
   (:export #:name #:children #:to-smt #:definition #:sort #:child-sorts #:arity
            #:*int-sort* #:*bool-sort* #:*string-sort* #:variable
@@ -37,7 +38,9 @@
 
            #:get-constant-type
 
-           #:is-application?))
+           #:is-application?
+
+           #:do-call-smt #:call-smt))
 
 (defpackage #:com.kjcjohnson.synthkit.grammar
   (:use #:cl)
@@ -131,6 +134,7 @@
            #:example-input
            #:example-output
            #:example-descriptor
+           #:examples-count
            #:with-example
            #:do-examples
            #:formula-specification
@@ -143,14 +147,37 @@
            #:add-counter-example
            #:add-counter-example-for-specification
            #:ensure-cegis-problem
-           #:constraint
+           #:constraint)
 
-           ;; CHC-related exports
-           #:arguments #:body #:head #:head-relations
+  ;; Reader things
+  (:export #:*semgus-context*
+           #:constraints
+           #:root-relations
+           #:output-names
+           #:output-indices
+           #:input-names
+           #:input-indices
+           #:term-name
+           #:term-index)
+  
+  ;; Verifier protocol
+  (:export #:verify-program)
+           
+  ;; CHC-related exports
+  (:export #:arguments #:body #:head #:head-relations
            #:input-variables #:output-variables #:term-name #:variables
            #:input-indexes #:output-indexes #:term-index
-            #:output-names #:input-names
-           ))
+            #:output-names #:input-names))
+
+(defpackage #:com.kjcjohnson.synthkit.semgus.reader
+  (:use #:cl)
+  (:local-nicknames (#:semgus #:com.kjcjohnson.synthkit.semgus)
+                    (#:smt #:com.kjcjohnson.synthkit.smt)))
+
+(defpackage #:com.kjcjohnson.synthkit.semgus.verifiers
+  (:use #:cl)
+  (:local-nicknames (#:semgus #:com.kjcjohnson.synthkit.semgus)
+                    (#:smt #:com.kjcjohnson.synthkit.smt)))
 
 (defpackage #:com.kjcjohnson.synthkit.tdp
   (:use #:cl)

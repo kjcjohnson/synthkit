@@ -45,6 +45,8 @@
     (boolean (eql left right))
     (string (string= left right))
     (bit-vector (equal left right))
+    (regular-language (equal (regular-language-parse-tree left)
+                             (regular-language-parse-tree right)))
     (datatype-instance (datatype= left right))))
 
 (defun core-distinct (left right)

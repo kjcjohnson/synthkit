@@ -99,7 +99,7 @@
   "Gets a printed representation of a datatype instance."
   (print-unreadable-object (dti stream)
     (format stream
-            "DTI:~a/~a: ~a"
+            "DTI:~a/~a: ~s"
             (name (datatype dti))
             (name (constructor dti))
             (children dti))))

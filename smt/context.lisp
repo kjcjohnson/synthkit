@@ -110,6 +110,11 @@
                         :initarg :compiled-definition
                         :documentation "Function object implementing function")))
 
+(defmethod print-object ((fn-defn function-definition) stream)
+  "Prints a function definition object with the function name"
+  (print-unreadable-object (fn-defn stream :type t :identity t)
+    (format stream "~a" (name fn-defn))))
+
 (defun is-built-in? (defn)
   "Checks if a function definition is a built-in definition"
   (eql :built-in (definition defn)))
@@ -140,9 +145,14 @@
                   (format *trace-output*
                           "; Compiling definition: ~a~%"
                           (identifier-string (name defn)))
-                  (compile-definition (definition defn)))))
+                  (compile-definition defn))))
       (setf (%compiled-definition defn) compiled))
     compiled))
+
+(defun compiled-definition-form (defn &optional (context *smt*))
+  "Gets a form that, when evaluated, returns the compiled definition"
+  (declare (ignore context))
+  `(%compiled-definition ,defn))
 
 (defun get-compiled-function (fn-name &optional (context *smt*))
   "Gets a compiled version of the function named by FN-NAME"

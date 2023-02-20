@@ -6,6 +6,7 @@
   :version "0.0.1"
   :author "Keith Johnson <keith.johnson@wisc.edu>"
   :license "TBD"
+  :in-order-to ((test-op (test-op "com.kjcjohnson.synthkit/test")))
   :depends-on ("cl-smt-lib"
                "closer-mop"
                "str"
@@ -24,9 +25,9 @@
                              (:file "types")
                              (:file "theory-core")
                              (:file "theory-ints")
-                             (:file "theory-strings")
                              (:file "theory-bitvectors")
                              (:file "theory-dispatch")
+                             (:file "theory-strings")
                              (:file "datatypes")
                              (:file "context")
                              (:file "compiler")
@@ -59,7 +60,14 @@
                                            (:file "expressions")
                                            (:file "codegen")
                                            (:file "operationalizer")))
-                             (:file "reader")
+                             (:file "reader_mono")
+                             (:module "reader"
+                              :serial t
+                              :components ((:file "constraints")))
+                             (:file "verifier")
+                             (:module "verifiers"
+                              :serial t
+                              :components (#+()(:file "concretizing")))
                              (:file "cegis")))
                (:module "vsa"
                 :depends-on ("package" "ast" "grammar")
@@ -76,3 +84,25 @@
                               :depends-on ("program-node"
                                            "union-program-node"
                                            "union-program-node"))))))
+
+(asdf:defsystem "com.kjcjohnson.synthkit/test"
+  :description "Tests for synthkit"
+  :version "0.0.1"
+  :author "Keith Johnson <keith.johnson@wisc.edu>"
+  :license "TBD"
+  :perform (test-op (op c)
+                    (symbol-call :fiveam :run! :synthkit-tests))
+  :depends-on ("fiveam"
+               "com.kjcjohnson.synthkit")
+  :pathname "t"
+  :serial "t"
+  :components ((:file "package")
+               (:file "main")
+               (:module "smt"
+                :serial t
+                :components ((:file "main")
+                             (:module "theories"
+                              :serial t
+                              :components ((:file "main")
+                                           (:file "strings")
+                                           (:file "regex")))))))

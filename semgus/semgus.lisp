@@ -56,6 +56,10 @@
   "Gets the descriptor for the given example"
   (third example))
 
+(defun examples-count (spec)
+  "Gets the count of examples on this specification"
+  (length (examples spec)))
+
 (defmacro with-example ((input-var output-var descriptor-var example) &body body)
   "Runs BODY with input-var and output-var bound to the example's input and output."
   `(let ((,input-var (example-input ,example))
