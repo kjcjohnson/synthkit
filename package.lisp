@@ -175,9 +175,3 @@
            #:input-variables #:output-variables #:term-name #:variables
            #:input-indexes #:output-indexes #:term-index
             #:output-names #:input-names))
-
-(defpackage #:com.kjcjohnson.synthkit.tdp
-  (:use #:cl)
-  (:local-nicknames (#:g #:com.kjcjohnson.synthkit.grammar)
-                    (#:a #:com.kjcjohnson.synthkit.ast)
-                    (#:semgus #:com.kjcjohnson.synthkit.semgus)))
