@@ -67,6 +67,7 @@
                               :components ((:file "package")
                                            (:file "chc")
                                            (:file "symbol-table")))
+                             (:file "package")
                              (:file "semgus")
                              (:file "protocol-reader")
                              (:file "semantics")
