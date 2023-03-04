@@ -84,3 +84,6 @@
     :initarg :relation-name
     :initform "rootprogram"
     :reader relation-name)))
+
+;;(defclass relational-specification ()
+;;  ((

@@ -20,9 +20,10 @@
            #:with-solver #:make-solver #:close-solver #:check-sat #:get-model
            #:push-scope #:pop-scope #:with-scope
            #:add #:declare-constants #:dump-commands #:set-model
+           #:copy-node
 
            #:*smt* #:init-smt
-           #:ensure-identifier #:ensure-sort #:identifier-string
+           #:ensure-identifier #:ensure-sort #:identifier-string #:identifier-smt
 
            #:get-function-definition #:set-function-definition
            #:get-compiled-function #:evaluate-expression
@@ -40,7 +41,10 @@
 
            #:is-application?
 
-           #:do-call-smt #:call-smt))
+           #:do-call-smt #:call-smt)
+
+  ;; Traversals
+  (:export #:map-expression #:update-expression))
 
 (defpackage #:com.kjcjohnson.synthkit.grammar
   (:use #:cl)
@@ -79,7 +83,7 @@
            #:semantics-descriptor-request-node-id
            #:calling-card
            #:semantics-descriptor-request
-           
+
            #:production
            #:operator
            #:print-program-operator
@@ -159,25 +163,18 @@
            #:input-indices
            #:term-name
            #:term-index)
-  
+
   ;; Verifier protocol
   (:export #:verify-program)
-           
+
+  ;; Reader protocol
+  (:export #:process-chcs-for-relational-semantics)
+
   ;; CHC-related exports
   (:export #:arguments #:body #:head #:head-relations
            #:input-variables #:output-variables #:term-name #:variables
            #:input-indexes #:output-indexes #:term-index
             #:output-names #:input-names))
-
-(defpackage #:com.kjcjohnson.synthkit.semgus.reader
-  (:use #:cl)
-  (:local-nicknames (#:semgus #:com.kjcjohnson.synthkit.semgus)
-                    (#:smt #:com.kjcjohnson.synthkit.smt)))
-
-(defpackage #:com.kjcjohnson.synthkit.semgus.verifiers
-  (:use #:cl)
-  (:local-nicknames (#:semgus #:com.kjcjohnson.synthkit.semgus)
-                    (#:smt #:com.kjcjohnson.synthkit.smt)))
 
 (defpackage #:com.kjcjohnson.synthkit.tdp
   (:use #:cl)

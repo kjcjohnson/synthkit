@@ -161,6 +161,9 @@
                                                   value)))
                                 model)))
 
+(defgeneric copy-node (node &key &allow-other-keys)
+  (:documentation "Makes a shallow copy of an SMT node"))
+
 (defclass smt-node ()
   ())
 
@@ -171,16 +174,38 @@
    (children :reader children :initarg :children :initform (error "Children are required."))
    (child-sorts :reader child-sorts :initarg :child-sorts :initform (error "Child sorts are required."))))
 
+(defmethod copy-node ((node expression) &key children)
+  "Copies an SMT expression"
+  (make-instance 'expression
+                 :name (name node)
+                 :sort (sort node)
+                 :arity (arity node)
+                 :children (if children children (copy-list (children node)))
+                 :child-sorts (copy-list (child-sorts node))))
+
 (defclass constant (expression)
   ((arity :initarg nil :initform 0)
    (children :initarg nil :initform nil)
    (child-sorts :initarg nil :initform nil)))
+
+(defmethod copy-node ((node constant) &key)
+  "Copies a constant node"
+  (make-instance 'constant
+                 :name (name node)
+                 :sort (sort node)))
 
 (defclass literal (expression)
   ((arity :initarg nil :initform 0)
    (children :initarg nil :initform nil)
    (child-sorts :initarg nil :initform nil)
    (value :reader value :initarg :value :initform (error "Literal value is required."))))
+
+(defmethod copy-node ((node literal) &key)
+  "Copies a constant node"
+  (make-instance 'literal
+                 :name (name node)
+                 :sort (sort node)
+                 :value (value node)))
 
 (defclass function-declaration (smt-node)
   ((name :reader name
@@ -211,7 +236,18 @@
                    :initarg :argument-sorts
                    :initform (error "Argument sorts are required."))
    (sort :initform *bool-sort*)
-   (children :initarg children :initform (error "Children (single child) is required."))))
+   (children :initarg :children :initform (error "Children (single child) is required."))))
+
+
+(defmethod copy-node ((node quantifier) &key children)
+  "Copies a quantifier node"
+  (make-instance 'quantifier
+                 :name (name node)
+                 :sort (sort node)
+                 :arguments (copy-list (arguments node))
+                 :argument-sorts (copy-list (argument-sorts node))
+                 :children (if children children (copy-list (children node)))
+                 :child-sorts (copy-list (child-sorts node))))
 
 (defclass lambda-binder (smt-node)
   ((arguments :reader arguments
@@ -231,11 +267,12 @@
 
 (defgeneric to-smt (expr))
 (defmethod to-smt ((constant constant))
-  (intern (name constant)))
+  (intern (identifier-smt (name constant))))
 (defmethod to-smt ((integer integer))
   integer)
 (defmethod to-smt ((expression expression))
-  `(,(intern (name expression)) ,@(map 'list #'to-smt (children expression))))
+  `(,(intern (identifier-smt (name expression)))
+    ,@(map 'list #'to-smt (children expression))))
 (defmethod to-smt ((fn function-declaration))
   (if (cl:not (null (definition fn)))
       `(,(intern "define-fun")
@@ -365,7 +402,7 @@
   `(,(intern (name expr)) (,@(map 'list
                                   #'(lambda (a s)
                                       (list
-                                       (intern (name a))
+                                       (intern (identifier-smt a))
                                        (intern (name s))))
                                   (arguments expr)
                                   (argument-sorts expr)))

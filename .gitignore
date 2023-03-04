@@ -1,6 +1,7 @@
 # The usual Emacs things
 *~
 \#*#
+.#*
 
 # These are compiled files
 *.fasl

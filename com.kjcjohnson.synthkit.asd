@@ -33,7 +33,8 @@
                              (:file "compiler")
                              (:file "evaluator")
                              (:file "predicates")
-                             (:file "states")))
+                             (:file "states")
+                             (:file "traversal")))
                (:module "grammar"
                 :depends-on ("package" "utilities")
                 :serial t
@@ -48,11 +49,25 @@
                              (:file "ast")
                              (:file "calling-card")
                              (:file "execution")))
-                             
+               (:module "specification"
+                :pathname "src/specification"
+                :depends-on ("smt")
+                :serial t
+                :components ((:file "package")
+                             (:file "base")
+                             (:file "joiners")
+                             (:file "inductive")
+                             (:file "cegis")))
                (:module "semgus"
                 :depends-on ("package" "grammar" "ast" "smt" "utilities")
                 :serial t
-                :components ((:file "semgus")
+                :components ((:module "chc"
+                              :serial t
+                              :components ((:file "package")
+                                           (:file "chc")
+                                           (:file "symbol-table")))
+                             (:file "semgus")
+                             (:file "protocol-reader")
                              (:file "semantics")
                              (:module "operationalizer"
                               :serial t
@@ -63,7 +78,9 @@
                              (:file "reader_mono")
                              (:module "reader"
                               :serial t
-                              :components ((:file "constraints")))
+                              :components ((:file "package")
+                                           (:file "constraints")
+                                           (:file "semantics")))
                              (:file "verifier")
                              (:module "verifiers"
                               :serial t

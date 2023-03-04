@@ -31,6 +31,17 @@
    :constraints nil
    :auxiliary-functions nil))
 
+(defclass symbol-entry ()
+  ((name :initarg :name :reader symbol-entry-name)
+   (sort :initarg :sort :reader symbol-entry-sort)
+   (index :initarg :index :reader symbol-entry-index)))
+
+(defclass symbol-table ()
+  ((inputs :initarg :inputs :reader symbol-table-inputs)
+   (outputs :initarg :outputs :reader symbol-table-outputs)
+   (term :initarg :term :reader symbol-table-term)
+   (auxiliary :initarg :auxiliary :reader symbol-table-auxiliary)))
+
 (defclass semgus-chc ()
   ((head :accessor head :initarg :head)
    (body :accessor body :initarg :body)
@@ -38,6 +49,7 @@
    (input-variables :accessor input-variables :initarg :input-variables)
    (output-variables :accessor output-variables :initarg :output-variables)
    (variables :accessor variables :initarg :variables)
+   (symbol-table :accessor symbol-table :initarg :symbol-table)
    (constructor :accessor constructor :initarg :constructor)))
 
 (defclass semgus-chc-head ()
@@ -82,6 +94,7 @@
             doing (eval sexpr)))
     (multiple-value-bind (op-fn desc-map)
         (operationalize-semantics)
+      (process-chcs-for-relational-semantics *semgus-context*)
       (make-instance 'semgus-problem
                      :specification (constraints-to-pbe)
                      :semantics (make-instance 'default-semantics
@@ -112,7 +125,7 @@
                         (gethash (g:term-type (g:instance prod)) desc-map))
           end
           do (setf (gethash descriptor opsem) subtable))
-    
+
     (values
      #'(lambda (descriptor prod)
          (if (null (g:name prod))
@@ -220,13 +233,13 @@ input state and semantic functions for each child term"
                           (list
                            (first (output-names root-rel))
                            (first (smt:children equality)))))))))))
-       
-      
+
+
         (t
         nil))))
-             
-            
-       
+
+
+
 
 (defun com.kjcjohnson.synthkit.semgus-user::set-info (name &optional prop)
   "Set info...not well implemented"
@@ -252,6 +265,26 @@ input state and semantic functions for each child term"
   "N/A"
   (declare (ignore stuff)))
 
+;;
+;; Symbol tables
+;;
+(defun com.kjcjohnson.synthkit.semgus-user::symbol-entry
+    (name &key sort index)
+  "A symbol entry"
+  (make-instance 'symbol-entry :name name :sort sort :index index))
+
+(defun com.kjcjohnson.synthkit.semgus-user::symbol-table
+    (&key inputs outputs term auxiliary)
+  "A CHC's symbol table"
+  (make-instance 'symbol-table
+                 :inputs inputs
+                 :outputs outputs
+                 :term term
+                 :auxiliary auxiliary))
+
+;;
+;; Main CHC entry
+;;
 (defun com.kjcjohnson.synthkit.semgus-user::relation
     (name &key signature arguments)
   "Creates a relation"
@@ -270,8 +303,13 @@ input state and semantic functions for each child term"
                  :return-sort return-sort))
 
 (defun com.kjcjohnson.synthkit.semgus-user::chc
-    (&key head body constraint input-variables output-variables variables constructor)
+    (&key head body constraint
+       input-variables output-variables variables symbols
+       constructor)
   "Creates a CHC"
+  ;; We may need to fix up the CHC variables
+
+
   (push
    (make-instance 'semgus-chc
                   :head head
@@ -280,6 +318,7 @@ input state and semantic functions for each child term"
                   :input-variables input-variables
                   :output-variables output-variables
                   :variables variables
+                  :symbol-table symbols
                   :constructor constructor)
    (chcs *semgus-context*))
   (unless (find (name head)
@@ -304,7 +343,7 @@ input state and semantic functions for each child term"
                       :term-index term-index
                       :term-type (nth term-index (signature head))
                       :argument-sorts (signature head)
-                      :input-indexes input-indexes 
+                      :input-indexes input-indexes
                       :output-indexes output-indexes
                       :term-name (nth term-index (arguments head))
                       :input-names (map 'list
@@ -314,7 +353,7 @@ input state and semantic functions for each child term"
                                          #'(lambda (i) (nth i (arguments head)))
                                          output-indexes))
        (head-relations *semgus-context*)))))
-                    
+
 
 ;;;
 ;;; Term handling

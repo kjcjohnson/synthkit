@@ -85,22 +85,38 @@
         (t
         nil))))
 
+(defun %extract-descriptors (expression context)
+  "Extracts all descriptors used in an SMT expression."
+  (loop for root-rel in (semgus:root-relations context)
+        when (smt:map-expression (constantly t)
+                                 expression
+                                 :filter (a:rcurry #'smt:is-application?
+                                                   (semgus:name root-rel))
+                                 :join (a:curry #'some #'identity))
+          collect (semgus:name root-rel)))
+
+(defun derive-specification-for-constraint (constraint context)
+  "Derives a specification from an individual constraint clause"
+  ;; Try PBE
+  (let ((pbe (try-derive-pbe-constraint constraint context)))
+    (if pbe
+        (make-instance 'spec:io-specification
+                       :input-state (getf pbe :inputs)
+                       :output-state (getf pbe :output)
+                       :descriptor (getf pbe :descriptor))
+        (make-instance 'spec:relational-specification
+                       :expression constraint
+                       :descriptors (%extract-descriptors constraint context)))))
   
 (defun derive-specification (&optional (context semgus:*semgus-context*))
   "Derives a specification from the current semgus CONTEXT"
-  (let ((io-spec (make-instance 'semgus:io-specification))
-        (rel-spec (list)))
-    (loop for constraint in (semgus:constraints context)
-          for pbe = (try-derive-pbe-constraint constraint context)
-          if pbe do (semgus:add-example io-spec
-                                        (getf pbe :inputs)
-                                        (getf pbe :output)
-                                        (getf pbe :descriptor))
-                                        
-            else do (push constraint rel-spec))
-    (cond ((null rel-spec)
-           io-spec)
-          ((zerop (semgus:examples-count io-spec))
-           (error "Would have returned rel-spec"))
-          (t
-           (error "Would have returned mixed-spec")))))
+  (let ((specs
+          (loop for constraint in (semgus:constraints context)
+                collecting (derive-specification-for-constraint constraint context))))
+    (cond
+      ((null specs)
+       (error "No specifications found!"))
+      ((= 1 (length specs))
+       (first specs))
+      (t
+       (make-instance 'spec:intersection-specification :components specs)))))

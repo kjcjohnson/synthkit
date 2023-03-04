@@ -96,6 +96,15 @@
       (t
        (princ-to-string thing)))))
 
+(defun identifier-smt (identifier &optional (smt *smt*))
+  "Gets the SMT name for the given identifier"
+  (unless (symbolp identifier)
+    (setf identifier (ensure-identifier identifier smt)))
+  (let ((thing (gethash identifier (identifier-reverse smt))))
+    (if (= 1 (length thing))
+        (first thing)
+        thing))) ; TODO: probably broken for indexed identifiers
+
 ;;;
 ;;; Functions and their definitions
 ;;;
