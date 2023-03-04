@@ -59,6 +59,7 @@
                              (:file "inductive")
                              (:file "cegis")))
                (:module "semgus"
+                :pathname "src/semgus"
                 :depends-on ("package" "grammar" "ast" "smt" "utilities")
                 :serial t
                 :components ((:module "chc"
