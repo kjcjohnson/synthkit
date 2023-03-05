@@ -7,6 +7,7 @@
                     (#:ast #:com.kjcjohnson.synthkit.ast)
                     (#:smt #:com.kjcjohnson.synthkit.smt)
                     (#:u #:com.kjcjohnson.synthkit.utilities)
+                    (#:chc #:com.kjcjohnson.synthkit.semgus.chc)
                     (#:a #:alexandria)
                     (#:? #:trivia))
   (:export #:semgus-problem

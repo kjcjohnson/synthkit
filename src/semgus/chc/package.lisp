@@ -3,6 +3,7 @@
 ;;;;
 (defpackage #:com.kjcjohnson.synthkit.semgus.chc
   (:use #:cl)
+  (:local-nicknames (#:smt #:com.kjcjohnson.synthkit.smt))
   (:shadow #:symbol-name)
   ;; CHCs
   (:export #:chc

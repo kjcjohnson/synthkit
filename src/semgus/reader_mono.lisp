@@ -31,17 +31,6 @@
    :constraints nil
    :auxiliary-functions nil))
 
-(defclass symbol-entry ()
-  ((name :initarg :name :reader symbol-entry-name)
-   (sort :initarg :sort :reader symbol-entry-sort)
-   (index :initarg :index :reader symbol-entry-index)))
-
-(defclass symbol-table ()
-  ((inputs :initarg :inputs :reader symbol-table-inputs)
-   (outputs :initarg :outputs :reader symbol-table-outputs)
-   (term :initarg :term :reader symbol-table-term)
-   (auxiliary :initarg :auxiliary :reader symbol-table-auxiliary)))
-
 (defclass semgus-chc ()
   ((head :accessor head :initarg :head)
    (body :accessor body :initarg :body)
@@ -271,16 +260,17 @@ input state and semantic functions for each child term"
 (defun com.kjcjohnson.synthkit.semgus-user::symbol-entry
     (name &key sort index)
   "A symbol entry"
-  (make-instance 'symbol-entry :name name :sort sort :index index))
+  (make-instance 'chc:symbol-entry :name name :sort sort :index index))
 
 (defun com.kjcjohnson.synthkit.semgus-user::symbol-table
-    (&key inputs outputs term auxiliary)
+    (&key inputs outputs term auxiliary children)
   "A CHC's symbol table"
-  (make-instance 'symbol-table
+  (make-instance 'chc:symbol-table
                  :inputs inputs
                  :outputs outputs
                  :term term
-                 :auxiliary auxiliary))
+                 :auxiliary auxiliary
+                 :children children))
 
 ;;
 ;; Main CHC entry
