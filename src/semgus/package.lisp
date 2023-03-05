@@ -45,12 +45,14 @@
 
   ;; Reader things
   (:export #:*semgus-context*
+           #:auxiliary-functions
            #:constraints
            #:root-relations
            #:output-names
            #:output-indices
            #:input-names
            #:input-indices
+           #:term-type
            #:term-name
            #:term-index)
 

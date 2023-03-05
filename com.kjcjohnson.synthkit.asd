@@ -83,6 +83,14 @@
                              (:module "reader"
                               :serial t
                               :components ((:file "package")
+                                           (:file "events-chc")
+                                           (:file "events-datatypes")
+                                           (:file "events-functions")
+                                           (:file "events-meta")
+                                           (:file "events-symbol-table")
+                                           (:file "events-synthesis")
+                                           (:file "events-terms")
+                                           (:file "events-utility")
                                            (:file "constraints")
                                            (:file "semantics")))
                              (:file "verifier")
