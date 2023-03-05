@@ -20,6 +20,11 @@
 symbol name, the symbol sort, and optionally the symbol index of where it appears
 in the associated signature: either the CHC head relation or the term constructor."))
 
+(defmethod print-object ((se symbol-entry) stream)
+  "Prints a symbol-entry object"
+  (print-unreadable-object (se stream :type t :identity nil)
+    (format stream "~a (~a) [~a]" (symbol-name se) (symbol-sort se) (symbol-index se))))
+
 (defclass symbol-table ()
   ((inputs :reader input-symbols
            :initarg :inputs

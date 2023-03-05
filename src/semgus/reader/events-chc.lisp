@@ -26,7 +26,15 @@
        constructor)
   "Creates a CHC"
   ;; We may need to fix up the CHC variables
-
+  (unless symbols
+    (setf symbols (convert-legacy-symbol-table
+                   :head head
+                   :body body
+                   :constraint constraint
+                   :input-variables input-variables
+                   :output-variables output-variables
+                   :variables variables
+                   :constructor constructor)))
 
   (push
    (make-instance 'semgus::semgus-chc
