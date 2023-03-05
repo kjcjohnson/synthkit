@@ -23,44 +23,28 @@ implementation given by BODY."
                       (cons ',fn-name #',fn-name)
                       *builtin-smt-functions*))))))
 
+(defun lookup-theory-function (name)
+  "Looks up an SMT theory function"
+  (flet ((ensure-list (thing)
+           "Ensures that THING is a list. Makes a single element list if not."
+           (if (consp thing)
+               thing
+               (list thing))))
 
-(let ((data
-        `(
-          )))
+    (setf name (ensure-list name))
+    (let ((looked-up (assoc name *builtin-smt-functions*
+                            :key #'ensure-list
+                            :test #'equal)))
+      (unless (null looked-up)
+        (return-from lookup-theory-function (cddr looked-up))))
 
-  (defun lookup-theory-function (name)
-    "Looks up an SMT theory function"
-    (flet ((ensure-list (thing)
-             "Ensures that THING is a list. Makes a single element list if not."
-             (if (consp thing)
-                 thing
-                 (list thing))))
+    ;; Not a theory function
+    nil))
 
-      (setf name (ensure-list name))
-
-      (let ((looked-up (assoc name data
-                              :key #'ensure-list
-                              :test #'equal)))
-
-        (unless (null looked-up)
-          (return-from lookup-theory-function (cdr looked-up)))
-
-        (let ((looked-up (assoc name *builtin-smt-functions*
-                                :key #'ensure-list
-                                :test #'equal)))
-          (unless (null looked-up)
-            (return-from lookup-theory-function (cddr looked-up))))
-
-        ;; Not a theory function
-        nil)))
-
-  (defun map-built-in-definitions (operation)
-    "Iterates over built-in function definitions. OPERATION accepts two args"
-    (dolist (defn-form *builtin-smt-functions*)
-      (funcall operation (car defn-form) (cdr (cdr defn-form))))
-    (dolist (defn-form data)
-      (funcall operation (car defn-form) (cdr defn-form)))))
-
+(defun map-built-in-definitions (operation)
+  "Iterates over built-in function definitions. OPERATION accepts two args"
+  (dolist (defn-form *builtin-smt-functions*)
+    (funcall operation (car defn-form) (cdr (cdr defn-form)))))
 
 (defun lookup-theory-function-symbol (name)
   "Looks up a function name for a theory function"
