@@ -148,19 +148,6 @@
                      (cons (variable name (make-instance 'sort :name (symbol-name type))) value)))
          (rest output))))
 
-(defun set-model (solver model)
-  "Defines constants for each variable in the model"
-  (assert-smt-solver-enabled)
-  (cl-smt-lib:write-to-smt solver
-                           (map 'list #'(lambda (m)
-                                          (destructuring-bind (var . value) m
-                                            (check-type var constant)
-                                            (list (intern "define-const")
-                                                  (intern (name var))
-                                                  (intern (name (sort var)))
-                                                  value)))
-                                model)))
-
 (defgeneric copy-node (node &key &allow-other-keys)
   (:documentation "Makes a shallow copy of an SMT node"))
 
@@ -193,6 +180,21 @@
   (make-instance 'constant
                  :name (name node)
                  :sort (sort node)))
+
+
+(defun set-model (solver model)
+  "Defines constants for each variable in the model"
+  (assert-smt-solver-enabled)
+  (cl-smt-lib:write-to-smt solver
+                           (map 'list #'(lambda (m)
+                                          (destructuring-bind (var . value) m
+                                            (check-type var constant)
+                                            (list (intern "define-const")
+                                                  (intern (name var))
+                                                  (intern (name (sort var)))
+                                                  value)))
+                                model)))
+
 
 (defclass literal (expression)
   ((arity :initarg nil :initform 0)

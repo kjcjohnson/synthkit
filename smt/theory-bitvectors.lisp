@@ -18,48 +18,48 @@
     new))
     
 
-(defun bv-not (bv)
+(defsmtfun "bvnot" :bv (bv)
   "Bit vector not"
   (declare (type bit-vector bv))
   (bit-not bv))
 
-(defun bv-and (bv1 bv2)
+(defsmtfun "bvand" :bv (bv1 bv2)
   "Bit vector and"
   (declare (type bit-vector bv1 bv2))
   (bit-and bv1 bv2))
 
-(defun bv-or (bv1 bv2)
+(defsmtfun "bvor" :bv (bv1 bv2)
   "Bit vector inclusive or"
   (declare (type bit-vector bv1 bv2))
   (bit-ior bv1 bv2))
 
-(defun bv-xor (bv1 bv2)
+(defsmtfun "bvxor" :bv (bv1 bv2)
   "Bit vector exclusive or"
   (declare (type bit-vector bv1 bv2))
   (bit-xor bv1 bv2))
 
-(defun bv-lshr (bv count)
+(defsmtfun "bvlshr" :bv (bv count)
   "Bit vector shift right"
   (declare (type bit-vector bv count))
   (clip
    (bit-smasher:rshift bv (bit-smasher:bits->int count))
    bv))
 
-(defun bv-shl (bv count)
+(defsmtfun "bvshl" :bv (bv count)
   "Bit vector shift left"
   (declare (type bit-vector bv count))
   (clip
    (bit-smasher:lshift bv (bit-smasher:bits->int count))
    bv))
 
-(defun bv-add (bv1 bv2)
+(defsmtfun "bvadd" :bv (bv1 bv2)
   "Bit vector addition (modulo length)"
   (declare (type bit-vector bv1 bv2))
   (clip
    (bit-smasher:bit-sum bv1 bv2)
    bv1))
 
-(defun bv-sub (bv1 bv2)
+(defsmtfun "bvsub" :bv (bv1 bv2)
   "Bit vector subtraction (modulo length)"
   (declare (type bit-vector bv1 bv2))
   (clip

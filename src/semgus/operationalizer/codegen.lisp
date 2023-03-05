@@ -59,6 +59,7 @@
   "Generates a temporary SMT state. FORMALS should be a list of symbols for the 
 state variable names, and ACTUALS a list of in-scope variable names to assign
 to the state variables. If ACTUALS is not provided, defaults to FORMALS."
+  (declare (ignore actuals))
   )
 
 (defun %codegen-block-return (&key value (successful t))
