@@ -25,8 +25,8 @@
     (when (null production) (error "Cannot compile a program node without a production."))
     (let ((input-state-var (gensym "INPUT"))
           (output-state-var (gensym "OUTPUT")))
-      `(lambda (,input-state-var)
-         ,(dolist (s (operational-semantics-for-production semantics production))
+      `(lambda (,input-state-var) ; TODO: update for descriptors properly
+         ,(dolist (s (operational-semantics-for-production semantics nil production))
             `(let ((,output-state-var (funcall ,s ,input-state-var)))
                (unless (null ,output-state-var) (return ,output-state-var))))
          (error "No applicable semantics for production: ~a" ,production)))))
