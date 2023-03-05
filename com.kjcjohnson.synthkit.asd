@@ -16,12 +16,14 @@
                "graph"
                "alexandria"
                "com.kjcjohnson.kale")
+  :pathname "src"
   :components ((:file "package")
                (:file "utilities" :depends-on ("package"))
                (:module "smt"
-                :depends-on ("package")
+                :depends-on ()
                 :serial t
-                :components ((:file "smt")
+                :components ((:file "package")
+                             (:file "smt")
                              (:file "theory-dispatch")
                              (:file "theory-ints")
                              (:file "theory-bitvectors")
@@ -36,21 +38,22 @@
                              (:file "states")
                              (:file "traversal")))
                (:module "grammar"
-                :depends-on ("package" "utilities")
+                :depends-on ("utilities")
                 :serial t
-                :components ((:file "grammar")
+                :components ((:file "package")
+                             (:file "grammar")
                              (:file "distance-to-leaves")))
                (:module "ast"
-                :depends-on ("package" "grammar" "smt")
+                :depends-on ("grammar" "smt")
                 :serial t
-                :components ((:file "atom")
+                :components ((:file "package")
+                             (:file "atom")
                              (:file "node")
                              (:file "hole")
                              (:file "ast")
                              (:file "calling-card")
                              (:file "execution")))
                (:module "specification"
-                :pathname "src/specification"
                 :depends-on ("smt")
                 :serial t
                 :components ((:file "package")
@@ -59,8 +62,7 @@
                              (:file "inductive")
                              (:file "cegis")))
                (:module "semgus"
-                :pathname "src/semgus"
-                :depends-on ("package" "grammar" "ast" "smt" "utilities")
+                :depends-on ("grammar" "ast" "smt" "utilities")
                 :serial t
                 :components ((:module "chc"
                               :serial t
@@ -89,8 +91,9 @@
                               :components (#+()(:file "concretizing")))
                              (:file "cegis")))
                (:module "vsa"
-                :depends-on ("package" "ast" "grammar")
-                :components ((:file "program-node")
+                :depends-on ("ast" "grammar")
+                :components ((:file "package")
+                             (:file "program-node")
                              (:file "empty-program-node"
                               :depends-on ("program-node"))
                              (:file "cross-program-node"
