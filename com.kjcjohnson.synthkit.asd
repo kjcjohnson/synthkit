@@ -23,9 +23,9 @@
                 :serial t
                 :components ((:file "smt")
                              (:file "types")
+                             (:file "theory-dispatch")
                              (:file "theory-ints")
                              (:file "theory-bitvectors")
-                             (:file "theory-dispatch")
                              (:file "theory-strings")
                              (:file "theory-core")
                              (:file "datatypes")

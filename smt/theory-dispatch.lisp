@@ -26,21 +26,6 @@ implementation given by BODY."
 
 (let ((data
         `(
-          ;; Integer functions
-          ("+" . ,#'ints-+)
-          ("-" . ,#'ints--)
-          ("<" . ,#'ints-<)
-          (">" . ,#'ints->)
-          ("*" . ,#'ints-*)
-
-          ;; Bit vector functions
-          ("bvnot"  . ,#'bv-not)
-          ("bvand"  . ,#'bv-and)
-          ("bvor"   . ,#'bv-or)
-          ("bvxor"  . ,#'bv-xor)
-          ("bvlshr" . ,#'bv-lshr)
-          ("bvshl"  . ,#'bv-shl)
-          ("bvadd"  . ,#'bv-add)
           )))
 
   (defun lookup-theory-function (name)
