@@ -548,15 +548,15 @@
                      :is-head-input? (every #'eql inputs-a inputs-f)))))
 
 (defun operationalize-chc+ (chc smt-ctx semgus-ctx)
-  (let* ((symbol-table (symbol-table chc))
+  (let* ((symbol-table (chc:symbol-table chc))
          (is (map 'list #'chc:symbol-name (chc:input-symbols symbol-table)))
          (os (map 'list #'chc:symbol-name (chc:output-symbols symbol-table)))
          (as (map 'list #'chc:symbol-name (chc:auxiliary-symbols symbol-table)))
          (ts (cons (chc:symbol-name (chc:term-symbol symbol-table))
                    (map 'list #'chc:symbol-name (chc:child-symbols symbol-table)))))
     (operationalize
-     (%extract-conjuncts (constraint chc) smt-ctx)
-     :name (chc:name (constructor chc))
+     (%extract-conjuncts (chc:constraint chc) smt-ctx)
+     :name (chc:name (chc:constructor chc))
      :input-symbols is
      :output-symbols os
      :auxiliary-symbols as
@@ -564,7 +564,7 @@
      :child-signatures (map 'list #'(lambda (child)
                                       (%extract-uninterpreted-signature
                                        child semgus-ctx))
-                            (body chc)))))
+                            (chc:body chc)))))
 
 
 

@@ -20,7 +20,7 @@
   "Post-read actions"
   ;; We need to fixup forward references in CHCs
   (dolist (chc (semgus:chcs context))
-    (dolist (br (semgus:body chc))
+    (dolist (br (chc:body chc))
       (let ((head (chc:head br)))
         (when (chc:is-forward-declared-head? head)
           (chc:fixup-forward-declared-head br (semgus:lookup-head (chc:name head)

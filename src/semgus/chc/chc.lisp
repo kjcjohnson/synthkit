@@ -114,7 +114,7 @@ ROLES and DATA should be sequences of the same length. Returns a list."
 
 (defclass chc ()
   ((symbols :reader symbol-table
-            :initarg :symbols
+            :initarg :symbol-table
             :type symbol-table
             :documentation "Symbols for this CHC")
    (head :reader head

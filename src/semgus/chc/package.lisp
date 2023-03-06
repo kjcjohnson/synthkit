@@ -27,7 +27,7 @@
            #:relation #:head #:actuals)
   ;; CHCs
   (:export #:chc
-           #:symbol-table)
+           #:symbol-table #:head #:body #:constraint #:constructor)
   ;; Symbol tables
   (:export #:symbol-entry
            #:symbol-name #:symbol-sort #:symbol-index

@@ -51,13 +51,10 @@
       (setf head (chc:head head)))
 
   (push
-   (make-instance 'semgus::semgus-chc
+   (make-instance 'chc:chc
                   :head head
                   :body body
                   :constraint constraint
-                  :input-variables input-variables
-                  :output-variables output-variables
-                  :variables variables
                   :symbol-table symbols
                   :constructor constructor)
    (semgus:chcs semgus:*semgus-context*)))

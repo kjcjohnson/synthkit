@@ -8,17 +8,17 @@
   (format t
           "CHC: ~a~% - CONSTRAINT: ~a~% - CONSTRUCTOR: ~a(~{~a~^ ~})~% - PROD: ~a~% - IV: ~a~% - OV: ~a~% - AV: ~a~%~%"
           chc
-          (smt:to-smt (semgus:constraint chc))
-          (chc:name (semgus:constructor chc))
-          (chc:arguments (semgus:constructor chc))
+          (smt:to-smt (chc:constraint chc))
+          (chc:name (chc:constructor chc))
+          (chc:arguments (chc:constructor chc))
           (semgus::production-for-chc chc (semgus:grammar context))
-          (semgus:input-variables chc)
-          (semgus:output-variables chc)
-          (semgus:variables chc))
+          (map 'list #'chc:symbol-name (chc:input-symbols chc))
+          (map 'list #'chc:symbol-name (chc:output-symbols chc))
+          (map 'list #'chc:symbol-name (chc:auxiliary-symbols chc)))
   (format t "~a~%"
           (smt:to-smt
            (apply #'smt:$and
-                  (semgus:constraint chc)
+                  (chc:constraint chc)
                   (map 'list
                        #'(lambda (b)
                            (make-instance 'smt::expression
@@ -32,7 +32,7 @@
                                                (chc:signature b))
                                           :child-sorts (chc:signature b)
                                           :sort smt:*bool-sort*))
-                       (semgus:body chc))))))
+                       (chc:body chc))))))
 
 (defmethod semgus:process-chcs-for-relational-semantics (context)
   "Processes a SemGuS context and creates relational semantics"

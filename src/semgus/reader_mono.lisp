@@ -4,19 +4,9 @@
 ;;;; (note: this is not the SemGuS format. This is the sexpr parser output format)
 (in-package #:com.kjcjohnson.synthkit.semgus)
 
-(defclass semgus-chc ()
-  ((head :accessor head :initarg :head)
-   (body :accessor body :initarg :body)
-   (constraint :accessor constraint :initarg :constraint)
-   (input-variables :accessor input-variables :initarg :input-variables)
-   (output-variables :accessor output-variables :initarg :output-variables)
-   (variables :accessor variables :initarg :variables)
-   (symbol-table :accessor symbol-table :initarg :symbol-table)
-   (constructor :accessor constructor :initarg :constructor)))
-
 (defun production-for-chc (chc grammar)
   "Gets the production associated with the CHC in the grammar"
-  (find (chc:name (constructor chc))
+  (find (chc:name (chc:constructor chc))
         (g::productions grammar)
         :test (lambda (name prod)
                 ;;(format t "~S : ~S~%" name (g:name (g:operator prod)))
@@ -48,12 +38,12 @@
         (desc-map (make-hash-table)))
     (loop for chc in (chcs *semgus-context*)
           for prod = (production-for-chc chc (grammar *semgus-context*))
-          for descriptor = (chc:name (head chc))
+          for descriptor = (chc:name (chc:head chc))
           for subtable = (gethash descriptor opsem (make-hash-table))
           doing
              (if (null prod)
                  (warn "No production in grammar for CHC with operator: ~a"
-                       (chc:name (constructor chc)))
+                       (chc:name (chc:constructor chc)))
                  (push
                   (operationalize-chc chc)
                   (gethash (g:operator prod) subtable)))
