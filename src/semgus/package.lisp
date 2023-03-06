@@ -41,7 +41,11 @@
            #:add-counter-example
            #:add-counter-example-for-specification
            #:ensure-cegis-problem
+           #:symbol-table
            #:constraint)
+
+  ;; Context
+  (:export #:lookup-head #:add-head)
 
   ;; Reader things
   (:export #:*semgus-context*
@@ -60,7 +64,8 @@
   (:export #:verify-program)
 
   ;; Reader protocol
-  (:export #:process-chcs-for-relational-semantics)
+  (:export #:process-chcs-for-relational-semantics
+           #:read-problem-from-stream)
 
   ;; CHC-related exports
   (:export #:arguments #:body #:head #:head-relations

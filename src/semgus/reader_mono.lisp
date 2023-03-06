@@ -4,31 +4,6 @@
 ;;;; (note: this is not the SemGuS format. This is the sexpr parser output format)
 (in-package #:com.kjcjohnson.synthkit.semgus)
 
-(defvar *semgus-context* nil "Information about problem being parsed")
-
-(defclass semgus-context ()
-  ((grammar :accessor grammar
-            :initarg :grammar)
-   (chcs :accessor chcs
-         :initarg :chcs)
-   (head-relations :accessor head-relations
-                   :initarg :head-relations)
-   (constraints :accessor constraints
-                :initarg :constraints)
-   (root-relations :accessor root-relations
-                   :initarg :root-relations)
-   (term-name :accessor term-name
-              :initarg :term-name)
-   (term-type :accessor term-type
-              :initarg :term-type)
-   (auxiliary-functions :accessor auxiliary-functions
-                        :initarg :auxiliary-functions))
-  (:default-initargs
-   :chcs nil
-   :head-relations nil
-   :constraints nil
-   :auxiliary-functions nil))
-
 (defclass semgus-chc ()
   ((head :accessor head :initarg :head)
    (body :accessor body :initarg :body)
@@ -39,31 +14,9 @@
    (symbol-table :accessor symbol-table :initarg :symbol-table)
    (constructor :accessor constructor :initarg :constructor)))
 
-(defclass semgus-chc-head ()
-  ((name :accessor name :initarg :name)
-   (argument-sorts :accessor argument-sorts :initarg :argument-sorts)
-   (term-type :accessor term-type :initarg :term-type)
-   (term-index :accessor term-index :initarg :term-index)
-   (input-indexes :accessor input-indexes :initarg :input-indexes)
-   (output-indexes :accessor output-indexes :initarg :output-indexes)
-   (term-name :accessor term-name :initarg :term-name)
-   (input-names :accessor input-names :initarg :input-names)
-   (output-names :accessor output-names :initarg :output-names)))
-
-(defclass semgus-chc-constructor ()
-  ((name :accessor name :initarg :name)
-   (arguments :accessor arguments :initarg :arguments)
-   (argument-sorts :accessor argument-sorts :initarg :argument-sorts)
-   (return-sort :accessor return-sort :initarg :return-sort)))
-
-(defclass semgus-relation ()
-  ((name :accessor name :initarg :name)
-   (signature :accessor signature :initarg :signature)
-   (arguments :accessor arguments :initarg :arguments)))
-
 (defun production-for-chc (chc grammar)
   "Gets the production associated with the CHC in the grammar"
-  (find (name (constructor chc))
+  (find (chc:name (constructor chc))
         (g::productions grammar)
         :test (lambda (name prod)
                 ;;(format t "~S : ~S~%" name (g:name (g:operator prod)))
@@ -75,10 +28,7 @@
 
   (let ((*semgus-context* (make-instance 'semgus-context)))
     (with-open-file (stream filename)
-      (loop for sexpr = (let ((*package* (find-package "COM.KJCJOHNSON.SYNTHKIT.SEMGUS.READER.USER")))
-                          (read stream nil :eof))
-            until (eql sexpr :eof)
-            doing (eval sexpr)))
+      (read-problem-from-stream stream *semgus-context*))
     (multiple-value-bind (op-fn desc-map)
         (operationalize-semantics)
       (process-chcs-for-relational-semantics *semgus-context*)
@@ -98,12 +48,12 @@
         (desc-map (make-hash-table)))
     (loop for chc in (chcs *semgus-context*)
           for prod = (production-for-chc chc (grammar *semgus-context*))
-          for descriptor = (name (head chc))
+          for descriptor = (chc:name (head chc))
           for subtable = (gethash descriptor opsem (make-hash-table))
           doing
              (if (null prod)
                  (warn "No production in grammar for CHC with operator: ~a"
-                       (name (constructor chc)))
+                       (chc:name (constructor chc)))
                  (push
                   (operationalize-chc chc)
                   (gethash (g:operator prod) subtable)))
@@ -164,27 +114,27 @@ input state and semantic functions for each child term"
                         nil))
          (root-rels (root-relations *semgus-context*))
          (sf-term (term-name *semgus-context*))
-         (appl-root (find appl-name root-rels :test #'eql :key #'name)))
+         (appl-root (find appl-name root-rels :test #'eql :key #'chc:name)))
     (cond
       ;; Standard SemGuS-style PBE
       (appl-root
        ;; Check if we're applying to the synth-fun term
-       (let ((termchild (nth (term-index appl-root) (smt:children constraint))))
+       (let ((termchild (nth (chc:term-index appl-root) (smt:children constraint))))
          (when (and (typep termchild 'smt::expression)
                     (eql (smt:name termchild) sf-term))
            (let ((inputs (smt:make-state
-                          (loop for ix in (input-indexes appl-root)
-                                for name in (input-names appl-root)
+                          (loop for ix in (chc:input-indices appl-root)
+                                for name in (chc:input-formals appl-root)
                                 collect name
                                 collect (nth ix (smt:children constraint)))))
                  (output (smt:make-state
-                          (loop for output-ix in (output-indexes appl-root)
-                                for output-name in (output-names appl-root)
+                          (loop for output-ix in (chc:output-indices appl-root)
+                                for output-name in (chc:output-formals appl-root)
                                 collecting
                                 (cons output-name
                                       (elt (smt:children constraint)
                                            output-ix))))))
-             (list :inputs inputs :output output :descriptor (name appl-root))))))
+             (list :inputs inputs :output output :descriptor (chc:name appl-root))))))
 
       ;; Existentially quantified from SyGuS conversion
       ((and (typep constraint 'smt::quantifier)
@@ -204,21 +154,21 @@ input state and semantic functions for each child term"
                       (typep equality 'smt::expression)
                       (eql (smt:name equality) (smt:ensure-identifier "=")))
 
-             (let ((root-rel (find descriptor root-rels :test #'eql :key #'name)))
+             (let ((root-rel (find descriptor root-rels :test #'eql :key #'chc:name)))
                (if (eql output-var (smt:name (first (smt:children equality))))
                    (list :descriptor descriptor
                          :inputs inputs
                          :output
                          (smt:make-state ; SyGuS will only have one output var
                           (list
-                           (first (output-names root-rel))
+                           (first (chc:output-formals root-rel))
                            (second (smt:children equality)))))
                    (list :descriptor descriptor
                          :inputs inputs
                          :output
                          (smt:make-state
                           (list
-                           (first (output-names root-rel))
+                           (first (chc:output-formals root-rel))
                            (first (smt:children equality)))))))))))
 
 

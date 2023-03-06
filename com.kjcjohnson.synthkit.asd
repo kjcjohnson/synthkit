@@ -68,8 +68,10 @@
                               :serial t
                               :components ((:file "package")
                                            (:file "chc")
-                                           (:file "symbol-table")))
+                                           (:file "symbol-table")
+                                           (:file "operations")))
                              (:file "package")
+                             (:file "context")
                              (:file "semgus")
                              (:file "protocol-reader")
                              (:file "semantics")
@@ -92,7 +94,8 @@
                                            (:file "events-terms")
                                            (:file "events-utility")
                                            (:file "constraints")
-                                           (:file "semantics")))
+                                           (:file "semantics")
+                                           (:file "reader")))
                              (:file "verifier")
                              (:module "verifiers"
                               :serial t

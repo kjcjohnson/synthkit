@@ -31,8 +31,8 @@ if unable to derive a sort, which can happen if a variable is not used anywhere.
 
   ;; Look in body relations first
   (dolist (br body)
-    (a:when-let (pos (position variable (semgus::arguments br)))
-      (return-from %try-derive-aux-sort (elt (semgus::signature br) pos))))
+    (a:when-let (pos (position variable (chc:actuals br)))
+      (return-from %try-derive-aux-sort (elt (chc:signature br) pos))))
 
   ;; Then traverse the constraint...if needed. But chances are we don't need to.
   ;; TODO if we care
@@ -43,13 +43,13 @@ if unable to derive a sort, which can happen if a variable is not used anywhere.
     (&key head body constraint input-variables output-variables variables constructor)
   "Attempts to create a SYMBOL-TABLE from the loose variables in the previous format."
 
-  (let ((head-sig (semgus::signature head))
-        (head-var (semgus::arguments head))
+  (let ((head-sig (chc:signature head))
+        (head-var (chc:actuals head))
         (term nil)
         (inputs (make-array (length input-variables)))
         (outputs (make-array (length output-variables)))
         (auxiliary nil)
-        (children (make-array (length (semgus:arguments constructor)))))
+        (children (make-array (length (chc:arguments constructor)))))
 
     ;; Term - assumed to be index 0 of the CHC head
     (setf term (make-instance 'chc:symbol-entry
@@ -94,11 +94,11 @@ if unable to derive a sort, which can happen if a variable is not used anywhere.
                           variables)))
 
     ;; Children
-    (dotimes (i (length (semgus:arguments constructor)))
+    (dotimes (i (length (chc:arguments constructor)))
       (setf (aref children i)
             (make-instance 'chc:symbol-entry
-                           :name (elt (semgus::arguments constructor) i)
-                           :sort (elt (semgus::argument-sorts constructor) i)
+                           :name (elt (chc:arguments constructor) i)
+                           :sort (elt (chc:argument-sorts constructor) i)
                            :index i)))
 
     ;; Create and return the table!

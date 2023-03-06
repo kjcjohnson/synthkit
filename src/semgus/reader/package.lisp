@@ -8,6 +8,7 @@
                     (#:smt #:com.kjcjohnson.synthkit.smt)
                     (#:chc #:com.kjcjohnson.synthkit.semgus.chc)
                     (#:g #:com.kjcjohnson.synthkit.grammar)
+                    (#:u #:com.kjcjohnson.synthkit.utilities)
                     (#:a #:alexandria)))
 
 ;;;

@@ -6,3 +6,5 @@
 (defgeneric process-chcs-for-relational-semantics (context)
   (:documentation "Processes CHCs out of the given SemGuS context"))
 
+(defgeneric read-problem-from-stream (stream context)
+  (:documentation "Reads a SemGuS problem from STREAM"))

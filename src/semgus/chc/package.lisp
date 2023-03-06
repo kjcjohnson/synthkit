@@ -3,8 +3,28 @@
 ;;;;
 (defpackage #:com.kjcjohnson.synthkit.semgus.chc
   (:use #:cl)
-  (:local-nicknames (#:smt #:com.kjcjohnson.synthkit.smt))
+  (:local-nicknames (#:smt #:com.kjcjohnson.synthkit.smt)
+                    (#:a #:alexandria))
   (:shadow #:symbol-name)
+  ;; Relations and constructors
+  (:export #:constructor
+           #:name
+           #:arguments
+           #:argument-sorts
+           #:return-sort
+
+           #:head
+           #:forward-declared-head
+           #:signature
+           #:roles #:formals
+           #:is-forward-declared-head? #:fixup-forward-declared-head
+           #:make-head-from-relation
+           #:term-index #:term-type #:term-name
+           #:filter-role
+           #:role-indices
+           #:input-indices #:input-formals #:output-indices #:output-formals
+
+           #:relation #:head #:actuals)
   ;; CHCs
   (:export #:chc
            #:symbol-table)

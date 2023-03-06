@@ -9,8 +9,8 @@
           "CHC: ~a~% - CONSTRAINT: ~a~% - CONSTRUCTOR: ~a(~{~a~^ ~})~% - PROD: ~a~% - IV: ~a~% - OV: ~a~% - AV: ~a~%~%"
           chc
           (smt:to-smt (semgus:constraint chc))
-          (semgus:name (semgus:constructor chc))
-          (semgus:arguments (semgus:constructor chc))
+          (chc:name (semgus:constructor chc))
+          (chc:arguments (semgus:constructor chc))
           (semgus::production-for-chc chc (semgus:grammar context))
           (semgus:input-variables chc)
           (semgus:output-variables chc)
@@ -22,15 +22,15 @@
                   (map 'list
                        #'(lambda (b)
                            (make-instance 'smt::expression
-                                          :name (semgus:name b)
-                                          :arity (length (semgus:arguments b))
+                                          :name (chc:name b)
+                                          :arity (length (chc:actuals b))
                                           :children
                                           (map 'list
                                                #'(lambda (a s)
                                                    (smt:variable a s))
-                                               (semgus:arguments b)
-                                               (semgus::signature b))
-                                          :child-sorts (semgus::signature b)
+                                               (chc:actuals b)
+                                               (chc:signature b))
+                                          :child-sorts (chc:signature b)
                                           :sort smt:*bool-sort*))
                        (semgus:body chc))))))
 

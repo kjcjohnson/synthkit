@@ -13,8 +13,8 @@
   ((name :reader name
          :initarg :name
          :type symbol
-         :documentation "The name of this head (as an SMT symbol). This name is also the
-descriptor for this head.")
+         :documentation "The name of this head (as an SMT symbol). This name is also
+the descriptor for this head.")
    (signature :reader signature
               :initarg :signature
               :type (vector symbol)
@@ -33,6 +33,55 @@ in SMT-LIB2 files. We're likely to remove this assumption in the future, and wit
 this slot (and data). You have been warned."))
   (:documentation "A CHC head"))
 
+(defun filter-role (role data roles)
+  "Filters elements from DATA where the matching element in ROLES matches ROLE. Both
+ROLES and DATA should be sequences of the same length. Returns a list."
+  (assert (= (length data) (length roles)))
+  (loop for datum across data
+        for rolex across roles
+        when (eql role rolex) collect datum))
+
+(defun role-indices (role head)
+  "Gets indices from HEAD's signature with the given role"
+  (loop for r across (roles head)
+        for i from 0
+        when (eql role r) collect i))
+
+(defun term-index (head)
+  "Gets the term index for the head"
+  (declare (type head head))
+  (position :term (roles head)))
+
+(defun term-type (head)
+  "Gets the term type for the head"
+  (check-type head head)
+  (let ((term-ix (term-index head)))
+    (elt (signature head) term-ix)))
+
+(defun term-name (head)
+  "Gets the term name for the head"
+  (check-type head head)
+  (let ((term-ix (term-index head)))
+    (elt (formals head) term-ix)))
+
+(defun input-indices (head)
+  "Gets indices of input formals in HEAD"
+  (role-indices :input head))
+
+(defun input-formals (head)
+  "Gets formals that are inputs in HEAD"
+  (loop for i in (role-indices :input head)
+        collecting (elt (formals head) i)))
+
+(defun output-indices (head)
+  "Gets indices of output formals in HEAD"
+  (role-indices :output head))
+
+(defun output-formals (head)
+  "Gets formals that are outputs in HEAD"
+  (loop for i in (role-indices :output head)
+        collecting (elt (formals head) i)))
+
 (defclass forward-declared-head ()
   ((name :reader name
          :initarg :name
@@ -44,6 +93,10 @@ this slot (and data). You have been warned."))
               :documentation "Vector of sorts of the relation"))
   (:documentation "A placeholder for a CHC head that has not yet been seen."))
 
+(defun is-forward-declared-head? (obj)
+  "Checks if OBJ is a forward declared head or no"
+  (typep obj 'forward-declared-head))
+
 (defclass relation ()
   ((head :reader head
          :initarg :head
@@ -54,6 +107,10 @@ this slot (and data). You have been warned."))
             :type (vector symbol)
             :documentation "The actual symbols passed as arguments to this relation"))
   (:documentation "A call to a semantic relation, including the head and arguments"))
+
+;;; Convenience readers for relations
+(defmethod name ((relation relation)) (name (head relation)))
+(defmethod signature ((relation relation)) (signature (head relation)))
 
 (defclass chc ()
   ((symbols :reader symbol-table

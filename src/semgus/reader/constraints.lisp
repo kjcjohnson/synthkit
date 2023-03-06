@@ -24,27 +24,27 @@
                         nil))
          (root-rels (semgus:root-relations context))
          (sf-term (semgus:term-name context))
-         (appl-root (find appl-name root-rels :test #'eql :key #'semgus:name)))
+         (appl-root (find appl-name root-rels :test #'eql :key #'chc:name)))
     (cond
       ;; Standard SemGuS-style PBE
       (appl-root
        ;; Check if we're applying to the synth-fun term
-       (let ((termchild (nth (semgus:term-index appl-root) (smt:children constraint))))
+       (let ((termchild (nth (chc:term-index appl-root) (smt:children constraint))))
          (when (and (typep termchild 'smt::expression)
                     (eql (smt:name termchild) sf-term))
            (let ((inputs (smt:make-state
-                          (loop for ix in (semgus:input-indexes appl-root)
-                                for name in (semgus:input-names appl-root)
+                          (loop for ix in (chc:input-indices appl-root)
+                                for name in (chc:input-formals appl-root)
                                 collect name
                                 collect (nth ix (smt:children constraint)))))
                  (output (smt:make-state
-                          (loop for output-ix in (semgus:output-indexes appl-root)
-                                for output-name in (semgus:output-names appl-root)
+                          (loop for output-ix in (chc:output-indices appl-root)
+                                for output-name in (chc:output-formals appl-root)
                                 collecting
                                 (cons output-name
                                       (elt (smt:children constraint)
                                            output-ix))))))
-             (list :inputs inputs :output output :descriptor (semgus:name appl-root))))))
+             (list :inputs inputs :output output :descriptor (chc:name appl-root))))))
 
       ;; Existentially quantified from SyGuS conversion
       ((and (typep constraint 'smt::quantifier)
@@ -64,21 +64,21 @@
                       (typep equality 'smt::expression)
                       (eql (smt:name equality) (smt:ensure-identifier "=")))
 
-             (let ((root-rel (find descriptor root-rels :test #'eql :key #'semgus:name)))
+             (let ((root-rel (find descriptor root-rels :test #'eql :key #'chc:name)))
                (if (eql output-var (smt:name (first (smt:children equality))))
                    (list :descriptor descriptor
                          :inputs inputs
                          :output
                          (smt:make-state ; SyGuS will only have one output var
                           (list
-                           (first (semgus:output-names root-rel))
+                           (first (chc:output-formals root-rel))
                            (second (smt:children equality)))))
                    (list :descriptor descriptor
                          :inputs inputs
                          :output
                          (smt:make-state
                           (list
-                           (first (semgus:output-names root-rel))
+                           (first (chc:output-formals root-rel))
                            (first (smt:children equality)))))))))))
        
       
@@ -91,9 +91,9 @@
         when (smt:map-expression (constantly t)
                                  expression
                                  :filter (a:rcurry #'smt:is-application?
-                                                   (semgus:name root-rel))
+                                                   (chc:name root-rel))
                                  :join (a:curry #'some #'identity))
-          collect (semgus:name root-rel)))
+          collect (chc:name root-rel)))
 
 (defun derive-specification-for-constraint (constraint context)
   "Derives a specification from an individual constraint clause"

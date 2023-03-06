@@ -25,3 +25,15 @@
           (setf (slot-value copy slot-name)
             (slot-value object slot-name))))
       (apply #'reinitialize-instance copy initargs))))
+
+(defun ensure-vector (sequence)
+  "Checks if SEQUENCE is a vector. If so, returns it, else copies into a fresh vector"
+  (if (vectorp sequence)
+      sequence
+      (map 'vector #'identity sequence)))
+
+(defun ensure-list (sequence)
+  "Checks if SEQUENCE is a list. If so, returns it, else copies into a fresh list"
+  (if (listp sequence)
+      sequence
+      (map 'list #'identity sequence)))

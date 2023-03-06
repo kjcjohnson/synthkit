@@ -52,7 +52,7 @@
                            auxiliary-symbols
                            child-signatures)
   "Builds a table of usage data for symbols"
-  
+
   (let ((usage-table (make-hash-table :size (+ (length input-symbols)
                                                (length output-symbols)
                                                (length auxiliary-symbols)))))
@@ -81,7 +81,7 @@
           (push :consumes (%symbol-usage-types data))))
       (dolist (s auxiliary-symbols)
         (add-symbol s :auxiliary))
-      
+
       ;;
       ;; Add child signature usages and validate input/outputs
       ;;
@@ -121,7 +121,7 @@
                  (when (null (%symbol-usages data))
                    (remhash name usage-table)))
              usage-table)
-    
+
     usage-table))
 
 (defun %is-usage-table-complete? (usage-table)
@@ -148,12 +148,12 @@
                  (case type
                    (:input ; All input variable usages are consumers
                     (%list-replace-all nil :consumes usage-types))
-                   
+
                    (:output ; Output variables must have one producer
                     (when (and (zerop (count :produces usage-types))
                                (= 1 (count nil usage-types)))
                       (%list-replace-all nil :produces usage-types)))
-                   
+
                    (:auxiliary ; If a producer exists, the rest are consumers
                     (when (> (count :produces usage-types) 0)
                       (%list-replace-all nil :consumes usage-types))))))
@@ -197,7 +197,7 @@
                               (push type (%node-usage-types node))))
                         usage-table)
                (setf (gethash (%node-identifier node) node-table) node))))
-      
+
       (map nil #'add-node conjuncts)
       (map nil #'add-node child-signatures)
       (add-terminus :output :consumes)
@@ -268,7 +268,7 @@
             (dolist (cpn critical-path)
               (unless (find cpn precedents)
                 (graph:add-edge node-graph (list gn cpn))))))
-        
+
         (graph:topological-sort node-graph)))))
 
 (defun %operationalize-expression (expression input-vars output-vars &key assigning)
@@ -281,16 +281,16 @@
     ((and (typep expression 'smt::expression)
           (eql (smt:name expression) (smt:ensure-identifier "false")))
      'nil)
-    
+
     ((typep expression 'smt::constant)
      (smt:name expression))
 
     ((stringp expression)
      expression)
-    
+
     ((numberp expression)
      expression)
-    
+
     ((bit-vector-p expression)
      expression)
 
@@ -312,7 +312,7 @@
           `(progn
              (setf ,arg1 ,arg2)
              t))
-         
+
          ((find arg2 output-vars)
           `(progn
              (setf ,arg2 ,arg1)
@@ -381,7 +381,7 @@
                  ,@output-symbols
                  ,@auxiliary-symbols)
              (declare (ignorable ,@input-symbols ,@auxiliary-symbols))
-             
+
              ,@(loop for id in ordering
                      for node = (%id->node id index-table)
                      collecting
@@ -390,9 +390,9 @@
                         `'(SEMANTICS-NAME-------> ,name))
                        ;; No-op.
                        ;; We stuff the name here to be visible in listings.
-                       
+
                        ((eql node :output)
-                        
+
                         `(progn
                            (return-from ,lblock
                              (values (smt:make-temp-state
@@ -400,7 +400,7 @@
                                                        `(cons ',x ,x))
                                              output-symbols))
                                      t))))
-                       
+
                        ((typep node 'uninterpreted-signature)
                         (let ((us-pos (position node child-signatures)))
                           `(multiple-value-bind (output-state successful?)
@@ -434,7 +434,7 @@
                                             (smt:get-value output-state
                                                            ',formal))))))
                        (t
-                        
+
                         (let ((nd (gethash (%node->id node index-table)
                                            node-table))
                               input-vars
@@ -445,11 +445,11 @@
                                   do (push symbol input-vars)
                                 when (eql type :produces)
                                   do (push symbol output-vars))
-                          
+
                           (%codegen-expression-node node
                                                     input-vars
                                                     output-vars)))))))))))
-                          
+
 (defun operationalize (conjuncts &key input-symbols
                                    output-symbols
                                    auxiliary-symbols
@@ -457,7 +457,7 @@
                                    child-signatures
                                    name)
   "Operationalizes a list of conjuncts. ..."
-  
+
   (let ((index-table (%build-index-table conjuncts
                                          child-signatures))
         (usage-table (%build-usage-table conjuncts
@@ -524,37 +524,42 @@
 
 (defun %extract-uninterpreted-signature (relation semgus-ctx)
   "Extracts an uninterpreted signature for a relation."
-  ;; Look up the associated CHC head relation
-  (let ((head (find (name relation) (head-relations semgus-ctx) :key #'name)))
+  (declare (ignore semgus-ctx))
+  (let ((head (chc:head relation)))
+    (assert (not (chc:is-forward-declared-head? head)))
     (when (null head)
       (error 'operationalization-error
              :message (format nil
                               "Cannot find head relation: ~s"
-                              (name relation))))
-    (let ((inputs (%filter-indices (arguments relation)
-                                   (input-indexes head)))
-          (outputs (%filter-indices (arguments relation)
-                                    (output-indexes head))))
+                              (chc:name relation))))
+    (let ((inputs-a (chc:filter-role :input (chc:actuals relation) (chc:roles head)))
+          (outputs-a (chc:filter-role :output (chc:actuals relation) (chc:roles head)))
+          (inputs-f (chc:filter-role :input (chc:formals head) (chc:roles head)))
+          (outputs-f (chc:filter-role :output (chc:formals head) (chc:roles head)))
+          (term-a (chc:filter-role :term (chc:actuals relation) (chc:roles head))))
+
       (make-instance 'uninterpreted-signature
-                     :inputs inputs
-                     :outputs outputs
-                     :input-formals (input-names head)
-                     :output-formals (output-names head)
-                     :term-symbol (elt (arguments relation) (term-index head))
-                     :head-symbol (name head)
-                     :is-head-input? (every #'eql inputs (input-names head))))))
+                     :inputs inputs-a
+                     :outputs outputs-a
+                     :input-formals inputs-f
+                     :output-formals outputs-f
+                     :term-symbol (first term-a)
+                     :head-symbol (chc:name head)
+                     :is-head-input? (every #'eql inputs-a inputs-f)))))
 
 (defun operationalize-chc+ (chc smt-ctx semgus-ctx)
-  (let* ((is (input-variables chc))
-         (os (output-variables chc))
-         (head (find (name (head chc)) (head-relations semgus-ctx) :key #'name))
-         (ts (cons (term-name head) (arguments (constructor chc)))))
+  (let* ((symbol-table (symbol-table chc))
+         (is (map 'list #'chc:symbol-name (chc:input-symbols symbol-table)))
+         (os (map 'list #'chc:symbol-name (chc:output-symbols symbol-table)))
+         (as (map 'list #'chc:symbol-name (chc:auxiliary-symbols symbol-table)))
+         (ts (cons (chc:symbol-name (chc:term-symbol symbol-table))
+                   (map 'list #'chc:symbol-name (chc:child-symbols symbol-table)))))
     (operationalize
      (%extract-conjuncts (constraint chc) smt-ctx)
-     :name (name (constructor chc))
+     :name (chc:name (constructor chc))
      :input-symbols is
      :output-symbols os
-     :auxiliary-symbols (set-difference (variables chc) (union ts (union is os)))
+     :auxiliary-symbols as
      :term-symbols ts
      :child-signatures (map 'list #'(lambda (child)
                                       (%extract-uninterpreted-signature
@@ -584,4 +589,4 @@ r1:
 E.Sem, r.r1
 
 |#
-  
+

@@ -6,15 +6,21 @@
 (defun com.kjcjohnson.synthkit.semgus.reader.user::relation
     (name &key signature arguments)
   "Creates a relation"
-  (make-instance 'semgus::semgus-relation
-                 :name name
-                 :signature signature
-                 :arguments arguments))
+  (let ((head (semgus:lookup-head name)))
+    ;; If the head hasn't been encountered yet, make a forward reference
+    (when (null head)
+      (setf head (make-instance 'chc:forward-declared-head
+                                :name name
+                                :signature (u:ensure-vector signature))))
+
+    (make-instance 'chc:relation
+                   :head head
+                   :actuals (u:ensure-vector arguments))))
 
 (defun com.kjcjohnson.synthkit.semgus.reader.user::constructor
     (name &key arguments argument-sorts return-sort)
   "Creates a constructor"
-  (make-instance 'semgus::semgus-chc-constructor
+  (make-instance 'chc:constructor
                  :name name
                  :arguments arguments
                  :argument-sorts argument-sorts
@@ -36,6 +42,14 @@
                    :variables variables
                    :constructor constructor)))
 
+  ;; Check if we need to create a CHC head object
+  ;;  At this point, HEAD is a chc:relation, not a chc:head
+  (if (chc:is-forward-declared-head? (chc:head head))
+      (let ((new-head (chc:make-head-from-relation head symbols)))
+        (semgus:add-head new-head)
+        (setf head new-head))
+      (setf head (chc:head head)))
+
   (push
    (make-instance 'semgus::semgus-chc
                   :head head
@@ -46,36 +60,4 @@
                   :variables variables
                   :symbol-table symbols
                   :constructor constructor)
-   (semgus:chcs semgus:*semgus-context*))
-  (unless (find (semgus:name head)
-                (semgus:head-relations semgus:*semgus-context*)
-                :test #'(lambda (n r)
-                          (eql n (semgus:name r))))
-    (let ((term-index 0) ;; Shouldn't hardcode this - TODO
-          (input-indexes (loop for i from 0
-                                         upto (length (semgus::signature head))
-                                         for arg = (nth i (semgus:arguments head))
-                                         when (find arg input-variables)
-                                           collect i))
-          (output-indexes (loop for i from 0
-                                         upto (length (semgus::signature head))
-                                         for arg = (nth i (semgus:arguments head))
-                                          when (find arg output-variables)
-                                           collect i)))
-
-      (push
-       (make-instance 'semgus::semgus-chc-head
-                      :name (semgus:name head)
-                      :term-index term-index
-                      :term-type (nth term-index (semgus::signature head))
-                      :argument-sorts (semgus::signature head)
-                      :input-indexes input-indexes
-                      :output-indexes output-indexes
-                      :term-name (nth term-index (semgus:arguments head))
-                      :input-names (map 'list
-                                        #'(lambda (i) (nth i (semgus:arguments head)))
-                                        input-indexes) ;; TOD: warn if no match
-                      :output-names (map 'list
-                                         #'(lambda (i) (nth i (semgus:arguments head)))
-                                         output-indexes))
-       (semgus:head-relations semgus:*semgus-context*)))))
+   (semgus:chcs semgus:*semgus-context*)))

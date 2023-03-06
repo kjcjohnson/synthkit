@@ -34,7 +34,7 @@
   (setf (semgus:term-name semgus:*semgus-context*) name)
   (setf (semgus:term-type semgus:*semgus-context*) term-type)
   (let ((possible-root-relations
-          (remove-if-not #'(lambda (x) (eql term-type (semgus:term-type x)))
+          (remove-if-not #'(lambda (x) (eql term-type (chc:term-type x)))
                          (semgus:head-relations semgus:*semgus-context*))))
     (when (endp possible-root-relations)
       (warn "No possible root relations for synth-fun ~a. Make sure CHCs are defined."
