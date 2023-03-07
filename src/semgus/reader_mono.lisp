@@ -4,14 +4,6 @@
 ;;;; (note: this is not the SemGuS format. This is the sexpr parser output format)
 (in-package #:com.kjcjohnson.synthkit.semgus)
 
-(defun production-for-chc (chc grammar)
-  "Gets the production associated with the CHC in the grammar"
-  (find (chc:name (chc:constructor chc))
-        (g::productions grammar)
-        :test (lambda (name prod)
-                ;;(format t "~S : ~S~%" name (g:name (g:operator prod)))
-                (eql name (g:name (g:operator prod))))))
-
 (defun load-semgus-problem (filename)
   "Loads a SemGuS problem from the given file."
   (smt:init-smt)
@@ -21,23 +13,25 @@
       (read-problem-from-stream stream *semgus-context*))
     (multiple-value-bind (op-fn desc-map)
         (operationalize-semantics)
-      (process-chcs-for-relational-semantics *semgus-context*)
-      (make-instance 'semgus-problem
-                     :specification (constraints-to-pbe)
-                     :semantics (make-instance 'default-semantics
-                                               :operational op-fn
-                                               :descriptor-map desc-map
-                                               :relational nil
-                                               :relation-definitions nil)
-                     :grammar (grammar *semgus-context*)
-                     :context *semgus-context*))))
+      (multiple-value-bind (rel-fn rel-desc-map)
+          (process-chcs-for-relational-semantics *semgus-context*)
+        (declare (ignore rel-desc-map))
+        (make-instance 'semgus-problem
+                       :specification (derive-specification *semgus-context*);(constraints-to-pbe)
+                       :semantics (make-instance 'default-semantics
+                                                 :operational op-fn
+                                                 :descriptor-map desc-map
+                                                 :relational rel-fn
+                                                 :relation-definitions nil)
+                       :grammar (grammar *semgus-context*)
+                       :context *semgus-context*)))))
 
 (defun operationalize-semantics ()
   "Operationalizes semantics - or, at least, tries to."
   (let ((opsem (make-hash-table))
         (desc-map (make-hash-table)))
     (loop for chc in (chcs *semgus-context*)
-          for prod = (production-for-chc chc (grammar *semgus-context*))
+          for prod = (chc:production-for-chc chc (grammar *semgus-context*))
           for descriptor = (chc:name (chc:head chc))
           for subtable = (gethash descriptor opsem (make-hash-table))
           doing

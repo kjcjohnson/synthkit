@@ -8,3 +8,6 @@
 
 (defgeneric read-problem-from-stream (stream context)
   (:documentation "Reads a SemGuS problem from STREAM"))
+
+(defgeneric derive-specification (context)
+  (:documentation "Derives a specification from the given context"))

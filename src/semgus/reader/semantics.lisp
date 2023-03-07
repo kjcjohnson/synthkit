@@ -5,37 +5,37 @@
 
 (defun relationalize-chc (chc context)
   "Creates an SMT relation from a CHC"
-  (format t
-          "CHC: ~a~% - CONSTRAINT: ~a~% - CONSTRUCTOR: ~a(~{~a~^ ~})~% - PROD: ~a~% - IV: ~a~% - OV: ~a~% - AV: ~a~%~%"
-          chc
-          (smt:to-smt (chc:constraint chc))
-          (chc:name (chc:constructor chc))
-          (chc:arguments (chc:constructor chc))
-          (semgus::production-for-chc chc (semgus:grammar context))
-          (map 'list #'chc:symbol-name (chc:input-symbols chc))
-          (map 'list #'chc:symbol-name (chc:output-symbols chc))
-          (map 'list #'chc:symbol-name (chc:auxiliary-symbols chc)))
-  (format t "~a~%"
-          (smt:to-smt
-           (apply #'smt:$and
-                  (chc:constraint chc)
-                  (map 'list
-                       #'(lambda (b)
-                           (make-instance 'smt::expression
-                                          :name (chc:name b)
-                                          :arity (length (chc:actuals b))
-                                          :children
-                                          (map 'list
-                                               #'(lambda (a s)
-                                                   (smt:variable a s))
-                                               (chc:actuals b)
-                                               (chc:signature b))
-                                          :child-sorts (chc:signature b)
-                                          :sort smt:*bool-sort*))
-                       (chc:body chc))))))
+  (declare (ignore context))
+  chc)
 
 (defmethod semgus:process-chcs-for-relational-semantics (context)
   "Processes a SemGuS context and creates relational semantics"
-  (loop for chc in (semgus:chcs context)
-        do (relationalize-chc chc context)))
-        
+  (let ((relsem (make-hash-table))
+        (descriptor-map (make-hash-table)))
+    (loop for chc in (semgus:chcs context)
+          for prod = (chc:production-for-chc chc (semgus:grammar context))
+          for descriptor = (chc:name (chc:head chc))
+          for subtable = (gethash descriptor relsem (make-hash-table :test 'equal))
+          doing
+             (if (null prod)
+                 (warn "No production in grammar for CHC with operator: ~a"
+                       (chc:name (chc:constructor chc)))
+                 (push
+                  (relationalize-chc chc context)
+                  (gethash (g:name (g:operator prod)) subtable)))
+          unless (null prod)
+            do (pushnew descriptor
+                        (gethash (g:term-type (g:instance prod)) descriptor-map))
+          end
+          do (setf (gethash descriptor relsem) subtable))
+
+    (values
+     #'(lambda (descriptor production)
+         (if (null (g:name production))
+             (error "No handling for relational NT-to-NT productions yet")
+             (let ((subtable (gethash descriptor relsem)))
+               (unless subtable
+                 (error "No relational semantics for descriptor: ~s" descriptor))
+               (let ((result (gethash (g:name (g:operator production)) subtable)))
+                 result))))
+     descriptor-map)))

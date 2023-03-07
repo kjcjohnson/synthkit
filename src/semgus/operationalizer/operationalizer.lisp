@@ -95,11 +95,11 @@
         (loop for o in (outputs c)
               for data = (get-for-sure o)
               when (eql :input (%symbol-type data)) do
-                   (error 'operationalization-error
-                          :message (format nil
-                                           "~s is an input, but is produced by ~s"
-                                           o
-                                           c))
+                (error 'operationalization-error
+                       :message (format nil
+                                        "~s is an input, but is produced by ~s"
+                                        o
+                                        c))
               doing
                  (push c (%symbol-usages data))
                  (push :produces (%symbol-usage-types data))))
@@ -554,6 +554,8 @@
          (as (map 'list #'chc:symbol-name (chc:auxiliary-symbols symbol-table)))
          (ts (cons (chc:symbol-name (chc:term-symbol symbol-table))
                    (map 'list #'chc:symbol-name (chc:child-symbols symbol-table)))))
+    (when (eql (smt:ensure-identifier "$findMatches") (chc:name (chc:constructor chc)))
+      (break))
     (operationalize
      (%extract-conjuncts (chc:constraint chc) smt-ctx)
      :name (chc:name (chc:constructor chc))

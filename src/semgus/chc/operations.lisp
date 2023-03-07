@@ -3,6 +3,13 @@
 ;;;;
 (in-package #:com.kjcjohnson.synthkit.semgus.chc)
 
+(defun production-for-chc (chc grammar)
+  "Gets the production associated with the CHC in the grammar"
+  (find (name (constructor chc))
+        (g:productions grammar)
+        :test (lambda (name prod)
+                (eql name (g:name (g:operator prod))))))
+
 (defun fixup-forward-declared-head (relation new-head)
   "Fixes up a forward-declared head in RELATION with NEW-HEAD."
   (declare (type relation relation)
@@ -28,3 +35,31 @@
                    :signature (signature relation)
                    :roles roles
                    :formals (actuals relation))))
+
+(defun body-to-smt (chc)
+  "Converts a CHC body to an SMT expression"
+  (let ((expr (apply #'smt:$and
+                  (constraint chc)
+                  (map 'list
+                       #'(lambda (b)
+                           (make-instance 'smt::expression
+                                          :name (name b)
+                                          :arity (length (actuals b))
+                                          :children
+                                          (map 'list
+                                               #'(lambda (a s)
+                                                   (smt:variable a s))
+                                               (actuals b)
+                                               (signature b))
+                                          :child-sorts (signature b)
+                                          :sort smt:*bool-sort*))
+                       (body chc)))))
+
+    (unless (zerop (length (auxiliary-symbols chc)))
+      (setf expr
+            (smt::quantifier-expression
+             "exists"
+             (map 'list #'symbol-name (auxiliary-symbols chc))
+             (map 'list #'symbol-sort (auxiliary-symbols chc))
+             expr)))
+    expr))

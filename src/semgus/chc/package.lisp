@@ -4,6 +4,7 @@
 (defpackage #:com.kjcjohnson.synthkit.semgus.chc
   (:use #:cl)
   (:local-nicknames (#:smt #:com.kjcjohnson.synthkit.smt)
+                    (#:g #:com.kjcjohnson.synthkit.grammar)
                     (#:a #:alexandria))
   (:shadow #:symbol-name)
   ;; Relations and constructors
@@ -35,4 +36,6 @@
            #:symbol-table
            #:input-symbols #:output-symbols
            #:term-symbol
-           #:auxiliary-symbols #:child-symbols))
+           #:auxiliary-symbols #:child-symbols)
+  ;; Other operations
+  (:export #:body-to-smt #:production-for-chc))

@@ -7,4 +7,6 @@
                     (#:spec #:com.kjcjohnson.synthkit.specification)
                     (#:smt #:com.kjcjohnson.synthkit.smt)
                     (#:ast #:com.kjcjohnson.synthkit.ast)
+                    (#:chc #:com.kjcjohnson.synthkit.semgus.chc)
+                    (#:spec #:com.kjcjohnson.synthkit.specification)
                     (#:a #:alexandria)))

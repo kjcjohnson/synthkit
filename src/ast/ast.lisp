@@ -9,7 +9,7 @@
 (defgeneric operational-semantics-for-production (semantics descriptor production)
   (:documentation "Maps from a production to a list of state transformation semantic functions."))
 
-(defgeneric relational-semantics-for-production (semantics production)
+(defgeneric relational-semantics-for-production (semantics descriptor production)
   (:documentation "Maps from a production to CHC-based relational semantics."))
 
 (defgeneric relational-semantics-for-non-terminal (semantics non-terminal)
@@ -54,7 +54,7 @@
 
     (setf child-names (nreverse child-names))
     ;; Grab our semantics TODO - handle multiple semantics per production
-    (setf rel (first (relational-semantics-for-production semantics (production node))))
+    (setf rel (first (relational-semantics-for-production semantics rel-name (production node))))
         
     ;; Substitute relations
     (dolist (d (map 'list #'(lambda (c) (relational-semantics-for-non-terminal semantics (g:instance (production c)))) (children node)))

@@ -15,11 +15,11 @@
     (&key inputs outputs term auxiliary children)
   "A CHC's symbol table"
   (make-instance 'chc:symbol-table
-                 :inputs inputs
-                 :outputs outputs
+                 :inputs (u:ensure-vector inputs)
+                 :outputs (u:ensure-vector outputs)
                  :term term
-                 :auxiliary auxiliary
-                 :children children))
+                 :auxiliary (u:ensure-vector auxiliary)
+                 :children (u:ensure-vector children)))
 
 ;;;
 ;;; Handling for creating symbol table instances from the legacy format

@@ -108,7 +108,7 @@
                        :expression constraint
                        :descriptors (%extract-descriptors constraint context)))))
   
-(defun derive-specification (&optional (context semgus:*semgus-context*))
+(defmethod semgus:derive-specification (context)
   "Derives a specification from the current semgus CONTEXT"
   (let ((specs
           (loop for constraint in (semgus:constraints context)

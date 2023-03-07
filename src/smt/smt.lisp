@@ -87,7 +87,7 @@
   (assert-smt-solver-enabled)
   (let ((constants (find-constants formula)))
     (dolist (c constants)
-      (cl-smt-lib:write-to-smt solver `((,(intern "declare-const") ,(intern (name c)) ,(intern (name (sort c)))))))))
+      (cl-smt-lib:write-to-smt solver `((,(intern "declare-const") ,(intern (identifier-smt (name c))) ,(intern (name (sort c)))))))))
 
 (defun solve (solver-spec &rest assertions)
   "Solves the given SMT query."
@@ -95,7 +95,7 @@
   (with-solver (smt solver-spec)
     (let ((constants (reduce #'append (map 'list #'find-constants assertions))))
       (dolist (c constants)
-        (cl-smt-lib:write-to-smt smt `((|declare-const| ,(intern (name c)) ,(intern (name (sort c))))))))
+        (cl-smt-lib:write-to-smt smt `((|declare-const| ,(intern (identifier-smt (name c))) ,(intern (name (sort c))))))))
     (apply #'add smt assertions)
     (let ((sat (check-sat smt)))
       (prog1
@@ -145,7 +145,7 @@
                    (destructuring-bind (df-kw name args type value) dfn
                      (declare (ignore args))
                      (assert (string= "define-fun" (symbol-name df-kw)))
-                     (cons (variable name (make-instance 'sort :name (symbol-name type))) value)))
+                     (cons (variable (ensure-identifier (symbol-name name)) (make-instance 'sort :name (symbol-name type))) value)))
          (rest output))))
 
 (defgeneric copy-node (node &key &allow-other-keys)
@@ -273,8 +273,10 @@
 (defmethod to-smt ((integer integer))
   integer)
 (defmethod to-smt ((expression expression))
-  `(,(intern (identifier-smt (name expression)))
-    ,@(map 'list #'to-smt (children expression))))
+  (if (zerop (length (children expression)))
+      (intern (identifier-smt (name expression)))
+      `(,(intern (identifier-smt (name expression)))
+        ,@(map 'list #'to-smt (children expression)))))
 (defmethod to-smt ((fn function-declaration))
   (if (cl:not (null (definition fn)))
       `(,(intern "define-fun")

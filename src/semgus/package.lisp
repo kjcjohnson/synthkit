@@ -65,7 +65,8 @@
 
   ;; Reader protocol
   (:export #:process-chcs-for-relational-semantics
-           #:read-problem-from-stream)
+           #:read-problem-from-stream
+           #:derive-specification)
 
   ;; CHC-related exports
   (:export #:arguments #:body #:head #:head-relations

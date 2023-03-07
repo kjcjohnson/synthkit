@@ -22,8 +22,10 @@
                                                      production)
   (funcall (operational-semantics sem) descriptor production))
 
-(defmethod ast:relational-semantics-for-production ((sem default-semantics) production)
-  (funcall (relational-semantics sem) production))
+(defmethod ast:relational-semantics-for-production
+    ((sem default-semantics) descriptor production)
+  "Gets an SMT expression for these semantics"
+  (funcall (relational-semantics sem) descriptor production))
 
 (defmethod ast:relational-semantics-for-non-terminal ((sem default-semantics) non-terminal)
   (funcall (relation-definitions sem) non-terminal))

@@ -99,7 +99,8 @@
                              (:file "verifier")
                              (:module "verifiers"
                               :serial t
-                              :components (#+()(:file "concretizing")))
+                              :components ((:file "package")
+                                           (:file "concretizing")))
                              (:file "cegis")))
                (:module "vsa"
                 :depends-on ("ast" "grammar")
