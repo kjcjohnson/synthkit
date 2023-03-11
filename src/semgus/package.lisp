@@ -8,6 +8,7 @@
                     (#:smt #:com.kjcjohnson.synthkit.smt)
                     (#:u #:com.kjcjohnson.synthkit.utilities)
                     (#:chc #:com.kjcjohnson.synthkit.semgus.chc)
+                    (#:spec #:com.kjcjohnson.synthkit.specification)
                     (#:a #:alexandria)
                     (#:? #:trivia))
   (:export #:semgus-problem
@@ -61,7 +62,10 @@
            #:term-index)
 
   ;; Verifier protocol
-  (:export #:verify-program)
+  (:export #:verify-program
+           #:verifier-for-specification
+           #:check-program
+           #:unknown-verifier-result)
 
   ;; Reader protocol
   (:export #:process-chcs-for-relational-semantics

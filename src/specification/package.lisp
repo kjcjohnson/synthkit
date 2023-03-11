@@ -8,6 +8,7 @@
   ;; Specification types
   (:export #:specification
            #:relational-specification
+           #:cegis-specification
            #:compound-specification
            #:intersection-specification
            #:union-specification
@@ -17,7 +18,10 @@
   (:export #:expression
            #:descriptor
            #:descriptors
-           #:components)
+           #:components
+           #:input-state
+           #:output-state
+           #:predicate)
   
   ;; Methods
   (:export #:leaf-specification-types

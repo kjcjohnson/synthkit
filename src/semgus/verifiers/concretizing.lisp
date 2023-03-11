@@ -4,6 +4,7 @@
 (in-package #:com.kjcjohnson.synthkit.semgus.verifiers)
 
 (defclass concretizing-verifier () ())
+(defparameter *concretizing-verifier-instance* (make-instance 'concretizing-verifier))
 
 (defun query-smt (body-defns constraint produce-cex)
   (smt:with-solver (solver smt::*cvc4*)
@@ -17,9 +18,9 @@
         ((eql :unknown q-res)
          (list :unknown nil))
         ((eql :unsat q-res)
-         (list :invalid nil))
+         (list :valid nil))
         ((eql :sat q-res)
-         (list :valid (and produce-cex (smt:get-model solver))))
+         (list :invalid (and produce-cex (smt:get-model solver))))
         (t (error "Invalid SMT response: ~s" q-res))))))
 
 (defgeneric convert-constraints (spec context)
@@ -177,7 +178,14 @@ first value, and the concrete function name as the second value."
                (declare (ignore ctx))
                (smt:is-application? expr descriptor))))
 
+(defmethod semgus:verifier-for-specification ((spec spec:relational-specification)
+                                              semgus-problem
+                                              &key produce-cex)
+  (declare (ignore spec semgus-problem produce-cex))
+  *concretizing-verifier-instance*)
+
 (defmethod semgus:verify-program ((verifier concretizing-verifier)
+                                  specification
                                   semgus-problem
                                   program
                                   &key produce-cex)
