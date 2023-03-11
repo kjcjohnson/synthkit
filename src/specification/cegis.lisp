@@ -8,7 +8,7 @@
                :reader relational-specification
                :documentation "Relational specification for CEGIS")
    (examples :initarg :examples
-             :accessor examples
+             :accessor cegis-examples
              :documentation "Examples generated during CEGIS"))
   (:default-initargs :examples (list))
   (:documentation "A specification for use during CEGIS"))
