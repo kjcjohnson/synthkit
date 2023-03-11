@@ -34,7 +34,7 @@ each of the component specifications."))
   (:documentation "Returns a list of the compound joiner types in SPEC")
   (:method ((spec compound-specification))
     (reduce #'union (map 'list #'compound-specification-types (components spec))
-            :initial-value (class-name (class-of spec))))
+            :initial-value (list (class-name (class-of spec)))))
   (:method ((spec specification))
     (list)))
 

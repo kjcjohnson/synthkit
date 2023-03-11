@@ -33,5 +33,7 @@
            #:with-only?
            #:with-only-intersection?
            #:with-only-union?
+           #:is-pbe?
+           #:examples
 
            #:convert-to-cegis))

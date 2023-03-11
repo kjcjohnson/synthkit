@@ -30,3 +30,22 @@ state to test for satisfication. Returns T if satisfied, NIL otherwise."))
 (defun is-only-io? (spec)
   "Checks if SPEC only includes IO specifications"
   (is-only? spec 'io-specification))
+
+(defun is-pbe? (spec)
+  "Checks if SPEC is a programming-by-example specification. That is, SPEC only consists
+of IO specification leaves and intersection joiners."
+  (and (is-only-io? spec) (with-only-intersection? spec)))
+
+(defun examples (spec)
+  "Gets a list of examples, but only if SPEC satisfies IS-PBE?"
+  (assert (is-pbe? spec))
+  (let ((result nil)
+        (proc-queue (list spec)))
+    (loop for item = (pop proc-queue)
+          until (null item)
+          if (typep item 'io-specification)
+            do (push item result)
+          else
+            do (setf proc-queue (append proc-queue (components item)))
+          end)
+    result))

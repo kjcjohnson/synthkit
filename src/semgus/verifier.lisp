@@ -16,14 +16,15 @@ optionally a counter-example (if :INVALID) as the second value."))
   ()
   (:documentation "Signaled when a verifier gets an inconclusive result"))
 
-(defun check-program (semgus-problem program)
+(defun check-program (semgus-problem program &optional specification)
   "Checks if PROGRAM satisfies the specification in SEMGUS-PROBLEM. Returns T if PROGRAM
 satisfies the specification in SEMGUS-PROBLEM, NIL otherwise. If PROGRAM is unable to
 be verified, signals an error of type UNKNOWN-VERIFIER-RESULT."
-  (let ((verifier (verifier-for-specification (specification semgus-problem)
+  (let ((verifier (verifier-for-specification (or specification
+                                                  (specification semgus-problem))
                                               semgus-problem
                                               :produce-cex nil)))
-    (ecase (verify-program verifier (specification semgus-problem)
+    (ecase (verify-program verifier (or specification (specification semgus-problem))
                            semgus-problem program :produce-cex nil)
       (:valid t)
       (:invalid nil)
