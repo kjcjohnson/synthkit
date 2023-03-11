@@ -20,6 +20,18 @@
     :initarg :context
     :reader context)))
 
+(defun replace-specification (semgus-problem new-specification)
+  "Returns a possibly-new SemGuS problem, identical to SEMGUS-PROBLEM except with the
+specification replaced by NEW-SPECIFICATION. If NEW-SPECIFICATION is EQL to the
+current specification, the original problem is returned."
+  (if (eql new-specification (specification semgus-problem))
+      semgus-problem
+      (make-instance 'semgus-problem
+                     :grammar (grammar semgus-problem)
+                     :semantics (semantics semgus-problem)
+                     :context (context semgus-problem)
+                     :specification new-specification)))
+
 (defun configure-smt (problem &optional (context smt:*smt*))
   "Configures the SMT context for this problem"
   (dolist (aux (auxiliary-functions (context problem)))

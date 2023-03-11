@@ -12,6 +12,7 @@
                     (#:a #:alexandria)
                     (#:? #:trivia))
   (:export #:semgus-problem
+           #:replace-specification
            #:load-semgus-problem
            #:grammar
            #:semantics
