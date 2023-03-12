@@ -39,5 +39,9 @@
 
            #:do-call-smt #:call-smt)
 
+  ;; Solvers
+  (:export #:*solver* #:with-solver #:with-solver*
+           #:solve)
+
   ;; Traversals
   (:export #:map-expression #:update-expression))

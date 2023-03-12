@@ -7,13 +7,15 @@
 (defparameter *concretizing-verifier-instance* (make-instance 'concretizing-verifier))
 
 (defun query-smt (body-defns constraint produce-cex)
-  (smt:with-solver (solver smt::*cvc4*)
+  (smt:with-solver* (solver smt::*cvc4*)
+    (smt:push-scope solver)
     (smt:dump-commands solver body-defns)
 
     (smt:declare-constants solver constraint)
     (smt:add solver (smt:$not constraint))
 
     (let ((q-res (smt:check-sat solver)))
+      (smt:pop-scope solver)
       (cond
         ((eql :unknown q-res)
          (list :unknown nil))

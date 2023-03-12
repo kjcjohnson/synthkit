@@ -23,6 +23,7 @@
                 :depends-on ()
                 :serial t
                 :components ((:file "package")
+                             (:file "solver")
                              (:file "smt")
                              (:file "theory-dispatch")
                              (:file "theory-ints")

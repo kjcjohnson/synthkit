@@ -8,6 +8,8 @@
   ;; Specification types
   (:export #:specification
            #:relational-specification
+           #:universal-specification
+           #:existential-specification
            #:cegis-specification
            #:compound-specification
            #:intersection-specification
@@ -33,7 +35,9 @@
            #:with-only?
            #:with-only-intersection?
            #:with-only-union?
-           #:is-pbe?
+
+           #:is-pbe? #:is-universal? #:is-existential?
+
            #:examples
            #:leaves
 
