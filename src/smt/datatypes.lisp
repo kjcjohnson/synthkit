@@ -3,6 +3,13 @@
 ;;;;
 (in-package #:com.kjcjohnson.synthkit.smt)
 
+(defvar *no-canonical-datatypes* nil "Feature flag for disabling the creation of
+canonical datatype instances. This might be useful if the problem being solved churns
+through a bunch of unique datatype instances, and the extra cost to compare datatypes
+(and states) is worth the memory savings. Note that setting this flag also affects
+state comparisons - states with non-canonical datatype instances also cannot be
+converted to canonical state instances!")
+
 (defclass datatype ()
   ((name
     :initarg :name
@@ -50,6 +57,10 @@
   (:default-initargs :canonical nil)
   (:documentation "A concrete instance of a datatype/constructor"))
 
+(defun is-datatype-instance? (object)
+  "Checks if OBJECT is a datatype instance or no"
+  (typep object 'datatype-instance))
+
 (defun add-datatype-constructor (datatype constructor)
   "Adds a constructor to the given datatype."
   (declare (type datatype datatype)
@@ -60,17 +71,24 @@
   "Creates an instance of a datatype."
   (declare (type datatype datatype)
            (type datatype-constructor constructor))
-  (let* ((canonical-instance-table (canonical-instances constructor))
-         (canonical-instance (gethash children canonical-instance-table)))
-    (when (null canonical-instance)
-      (setf children (copy-list children))
-      (setf canonical-instance (make-instance 'datatype-instance
-                                              :datatype datatype
-                                              :constructor constructor
-                                              :children children
-                                              :canonical t))
-      (setf (gethash children canonical-instance-table) canonical-instance))
-    canonical-instance))
+  (if *no-canonical-datatypes*
+      (make-instance 'datatype-instance
+                     :datatype datatype
+                     :constructor constructor
+                     :children children
+                     :canonical nil)
+
+      (let* ((canonical-instance-table (canonical-instances constructor))
+             (canonical-instance (gethash children canonical-instance-table)))
+        (when (null canonical-instance)
+          (setf children (copy-list children))
+          (setf canonical-instance (make-instance 'datatype-instance
+                                                  :datatype datatype
+                                                  :constructor constructor
+                                                  :children children
+                                                  :canonical t))
+          (setf (gethash children canonical-instance-table) canonical-instance))
+        canonical-instance)))
 
 (defun datatype= (instance1 instance2)
   "Compares two datatype instances."
@@ -80,7 +98,8 @@
              (is-canonical-instance? instance2))
     (return-from datatype= (eql instance1 instance2)))
 
-  (warn "Comparing non-canonical datatype instances")
+  (unless *no-canonical-datatypes*
+    (warn "Comparing non-canonical datatype instances"))
   (and (eql (datatype instance1) (datatype instance2))
        (eql (constructor instance1) (constructor instance2))
        (every #'core-= (children instance1) (children instance2))))

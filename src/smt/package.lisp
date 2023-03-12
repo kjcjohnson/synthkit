@@ -27,6 +27,7 @@
            #:datatype #:datatype-constructor #:constructors
            #:add-datatype-constructor
            #:datatype=
+           #:is-datatype-instance?
 
            #:state #:make-state #:copy-state #:get-value #:state=
            #:evaluate-state #:make-temp-state #:canonicalize-state

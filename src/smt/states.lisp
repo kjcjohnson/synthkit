@@ -69,7 +69,9 @@
                  :canonical nil))
 
 (defun canonicalize-state (state)
-  "Returns a canonical version of the given state."
+  "Returns a canonical version of the given state. There are certain instances where
+this method will not return a canonical state; namely, if the *NO-CANONICAL-DATATYPES*
+flag is set and STATE contains datatype instances."
   (if (is-canonical-state? state)
       state
       (make-state (mapping state))))
@@ -82,12 +84,18 @@
   (let* ((arglist (%normalize-state-mapping! (%state-arguments-to-alist args)))
          (canonical-instance (gethash arglist *canonical-state-instances*)))
     (incf *total-state-usage-count*)
-    (when (null canonical-instance)
-      (incf *total-state-alloc-count*)
-      (setf canonical-instance (make-instance 'state
-                                              :mapping arglist
-                                              :canonical t))
-      (setf (gethash arglist *canonical-state-instances*) canonical-instance))
+    (if (and *no-canonical-datatypes*
+             (some (a:compose #'is-datatype-instance? #'cdr) arglist))
+        ;; Uncanonical datatypes break canonical states
+        (setf canonical-instance
+              (make-instance 'state :mapping arglist :canonical nil))
+
+        (when (null canonical-instance)
+          (incf *total-state-alloc-count*)
+          (setf canonical-instance (make-instance 'state
+                                                  :mapping arglist
+                                                  :canonical t))
+          (setf (gethash arglist *canonical-state-instances*) canonical-instance)))
 
     '(when (zerop (rem *total-state-usage-count* 100000))
       (%print-state-alloc-stats))
