@@ -35,5 +35,6 @@
            #:with-only-union?
            #:is-pbe?
            #:examples
+           #:leaves
 
            #:convert-to-cegis))

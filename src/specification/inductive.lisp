@@ -36,16 +36,20 @@ state to test for satisfication. Returns T if satisfied, NIL otherwise."))
 of IO specification leaves and intersection joiners."
   (and (is-only-io? spec) (with-only-intersection? spec)))
 
-(defun examples (spec)
-  "Gets a list of examples, but only if SPEC satisfies IS-PBE?"
-  (assert (is-pbe? spec))
+(defun leaves (spec)
+  "Gets the leaf specifications of SPEC."
   (let ((result nil)
         (proc-queue (list spec)))
     (loop for item = (pop proc-queue)
           until (null item)
-          if (typep item 'io-specification)
-            do (push item result)
-          else
+          if (typep item 'compound-specification)
             do (setf proc-queue (append proc-queue (components item)))
+          else
+            do (push item result)
           end)
     result))
+
+(defun examples (spec)
+  "Gets a list of examples, but only if SPEC satisfies IS-PBE?"
+  (assert (is-pbe? spec))
+  (leaves spec))
