@@ -101,8 +101,8 @@
   (let ((pbe (try-derive-pbe-constraint constraint context)))
     (if pbe
         (make-instance 'spec:io-specification
-                       :input-state (getf pbe :inputs)
-                       :output-state (getf pbe :output)
+                       :input-state (smt:evaluate-state (getf pbe :inputs))
+                       :output-state (smt:evaluate-state (getf pbe :output))
                        :descriptor (getf pbe :descriptor))
         (make-instance 'spec:relational-specification
                        :expression constraint
