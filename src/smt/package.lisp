@@ -40,7 +40,8 @@
            #:do-call-smt #:call-smt)
 
   ;; Solvers
-  (:export #:*solver* #:with-solver #:with-solver*
+  (:export #:*solver* #:with-solver #:with-solver* #:with-lazy-solver
+           #:*cvc5*
            #:solve)
 
   ;; Traversals

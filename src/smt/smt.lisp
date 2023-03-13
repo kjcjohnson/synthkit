@@ -33,26 +33,13 @@
                                                      "--tlimit-per" "10000"
                                                      )))
 
-(defun assert-smt-solver-enabled ()
-  "Checks if SMT solving is enabled."
-  #+synthkit-disable-smt-solver
-  (error "SMT solver support is disabled."))
-
-(defun make-solver (solver-spec)
-  (assert-smt-solver-enabled)
-  (apply #'cl-smt-lib:make-smt (program solver-spec) (arguments solver-spec)))
-
-(defun close-solver (solver)
-  (assert-smt-solver-enabled)
-  (close (cl-smt-lib/process-two-way-stream:output solver))
-  (let ((status (uiop:wait-process (cl-smt-lib/process-two-way-stream:process solver))))
-    (unless (zerop status) (error "SMT solver failed with exit status ~S" status)))
-  (prog1
-      (loop :for form = (cl-smt-lib:read-from-smt solver t nil :eof)
-            :while (cl:not (equal :eof form))
-            :collect form)
-    ;; Ensure the process is terminated.
-    (uiop:terminate-process (cl-smt-lib/process-two-way-stream:process solver))))
+(defparameter *cvc5* (make-instance 'solver
+                                    :program "cvc5"
+                                    :arguments (list "--lang" "smt2"
+                                                     "--produce-models"
+                                                     "--incremental"
+                                                     "--tlimit-per" "10000"
+                                                     )))
 
 (defun declare-constants (solver formula)
   "Declares all constants in the given formula."
