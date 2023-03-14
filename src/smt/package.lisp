@@ -41,7 +41,7 @@
 
   ;; Solvers
   (:export #:*solver* #:with-solver #:with-solver* #:with-lazy-solver
-           #:*cvc5*
+           #:solver #:*cvc5* #:arguments
            #:solve)
 
   ;; Traversals

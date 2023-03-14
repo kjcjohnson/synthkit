@@ -16,10 +16,11 @@ optionally a counter-example (if :INVALID) as the second value."))
   ()
   (:documentation "Signaled when a verifier gets an inconclusive result"))
 
-(defun check-program (semgus-problem program &optional specification)
+(defun check-program (semgus-problem program &key specification (on-unknown :error))
   "Checks if PROGRAM satisfies the specification in SEMGUS-PROBLEM. Returns T if PROGRAM
 satisfies the specification in SEMGUS-PROBLEM, NIL otherwise. If PROGRAM is unable to
 be verified, signals an error of type UNKNOWN-VERIFIER-RESULT."
+  (declare (type (member :error :valid :invalid)))
   (let ((verifier (verifier-for-specification (or specification
                                                   (specification semgus-problem))
                                               semgus-problem
@@ -28,4 +29,7 @@ be verified, signals an error of type UNKNOWN-VERIFIER-RESULT."
                            semgus-problem program :produce-cex nil)
       (:valid t)
       (:invalid nil)
-      (:unknown (error 'unknown-verifier-result)))))
+      (:unknown (ecase on-unknown
+                  (:error (error 'unknown-verifier-result))
+                  (:valid :valid)
+                  (:invalid :invalid))))))
