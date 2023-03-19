@@ -1,43 +1,44 @@
 (in-package #:com.kjcjohnson.synthkit.vsa)
-(kl/oo:import-classes-from #:kl/c)
 
-;;;
-;;; A trivial enumerator for single programs
-;;;
-(kl/oo:define-encapsulated-class leaf-program-enumerator :extends kl/c::&enumerator
-  (private field _started)
-  (private field _parent)
+(defclass leaf-program-node-enumerator (program-node-enumerator)
+  ((started :accessor %started :initarg :started)
+   (program :accessor %program :initarg :program))
+  (:default-initargs :started nil)
+  (:documentation "Singleton enumerator for leaf program nodes"))
 
-  (public constructor (parent)
-          (setf _started nil)
-          (setf _parent parent))
+(defun leaf-program-node-reset (e)
+  (setf (%started e) nil))
 
-  (public property current :get (kl/oo:property-invoke _parent :program))
+(defun leaf-program-node-move-next (e)
+  (not (shiftf (%started e) t)))
 
-  (public move-next ()
-          (if _started
-              nil
-              (setf _started t)))
-
-  (public reset ()
-          (setf _started nil)))
+(defun leaf-program-node-current (e)
+  (%program e))
 
 ;;;
 ;;; A program node representing a single concrete program
 ;;;
-(kl/oo:define-encapsulated-class leaf-program-node :extends program-node
-  (public program-count () 1)
-  
-  ;; The program represented by this leaf
-  (private field _program)
+(defclass leaf-program-node (program-node)
+  ((program :reader program
+            :initarg :program
+            :type ast:program-node
+            :documentation "The concrete program associated with this node"))
+  (:documentation "A program node holding a single, concrete program"))
 
-  ;; Gets the program from this node
-  (public property program :get _program :set (error "Immutable"))
+(defun is-leaf-program-node? (node)
+  "Checks if NODE is a leaf program node."
+  (typep node 'leaf-program-node))
 
-  ;; Creates a new leaf program node for the given program
-  (public constructor (program)
-          (setf _program program))
+(defmethod program-count ((node leaf-program-node))
+  "Get the number of programs rooted at NODE. As this is a leaf node, always 1."
+  (declare (ignore node))
+  1)
 
-  ;; Gets an enumerator over all programs
-  (public get-enumerator ()
-          (leaf-program-enumerator:new this)))
+(defmethod enumerator ((node leaf-program-node))
+  "Get an enumerator for a singleton program node"
+  (make-instance 'leaf-program-node-enumerator
+                 :reset-fn #'leaf-program-node-reset
+                 :move-next-fn #'leaf-program-node-move-next
+                 :current-fn #'leaf-program-node-current
+                 :program (program node)))
+

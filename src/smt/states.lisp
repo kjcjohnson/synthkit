@@ -150,10 +150,6 @@ flag is set and STATE contains datatype instances."
           do (return-from state= nil))
   t)
 
-(defmethod com.kjcjohnson.kale:equals ((s1 state) (s2 state))
-  (state= s1 s2))
-
-(defmethod com.kjcjohnson.kale:get-hash-code ((s state))
+(defmethod hash-code ((s state))
   "Computes a hash code for the state S."
   (sxhash (mapping s)))
-

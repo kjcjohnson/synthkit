@@ -1,20 +1,24 @@
 (in-package #:com.kjcjohnson.synthkit.vsa)
-(kl/oo:import-classes-from #:kl/c)
-
-;;;
-;;; Empty enumerator
-;;;
-(kl/oo:define-encapsulated-class empty-program-enumerator :extends kl/c::&enumerator
-  (public constructor ())
-  (public property current :get nil :set (error "I"))
-  (public move-next () nil)
-  (public reset ()))
 
 ;;;
 ;;; Empty program node
 ;;;
-(kl/oo:define-encapsulated-class empty-program-node :extends program-node
-  (public constructor ())
-  (public program-count () 0)
-  (public get-enumerator ()
-          (empty-program-enumerator:new)))
+(defclass empty-program-node (program-node)
+  ()
+  (:documentation "A program node holding no children"))
+
+(defun is-empty-program-node? (node)
+  "Checks if NODE is an empty program node"
+  (typep node 'empty-program-node))
+
+(defmethod program-count ((node empty-program-node))
+  "Get the number of programs rooted at this node. Since this node is empty, always 0."
+  (declare (ignore node))
+  0)
+
+(defmethod enumerator ((node empty-program-node))
+  "Get an enumerator that has no elements."
+  (make-instance 'program-node-enumerator
+                 :reset-fn (constantly nil)
+                 :move-next-fn (constantly nil)
+                 :current-fn (constantly nil)))

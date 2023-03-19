@@ -1,6 +1,4 @@
 (in-package #:com.kjcjohnson.synthkit.vsa)
-(kl/oo:import-classes-from #:kl/c)
-(kl/oo:import-classes-from #:com.kjcjohnson.synthkit.vsa)
 
 (defun ensure-list (thing)
   "Ensures that the thing is a list - if not, wraps it in a one-element list"
@@ -14,11 +12,11 @@
   (let ((count (length programs)))
     (cond
       ((zerop count)
-       (empty-program-node:new))
+       (make-instance 'empty-program-node))
       ((= 1 count)
        (first programs))
       (t
-       (union-program-node:new programs)))))
+       (make-instance 'union-program-node :programs programs)))))
 
 (defun cross-inputs-and-descriptors (inputs descriptors)
   "Creates a list of (input . descriptor) pairs"
@@ -30,13 +28,13 @@
            (loop for input in inputs
                  do (push (cons input descriptor) results))
         finally (return results)))
-  
+
 (defun filter (program-node inputs outputs semantics descriptors &key (test #'equal))
   "Filters a program set to only programs that pass the given examples."
   (setf inputs (cross-inputs-and-descriptors inputs descriptors))
   
   (let (programs)
-    (kl:foreach (candidate in program-node)
+    (do-programs (candidate program-node)
       (when (every #'(lambda (input output)
                        (funcall test (ast:execute-program semantics
                                                           (cdr input)
@@ -44,16 +42,16 @@
                                                           (car input))
                                 output))
                    inputs outputs)
-        (push (leaf-program-node:new candidate) programs)))
+        (push (make-instance 'leaf-program-node :program candidate) programs)))
     (create-most-reasonable-program-node-for-list programs)))
 
 (defun prune (program-enumerable inputs semantics descriptors &key (test #'equal))
   "Prunes programs based on observational equivalence."
   ;; Compute observational equivalence
-  (let ((distinct (dictionary:new :test test))
+  (let ((distinct (make-hash-table :test test))
         (input-count 0))
-    (kl:foreach (child in (ensure-list program-enumerable))
-      (kl:foreach (candidate in child)
+    (dolist (child (ensure-list program-enumerable))
+      (do-programs (candidate child)
         (incf input-count)
         (let ((outputs (map 'list #'(lambda (descriptor input)
                                       (unless
@@ -65,25 +63,22 @@
                                                 :test #'eql)
                                         (return-from prune
                                           (if (listp program-enumerable)
-                                              (union-program-node:new
-                                               program-enumerable)
+                                              (make-instance
+                                               'union-program-node
+                                               :programs program-enumerable)
                                               program-enumerable)))
                                       (ast:execute-program semantics
                                                            descriptor
                                                            candidate
                                                            input))
                             descriptors inputs)))
-          (if (not (&dictionary:contains-key distinct outputs))
-              (&dictionary:add distinct outputs candidate)
+          (if (not (nth-value 1 (gethash outputs distinct)))
+              (setf (gethash outputs distinct) candidate)
               (when
                   (< (ast:program-size candidate)
-                     (ast:program-size (&dictionary:try-get-value
-                                        distinct
-                                        outputs)))
-                (&dictionary:add distinct outputs candidate))))))
-    '(format t "~&;PRUNE IN: ~s OUT: ~s~%" input-count (length (&dictionary:value-list distinct)))
+                     (ast:program-size (gethash outputs distinct)))
+                (setf (gethash outputs distinct) candidate))))))
+    '(format t "~&;PRUNE IN: ~s OUT: ~s~%" input-count (hash-table-count distinct))
     (create-most-reasonable-program-node-for-list
-     (map 'list
-          #'(lambda (p)
-              (leaf-program-node:new p))
-          (&dictionary:value-list distinct)))))
+     (loop for p being the hash-values in distinct
+           collecting (make-instance 'leaf-program-node :program p)))))

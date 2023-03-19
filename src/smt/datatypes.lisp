@@ -123,16 +123,11 @@ converted to canonical state instances!")
             (name (constructor dti))
             (children dti))))
 
-(defmethod com.kjcjohnson.kale:equals
-    ((d1 datatype-instance) (d2 datatype-instance))
-  (warn "Computing datatype equality")
-  (datatype= d1 d2))
-
-(defmethod com.kjcjohnson.kale:get-hash-code ((dti datatype-instance))
+(defmethod hash-code ((dti datatype-instance))
   "Computes a hash code for DTI."
   (warn "Computing datatype hash code")
   (logxor (sxhash (datatype dti))
           (sxhash (constructor dti))
           (reduce #'logxor
                   (loop for child in (children dti)
-                        collecting (com.kjcjohnson.kale:get-hash-code child)))))
+                        collecting (hash-code child)))))

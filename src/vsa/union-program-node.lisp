@@ -1,71 +1,78 @@
 (in-package #:com.kjcjohnson.synthkit.vsa)
-(kl/oo:import-classes-from #:kl/c)
-(kl/oo:import-classes-from #:com.kjcjohnson.synthkit.vsa)
 
 ;;;
 ;;; Union program node enumerator
 ;;;
-(kl/oo:define-encapsulated-class union-program-enumerator :extends kl/c::&enumerator
-  (private field _parent)
-  (private field _index)
-  (private field _enumerator)
-  (private field _program-list)
-  (private field _next-pointer)
+(defclass union-program-node-enumerator (program-node-enumerator)
+  ((child-enumerator :accessor %child-enumerator
+                     :initarg :child-enumerator
+                     :type program-node-enumerator
+                     :documentation "Enumerator for the current child")
+   (program-list :accessor %program-list
+                 :initarg :program-list)
+   (next-pointer :accessor %next-pointer
+                 :initarg :next-pointer)
+   (index :accessor %index
+          :initarg :index))
+  (:default-initargs :index -1 :child-enumerator nil))
 
-  (public constructor (parent program-list)
-          (setf _parent parent)
-          (setf _program-list program-list)
-          (reset))
+(defun union-program-node-reset (e)
+  (setf (%next-pointer e) (%program-list e))
+  (setf (%index e) -1))
 
-  (public property current :get (&enumerator:current _enumerator) :set (error "I"))
+(defun union-program-node-current (e)
+  (current (%child-enumerator e)))
 
-  (public reset ()
-          (setf _next-pointer (cons :sentinel _program-list))
-          (setf _index -1)
-          (setf _enumerator nil))
+(defun union-program-node-move-next (e)
+  (flet ((advance-children ()
+           (incf (%index e))
+           (let ((next-node (pop (%next-pointer e))))
+             (if (null next-node)
+                 nil
+                 (progn
+                   (setf (%child-enumerator e) (enumerator next-node))
+                   (union-program-node-move-next e))))))
 
-  (public move-next ()
-          (if (or (= _index -1)
-                  (not (&enumerator:move-next _enumerator)))
-              (progn
-                (incf _index)
-                (setf _next-pointer (cdr _next-pointer))
-                (let ((next-node
-                        ;; (kl/oo:method-invoke _parent :nth-program _index)))
-                        (car _next-pointer)))
-                  (if (null next-node)
-                      nil
-                      (progn
-                        (setf _enumerator (&enumerable:get-enumerator next-node))
-                        (move-next)))))
-              t)))
+  (cond
+    ;; Initial state
+    ((= -1 (%index e))
+     (advance-children))
+    ;; Are we still enumerating over a child?
+    ((move-next (%child-enumerator e))
+     t)
+    ;; Otherwise, advance
+    (t
+     (advance-children)))))
 
 ;;;
 ;;; A program node representing a union of programs
 ;;;
-(kl/oo:define-encapsulated-class union-program-node :extends program-node
-  (public program-count ()
-          (reduce #'+
-                  (map 'list #'(lambda (p)
-                                 (program-node:program-count p))
-                       _programs)))
+(defclass union-program-node (program-node)
+  ((programs :reader programs
+             :initarg :programs
+             :type list
+             :documentation "Set of program nodes being unioned"))
+  (:documentation "A program node that unions a set of program nodes"))
 
-  ;; Set of program nodes wrapped in this node
-  (private field _programs)
+(defmethod initialize-instance :after ((node union-program-node) &key)
+  "Filters out empty programs from this union"
+  (setf (slot-value node 'programs)
+        (remove-if #'is-empty-program-node? (programs node))))
 
-  ;; Gets the program nodes being unioned
-  (public property programs :get _programs :set (error "Immutable"))
+(defun is-union-program-node? (node)
+  "Checks if NODE is a union program node"
+  (typep node 'union-program-node))
 
-  ;; Gets the nth program node in the union
-  (public nth-program (n)
-          (nth n _programs))
+(defmethod program-count ((node union-program-node))
+  "Get the number of programs rooted at this node. Sum of child nodes for unions."
+  (reduce #'+ (programs node)
+          :key #'program-count))
 
-  ;; Creates a new union program node
-  (public constructor (programs)
-          (setf _programs (remove-if #'(lambda (p)
-                                         (typep p 'empty-program-node))
-                                     programs)))
-
-  ;; Enumerator over all programs in this node
-  (public get-enumerator ()
-          (union-program-enumerator:new this _programs)))
+(defmethod enumerator ((node union-program-node))
+  "Gets an enumerator over the union of this node's children"
+  (make-instance 'union-program-node-enumerator
+                 :program-list (programs node)
+                 :next-pointer (programs node)
+                 :reset-fn #'union-program-node-reset
+                 :move-next-fn #'union-program-node-move-next
+                 :current-fn #'union-program-node-current))

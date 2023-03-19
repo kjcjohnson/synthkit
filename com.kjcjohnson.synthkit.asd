@@ -3,10 +3,18 @@
 ;;;
 (asdf:defsystem "com.kjcjohnson.synthkit"
   :description "Program synthesis toolkit for Common Lisp"
-  :version "0.0.1"
+  :version (:read-file-form "version.sexpr")
   :author "Keith Johnson <keith.johnson@wisc.edu>"
-  :license "TBD"
+  :license "MIT"
   :in-order-to ((test-op (test-op "com.kjcjohnson.synthkit/test")))
+  :depends-on ("com.kjcjohnson.synthkit/impl"
+               "com.kjcjohnson.synthkit/vsa"))
+
+(asdf:defsystem "com.kjcjohnson.synthkit/impl"
+  :description "Implementation system of synthkit - to be split up"
+  :version (:read-file-form "version.sexpr")
+  :author "Keith Johnson <keith.johnson@wisc.edu>"
+  :license "MIT"
   :depends-on ("cl-smt-lib"
                "closer-mop"
                "str"
@@ -14,8 +22,7 @@
                "trivial-garbage"
                "trivia"
                "graph"
-               "alexandria"
-               "com.kjcjohnson.kale")
+               "alexandria")
   :pathname "src"
   :components ((:file "package")
                (:file "utilities" :depends-on ("package"))
@@ -23,6 +30,7 @@
                 :depends-on ()
                 :serial t
                 :components ((:file "package")
+                             (:file "protocol-hash-code")
                              (:file "solver")
                              (:file "smt")
                              (:file "theory-dispatch")
@@ -104,29 +112,33 @@
                                            (:file "glue")
                                            (:file "concretizing")
                                            (:file "operational")))
-                             (:file "cegis")))
-               (:module "vsa"
-                :depends-on ("ast" "grammar")
-                :components ((:file "package")
-                             (:file "program-node")
-                             (:file "empty-program-node"
-                              :depends-on ("program-node"))
-                             (:file "cross-program-node"
-                              :depends-on ("program-node"))
-                             (:file "union-program-node"
-                              :depends-on ("program-node"))
-                             (:file "leaf-program-node"
-                              :depends-on ("program-node"))
-                             (:file "utilities"
-                              :depends-on ("program-node"
-                                           "union-program-node"
-                                           "union-program-node"))))))
+                             (:file "cegis")))))
+
+(asdf:defsystem "com.kjcjohnson.synthkit/vsa"
+  :description "Version space algebra"
+  :version (:read-file-form "version.sexpr")
+  :author "Keith Johnson <keith.johnson@wisc.edu>"
+  :license "MIT"
+  :pathname "src/vsa"
+  :depends-on ("com.kjcjohnson.synthkit/impl")
+  :serial t
+  :components ((:file "package")
+               (:file "program-node")
+               (:file "enumerator")
+               (:file "empty-program-node")
+               (:file "cross-program-node")
+               (:file "union-program-node")
+               (:file "leaf-program-node")
+               (:file "utilities"
+                :depends-on ("program-node"
+                             "union-program-node"
+                             "union-program-node"))))
 
 (asdf:defsystem "com.kjcjohnson.synthkit/test"
   :description "Tests for synthkit"
-  :version "0.0.1"
+  :version (:read-file-form "version.sexpr")
   :author "Keith Johnson <keith.johnson@wisc.edu>"
-  :license "TBD"
+  :license "MIT"
   :perform (test-op (op c)
                     (symbol-call :fiveam :run! :synthkit-tests))
   :depends-on ("fiveam"
@@ -142,4 +154,11 @@
                               :serial t
                               :components ((:file "main")
                                            (:file "strings")
-                                           (:file "regex")))))))
+                                           (:file "regex")))))
+               (:module "vsa"
+                :serial t
+                :components ((:file "main")
+                             (:file "empty-program-node")
+                             (:file "leaf-program-node")
+                             (:file "union-program-node")
+                             (:file "cross-program-node")))))
