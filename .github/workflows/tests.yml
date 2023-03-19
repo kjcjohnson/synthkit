@@ -1,0 +1,52 @@
+# Run unit tests
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+      branches: [ "main" ]
+  workflow_dispatch:
+
+
+jobs:
+  test:
+    name: ${{ matrix.lisp }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # Each combination of lisp and os are tested
+      matrix:                 # Support more later
+        lisp: [sbcl-bin]      # [sbcl-bin, ccl-bin]
+        os: [ubuntu-latest]   # [windows-latest, ubuntu-latest, macOS-latest]
+
+    steps:
+      # This action checks out our code in the working directory
+      - uses: actions/checkout@v3
+      
+      # setup-lisp requires an env variable to be set, not matrix.lisp
+      - name: Set LISP env var
+        run: echo "LISP=${{ matrix.lisp }}" >> $GITHUB_ENV
+        
+      # This action installs roswell and a few other utilities such as qlot
+      - uses: 40ants/setup-lisp@v2
+
+      # These steps run our tests
+      # Windows needs to be run with the msys2 shell due to how roswell is installed
+      - name: Run tests (Non-Windows)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          # Install the roswell script for the test library
+          ros install neil-lindquist/ci-utils # for run-fiveam
+          
+          # Run the tests
+          run-fiveam -e t -l com.kjcjohnson.synthkit/test :synthkit-tests
+      - name: Run tests (Windows)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          # Install the roswell script for the test library
+          ros install neil-lindquist/ci-utils # for run-fiveam
+          
+          # Run the tests
+          run-fiveam -e t -l com.kjcjohnson.synthkit/test :synthkit-tests
