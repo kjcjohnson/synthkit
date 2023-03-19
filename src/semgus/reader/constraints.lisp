@@ -85,6 +85,16 @@
         (t
         nil))))
 
+(defun %derive-relational-specification-for-constraint (constraint context)
+  "Gets the most specific relational specification possible for CONSTRAINT."
+  (a:if-let (s (match-for-universal-constraint constraint context))
+    s
+    (a:if-let (s (match-for-existential-constraint constraint context))
+      s
+      (make-instance 'spec:relational-specification
+                     :expression constraint
+                     :descriptors (%extract-descriptors constraint context)))))
+
 (defun %extract-descriptors (expression context)
   "Extracts all descriptors used in an SMT expression."
   (loop for root-rel in (semgus:root-relations context)
@@ -104,9 +114,7 @@
                        :input-state (smt:evaluate-state (getf pbe :inputs))
                        :output-state (smt:evaluate-state (getf pbe :output))
                        :descriptor (getf pbe :descriptor))
-        (make-instance 'spec:relational-specification
-                       :expression constraint
-                       :descriptors (%extract-descriptors constraint context)))))
+        (%derive-relational-specification-for-constraint constraint context))))
   
 (defmethod semgus:derive-specification (context)
   "Derives a specification from the current semgus CONTEXT"

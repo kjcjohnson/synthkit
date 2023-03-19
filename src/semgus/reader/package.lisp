@@ -9,6 +9,7 @@
                     (#:chc #:com.kjcjohnson.synthkit.semgus.chc)
                     (#:g #:com.kjcjohnson.synthkit.grammar)
                     (#:u #:com.kjcjohnson.synthkit.utilities)
+                    (#:? #:trivia)
                     (#:a #:alexandria)))
 
 ;;;

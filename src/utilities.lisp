@@ -37,3 +37,7 @@
   (if (listp sequence)
       sequence
       (map 'list #'identity sequence)))
+
+(?:defpattern stash (var pattern)
+  "Saves form being matched by PATTERN into VAR."
+  `(?:<> ,pattern ,var ,var))

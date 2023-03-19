@@ -57,6 +57,7 @@
                (:file "evaluator")
                (:file "predicates")
                (:file "states")
+               (:file "trivia-extensions")
                (:file "traversal")))
 
 (asdf:defsystem "com.kjcjohnson.synthkit/grammar"
@@ -144,6 +145,7 @@
                              (:file "events-synthesis")
                              (:file "events-terms")
                              (:file "events-utility")
+                             (:file "relational-constraint-matchers")
                              (:file "constraints")
                              (:file "semantics")
                              (:file "reader")))

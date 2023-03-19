@@ -47,7 +47,7 @@
            #:constraint)
 
   ;; Context
-  (:export #:lookup-head #:add-head)
+  (:export #:lookup-head #:add-head #:lookup-root)
 
   ;; Reader things
   (:export #:*semgus-context*

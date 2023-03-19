@@ -16,7 +16,6 @@
                 :documentation "Descriptors used in this specification"))
   (:documentation "A specification from an SMT expression"))
 
-;; TODO: do inputs/outputs need sorts?
 (defclass universal-specification (relational-specification)
   ((input-symbols :reader input-symbols
                   :initarg :input-symbols
@@ -26,6 +25,18 @@
                    :initarg :output-symbols
                    :type (vector symbol)
                    :documentation "Vector of output symbols used in this formula")
+   (input-sorts :reader input-sorts
+                :initarg :input-sorts
+                :type (vector symbol)
+                :documentation "Vector of sorts used by input variables")
+   (output-sorts :reader output-sorts
+                 :initarg :output-sorts
+                 :type (vector symbol)
+                 :documentation "Vector of sorts used by output variables")
+   (relation :reader relation
+             :initarg :relation
+             :type smt::expression
+             :documentation "Semantic relation application")
    (constraint :reader constraint
                :initarg :constraint
                :type smt::expression
@@ -36,7 +47,6 @@
   "Checks if SPEC is a universal specification"
   (typep spec 'universal-specification))
 
-;; TODO: do inputs/outputs need sorts?
 (defclass existential-specification (relational-specification)
   ((input-symbols :reader input-symbols
                   :initarg :input-symbols
@@ -46,6 +56,18 @@
                    :initarg :output-symbols
                    :type (vector symbol)
                    :documentation "Vector of output symbols used in this formula")
+   (input-sorts :reader input-sorts
+                :initarg :input-sorts
+                :type (vector symbol)
+                :documentation "Vector of sorts used by input variables")
+   (output-sorts :reader output-sorts
+                 :initarg :output-sorts
+                 :type (vector symbol)
+                 :documentation "Vector of sorts used by output variables")
+   (relation :reader relation
+             :initarg :relation
+             :type smt::expression
+             :documentation "Semantic relation application")
    (constraint :reader constraint
                :initarg :constraint
                :type smt::expression

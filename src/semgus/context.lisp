@@ -30,10 +30,14 @@
 
 (defun lookup-head (name &optional (context *semgus-context*))
   "Looks up a CHC head with the given name"
-  (find name (head-relations context) :key #'chc:name)) ; TODO: change to CHC name
+  (find name (head-relations context) :key #'chc:name))
 
 (defun add-head (head &optional (context *semgus-context*))
   "Adds a CHC head to the context"
   (when (lookup-head (chc:name head) context)
     (error "Attempt to add a duplicate head with the name: ~a" (chc:name head)))
   (push head (head-relations context)))
+
+(defun lookup-root (name &optional (context *semgus-context*))
+  "Looks up a CHC root with the given name"
+  (find name (root-relations context) :key #'chc:name))

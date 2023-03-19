@@ -3,7 +3,8 @@
 ;;;;
 (defpackage #:com.kjcjohnson.synthkit.smt
   (:use #:cl)
-  (:local-nicknames (#:a #:alexandria))
+  (:local-nicknames (#:a #:alexandria)
+                    (#:? #:trivia))
   (:shadow #:sort #:variable)
   (:export #:name #:children #:to-smt #:definition #:sort #:child-sorts #:arity
            #:*int-sort* #:*bool-sort* #:*string-sort* #:variable
@@ -45,4 +46,7 @@
            #:solve)
 
   ;; Traversals
-  (:export #:map-expression #:update-expression))
+  (:export #:map-expression #:update-expression)
+
+  ;; Trivia patterns
+  (:export #:application #:fn #:quantifier #:forall #:exists))
