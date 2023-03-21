@@ -22,7 +22,9 @@ each of the component specifications."))
 (defgeneric leaf-specification-types (spec)
   (:documentation "Returns a list of the leaf specifications in SPEC")
   (:method ((spec compound-specification))
-    (reduce #'union (map 'list #'leaf-specification-types (components spec))))
+    (reduce #'union
+            (map 'list #'leaf-specification-types (components spec))
+            :initial-value nil))
   (:method ((spec specification))
     (list (class-name (class-of spec)))))
 
