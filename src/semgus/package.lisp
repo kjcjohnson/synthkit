@@ -68,6 +68,11 @@
            #:check-program
            #:unknown-verifier-result)
 
+  ;; CEGIS
+  (:export #:cegis-supported-for-specification?
+           #:cegis-supported?
+           #:cegis-wrapper)
+
   ;; Reader protocol
   (:export #:process-chcs-for-relational-semantics
            #:read-problem-from-stream
