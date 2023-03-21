@@ -14,6 +14,10 @@
                                               :components nil))
   (:documentation "A specification for use during CEGIS"))
 
+(defun is-cegis? (spec)
+  "Checks if SPEC is a CEGIS specification"
+  (typep spec 'cegis-specification))
+
 (defun convert-to-cegis (specification)
   "Converts SPECIFICATION into a CEGIS specification."
   (if (subtypep (type-of specification) 'cegis-specification)
@@ -35,3 +39,6 @@
   "Clears all examples from SPECIFICATION"
   (setf (cegis-examples specification)
         (make-instance 'intersection-specification :components nil)))
+
+(defgeneric cegis-supported-for-specification? (specification context)
+  (:documentation "Checks if CEGIS is supported for SPECIFICATION"))

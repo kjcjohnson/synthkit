@@ -49,6 +49,8 @@
            #:examples
            #:leaves
 
+           #:is-cegis?
            #:convert-to-cegis
            #:add-example
-           #:clear-examples))
+           #:clear-examples
+           #:cegis-supported-for-specification?))

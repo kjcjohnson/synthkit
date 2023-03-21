@@ -73,23 +73,26 @@
 ;;;
 ;;;  ============= NEW ============
 ;;;
-(defgeneric cegis-supported-for-specification? (specification semgus-problem)
-  (:documentation "Checks if CEGIS is supported for SPECIFICATION")
-  (:method (spec problem)
-    (declare (ignore spec problem))
-    nil)
-  (:method ((spec spec:universal-specification) problem)
-    (declare (ignore problem))
-    t)
-  (:method ((spec spec:existential-specification) problem)
-    (declare (ignore problem))
-    t)
-  (:method ((spec spec:cegis-specification) problem)
-    (cegis-supported-for-specification? (spec:relational spec) problem)))
+(defmethod spec:cegis-supported-for-specification? (spec context)
+  (declare (ignore spec context))
+  nil)
+(defmethod spec:cegis-supported-for-specification?
+    ((spec spec:universal-specification) context)
+  (declare (ignore context))
+  t)
+(defmethod spec:cegis-supported-for-specification?
+    ((spec spec:existential-specification) context)
+  (declare (ignore context))
+  t)
+(defmethod spec:cegis-supported-for-specification?
+    ((spec spec:cegis-specification) context)
+  (spec:cegis-supported-for-specification?
+   (spec:relational-specification spec) context))
 
 (defun cegis-supported? (semgus-problem)
   "Checks if SEMGUS-PROBLEM is eligible for CEGIS"
-  (cegis-supported-for-specification? (specification semgus-problem) semgus-problem))
+  (spec:cegis-supported-for-specification? (specification semgus-problem)
+                                           (context semgus-problem)))
 
 (defun cegis-wrapper (semgus-problem synth-fun)
   "Does CEGIS. SYNTH-FUN should be a function taking a semgus problem as the only arg."
@@ -153,3 +156,15 @@ output --> ~a
                   (first (spec:descriptors spec))
                   (smt:make-state input-vars)
                   (smt:make-state output-vars)))))))
+
+(defmacro maybe-with-cegis ((problem &optional (problem-var problem)) &body body)
+  "Runs BODY, maybe with CEGIS if PROBLEM has a CEGIS specification. PROBLEM is
+rebound inside of BODY to a new problem that does not have a CEGIS specification."
+  (assert (symbolp problem-var))
+  (a:with-gensyms (prob)
+    `(let ((,prob ,problem))
+       (flet ((body-fn (,problem-var) ,@body))
+         (if (spec:is-cegis? (specification ,prob))
+             (cegis-wrapper ,prob #'body-fn)
+             (funcall #'body-fn ,prob))))))
+
