@@ -69,3 +69,85 @@
   "Finds a counter-example for the given candidate program."
   (let ((cegis-spec (the cegis-specification (specification problem))))
     (find-counter-example-for-specification program problem cegis-spec (formula cegis-spec))))
+
+;;;
+;;;  ============= NEW ============
+;;;
+(defgeneric cegis-supported-for-specification? (specification semgus-problem)
+  (:documentation "Checks if CEGIS is supported for SPECIFICATION")
+  (:method (spec problem)
+    (declare (ignore spec problem))
+    nil)
+  (:method ((spec spec:universal-specification) problem)
+    (declare (ignore problem))
+    t)
+  (:method ((spec spec:existential-specification) problem)
+    (declare (ignore problem))
+    t))
+
+(defun cegis-supported? (semgus-problem)
+  "Checks if SEMGUS-PROBLEM is eligible for CEGIS"
+  (cegis-supported-for-specification? (specification semgus-problem) semgus-problem))
+
+(defun cegis-wrapper (semgus-problem synth-fun)
+  "Does CEGIS. SYNTH-FUN should be a function taking a semgus problem as the only arg."
+  (assert (cegis-supported? semgus-problem))
+
+  (let ((spec (specification semgus-problem)))
+    ;; TODO: maybe we should enumerate the smallest program first, instead
+    ;;       of passing an empty intersection-specification and save a step?
+    (loop with io-spec = (make-instance 'spec:intersection-specification
+                                        :components nil)
+          with verifier = (verifier-for-specification spec semgus-problem
+                                                      :produce-cex t)
+          for new-problem = (replace-specification semgus-problem io-spec)
+          for candidate = (funcall synth-fun new-problem)
+          when (listp candidate) do
+            (setf candidate (first candidate))
+          end
+          do (multiple-value-bind (result cex)
+                 (verify-program verifier spec semgus-problem candidate :produce-cex t)
+               (when (eql result :valid)
+                 (return-from cegis-wrapper candidate))
+               (when (eql result :unknown)
+                 (error "Unknown CEGIS verification!"))
+               ;; Convert to state
+               (let ((rootrel (lookup-root (first (spec:descriptors spec))
+                                           (context semgus-problem)))
+                     (input-vars)
+                     (output-vars))
+                 (loop for formal across (chc:formals rootrel)
+                       for role across (chc:roles rootrel)
+                       for actual in (smt:children (spec:relation spec))
+                       when (eql role :input) do
+                         (push (cons formal (cdr (assoc (smt:name actual)
+                                                        cex
+                                                        :key #'smt:name)))
+                               input-vars)
+                       end
+                       when (eql role :output) do
+                         (push (cons formal (cdr (assoc (smt:name actual)
+                                                        cex
+                                                        :key #'smt:name)))
+                               output-vars)
+                       end)
+                 (flet ((pp-varlist (varlist)
+                          (format nil "[~{~a~^, ~}]"
+                                  (map 'list
+                                       #'(lambda (x)
+                                           (format nil "~a: ~a"
+                                                   (smt:identifier-string (car x))
+                                                   (cdr x)))
+                                       varlist))))
+                   (format *trace-output*
+                           "~&~%------------- CEGIS -------------~@
+                                input ---> ~a~@
+                                output --> ~a~@
+                                ---------------------------------~%~%"
+                           (pp-varlist input-vars)
+                           (pp-varlist output-vars)))
+                 (push (make-instance 'spec:io-specification
+                                      :input-state (smt:make-state input-vars)
+                                      :output-state (smt:make-state output-vars)
+                                      :descriptor (first (spec:descriptors spec)))
+                       (spec:components io-spec)))))))

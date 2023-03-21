@@ -58,11 +58,12 @@
 
 (defmacro with-scope ((solver) &body body)
   "Executes BODY in a new SMT scope."
-  `(progn
-     (push-scope ,solver)
-     (unwind-protect
-          (progn ,@body)
-       (pop-scope ,solver))))
+  (a:with-gensyms (solver-var)
+    `(let ((,solver-var ,solver))
+       (push-scope ,solver-var)
+       (unwind-protect
+            (progn ,@body)
+         (pop-scope ,solver-var)))))
 
 (defun add (solver &rest assertions)
   (assert-smt-solver-enabled)
@@ -84,15 +85,28 @@
 
 (defun get-model (solver)
   (assert-smt-solver-enabled)
-  (cl-smt-lib:write-to-smt solver `((,(intern "get-model"))))
-  (let ((output (cl-smt-lib:read-from-smt solver t)))
-    (assert (string= "model" (symbol-name (first output))))
-    (map 'list #'(lambda (dfn)
-                   (destructuring-bind (df-kw name args type value) dfn
-                     (declare (ignore args))
-                     (assert (string= "define-fun" (symbol-name df-kw)))
-                     (cons (variable (ensure-identifier (symbol-name name)) (make-instance 'sort :name (symbol-name type))) value)))
-         (rest output))))
+  (flet ((fixup-value (value)
+           "Fixes up a value. Rewrites negatives to negatives"
+           (?:match value
+             ((list - v)
+              (- v))
+             (v
+              v))))
+
+    (cl-smt-lib:write-to-smt solver `((,(intern "get-model"))))
+    (let ((output (cl-smt-lib:read-from-smt solver t)))
+      ;; CVC4 has the string "model", cvc5 does not
+      (when (symbolp (first output))
+        (assert (string= "model" (symbol-name (first output))))
+        (setf output (rest output)))
+      (map 'list #'(lambda (dfn)
+                     (destructuring-bind (df-kw name args type value) dfn
+                       (declare (ignore args))
+                       (assert (string= "define-fun" (symbol-name df-kw)))
+                       (cons (variable (ensure-identifier (symbol-name name))
+                                       (make-instance 'sort :name (symbol-name type)))
+                             (fixup-value value))))
+           output))))
 
 (defgeneric copy-node (node &key &allow-other-keys)
   (:documentation "Makes a shallow copy of an SMT node"))
@@ -217,7 +231,9 @@
 (defmethod to-smt ((constant constant))
   (intern (identifier-smt (name constant))))
 (defmethod to-smt ((integer integer))
-  integer)
+  (if (< integer 0)
+      `(- ,(- integer))
+      integer))
 (defmethod to-smt ((expression expression))
   (if (zerop (length (children expression)))
       (intern (identifier-smt (name expression)))
@@ -410,7 +426,7 @@
   "Compares two expressions."
   (make-instance 'expression
                  :name "="
-                 :sort *int-sort*
+                 :sort *bool-sort*
                  :arity 2
                  :children (list expr1 expr2)
                  :child-sorts (list (sort expr1) (sort expr2))))

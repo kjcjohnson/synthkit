@@ -23,6 +23,12 @@
            #:components
            #:input-state
            #:output-state
+           #:input-symbols
+           #:output-symbols
+           #:input-sorts
+           #:output-sorts
+           #:relation
+           #:constraint
            #:predicate)
   
   ;; Methods
