@@ -83,7 +83,9 @@
     t)
   (:method ((spec spec:existential-specification) problem)
     (declare (ignore problem))
-    t))
+    t)
+  (:method ((spec spec:cegis-specification) problem)
+    (cegis-supported-for-specification? (spec:relational spec) problem)))
 
 (defun cegis-supported? (semgus-problem)
   "Checks if SEMGUS-PROBLEM is eligible for CEGIS"
@@ -93,14 +95,14 @@
   "Does CEGIS. SYNTH-FUN should be a function taking a semgus problem as the only arg."
   (assert (cegis-supported? semgus-problem))
 
-  (let ((spec (specification semgus-problem)))
+  (let* ((cegis-spec (spec:convert-to-cegis (specification semgus-problem)))
+         (spec (spec:relational-specification cegis-spec)))
     ;; TODO: maybe we should enumerate the smallest program first, instead
     ;;       of passing an empty intersection-specification and save a step?
-    (loop with io-spec = (make-instance 'spec:intersection-specification
-                                        :components nil)
-          with verifier = (verifier-for-specification spec semgus-problem
+    (loop with verifier = (verifier-for-specification spec semgus-problem
                                                       :produce-cex t)
-          for new-problem = (replace-specification semgus-problem io-spec)
+          for new-problem = (replace-specification semgus-problem
+                                                   (spec:cegis-examples cegis-spec))
           for candidate = (funcall synth-fun new-problem)
           when (listp candidate) do
             (setf candidate (first candidate))
@@ -140,14 +142,14 @@
                                                    (cdr x)))
                                        varlist))))
                    (format *trace-output*
-                           "~&~%------------- CEGIS -------------~@
-                                input ---> ~a~@
-                                output --> ~a~@
-                                ---------------------------------~%~%"
+                           "~&~%------------- CEGIS -------------
+input ---> ~a
+output --> ~a
+---------------------------------~%~%"
                            (pp-varlist input-vars)
                            (pp-varlist output-vars)))
-                 (push (make-instance 'spec:io-specification
-                                      :input-state (smt:make-state input-vars)
-                                      :output-state (smt:make-state output-vars)
-                                      :descriptor (first (spec:descriptors spec)))
-                       (spec:components io-spec)))))))
+                 (spec:add-example
+                  cegis-spec
+                  (first (spec:descriptors spec))
+                  (smt:make-state input-vars)
+                  (smt:make-state output-vars)))))))

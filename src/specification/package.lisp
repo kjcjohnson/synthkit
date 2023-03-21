@@ -28,7 +28,9 @@
            #:input-sorts
            #:output-sorts
            #:relation
+           #:relational-specification
            #:constraint
+           #:cegis-examples
            #:predicate)
   
   ;; Methods
@@ -47,4 +49,6 @@
            #:examples
            #:leaves
 
-           #:convert-to-cegis))
+           #:convert-to-cegis
+           #:add-example
+           #:clear-examples))
