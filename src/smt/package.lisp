@@ -30,7 +30,7 @@
            #:datatype=
            #:is-datatype-instance?
 
-           #:state #:make-state #:copy-state #:get-value #:state=
+           #:state #:make-state #:copy-state #:get-value #:state= #:state-hash-code
            #:evaluate-state #:make-temp-state #:canonicalize-state
            #:get-first-value
 

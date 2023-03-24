@@ -150,6 +150,7 @@ flag is set and STATE contains datatype instances."
           do (return-from state= nil))
   t)
 
-(defmethod hash-code ((s state))
+(defun state-hash-code (s)
   "Computes a hash code for the state S."
+  (declare (type state s))
   (sxhash (mapping s)))
