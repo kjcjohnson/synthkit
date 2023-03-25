@@ -42,3 +42,8 @@ capture all bindings, or a list to capture each binding individually."
   "Matches against an existential quantifier. BINDINGS can either be a single variable
 to capture all bindings, or a list to capture each binding individually."
   `(quantifier :exists ,bindings ,body :context ,context))
+
+(?:defpattern var (name &key sort (context '*smt*))
+  "Matches against an variable."
+  (declare (ignore context))
+  `(class constant :name ,name :sort ,(if (null sort) '_ sort)))
