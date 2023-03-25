@@ -7,6 +7,11 @@
   ()
   (:documentation "A program node holding no children"))
 
+(let ((epn (make-instance 'empty-program-node)))
+  (defun make-empty-program-node ()
+    "Makes an empty program node. May or may not be shared."
+    epn))
+
 (defun is-empty-program-node? (node)
   "Checks if NODE is an empty program node"
   (typep node 'empty-program-node))

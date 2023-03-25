@@ -25,6 +25,11 @@
             :documentation "The concrete program associated with this node"))
   (:documentation "A program node holding a single, concrete program"))
 
+(defun make-leaf-program-node (program)
+  "Makes a leaf program node with PROGRAM. May or may not be shared."
+  (declare (type ast:program-node program))
+  (make-instance 'leaf-program-node :program program))
+
 (defun is-leaf-program-node? (node)
   "Checks if NODE is a leaf program node."
   (typep node 'leaf-program-node))
