@@ -49,4 +49,4 @@
   (:export #:map-expression #:update-expression)
 
   ;; Trivia patterns
-  (:export #:application #:fn #:quantifier #:forall #:exists))
+  (:export #:application #:fn #:quantifier #:forall #:exists #:var))
