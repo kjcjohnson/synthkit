@@ -101,6 +101,13 @@ flag is set and STATE contains datatype instances."
       (%print-state-alloc-stats))
     canonical-instance))
 
+(defun get-variables (state)
+  "Gets a list of all variables in STATE."
+  (let ((output))
+    (loop for (var . val) in (mapping state)
+          do (pushnew var output :test #'eql))
+    output))
+
 (defun get-value (state var)
   "Gets a value from the given state."
   (declare (type state state))
