@@ -68,4 +68,3 @@
 (defmethod print-program-node (n stream)
   "Prints a program node in the standard way, as just printing the operator."
   (print-program-operator (operator n) (children n) stream))
-

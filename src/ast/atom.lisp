@@ -48,3 +48,15 @@
 
 (defmethod print-object ((n program-atom) stream)
   (ast-node-print-object-helper n stream))
+
+(defun print-program (program stream)
+  "Prints a program in a human-interpretable format"
+  (declare (type program-atom program))
+  (let ((*printing-program-node* t))
+    (uiop:with-output (stream)
+      (print-program-node program stream))))
+
+(defmacro break-on-program (program string)
+  "Breaks if PROGRAM prints to STRING."
+  `(when (string= (print-program ,program nil) ,string)
+     (break)))

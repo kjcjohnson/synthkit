@@ -9,6 +9,8 @@
   (:export #:program-atom
            #:program-node
            #:program-hole
+           #:print-program
+           #:break-on-program
 
            #:semantics-descriptor-requests
            #:semantic-builder-function

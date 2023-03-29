@@ -29,19 +29,11 @@
                  do (push (cons input descriptor) results))
         finally (return results)))
 
-(defun filter (program-node inputs outputs semantics descriptors &key (test #'equal))
+(defun filter (program-node check-fn)
   "Filters a program set to only programs that pass the given examples."
-  (setf inputs (cross-inputs-and-descriptors inputs descriptors))
-  
   (let (programs)
     (do-programs (candidate program-node)
-      (when (every #'(lambda (input output)
-                       (funcall test (ast:execute-program semantics
-                                                          (cdr input)
-                                                          candidate
-                                                          (car input))
-                                output))
-                   inputs outputs)
+      (when (funcall check-fn candidate)
         (push (make-instance 'leaf-program-node :program candidate) programs)))
     (create-most-reasonable-program-node-for-list programs)))
 
@@ -78,7 +70,8 @@
                   (< (ast:program-size candidate)
                      (ast:program-size (gethash outputs distinct)))
                 (setf (gethash outputs distinct) candidate))))))
-    '(format t "~&;PRUNE IN: ~s OUT: ~s~%" input-count (hash-table-count distinct))
+    '(unless (zerop input-count)
+      (format t "~&;PRUNE IN: ~s OUT: ~s~%" input-count (hash-table-count distinct)))
     (create-most-reasonable-program-node-for-list
      (loop for p being the hash-values in distinct
            collecting (make-instance 'leaf-program-node :program p)))))

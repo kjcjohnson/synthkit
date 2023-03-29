@@ -101,14 +101,15 @@
   ;;; Short-circuit and yell if we attempt to execute a hole as a program
   (when (typep node 'program-hole)
     (error "Attempting to execute hole: ~a" node))
-  
+
   (dolist (calling-card (operational-semantics-for-production semantics
                                                               descriptor
                                                               (production node)))
     (multiple-value-bind (result valid)
         (funcall (build-semantics-from-calling-card semantics calling-card node)
                  input-state)
-      ;;(break)
+
       (when (or (not (null result)) valid)
         (return-from %execute-program (values result t)))))
-  (error "No applicable semantics: ~a" (g:name (operator node))))
+  (error "No applicable semantics: ~a [descriptor: ~a]"
+         (g:name (operator node)) descriptor))
