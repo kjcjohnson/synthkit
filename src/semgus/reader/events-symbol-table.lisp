@@ -12,13 +12,14 @@
   (make-instance 'chc:symbol-entry :name name :sort sort :index index))
 
 (defun com.kjcjohnson.synthkit.semgus.reader.user::symbol-table
-    (&key inputs outputs term auxiliary children)
+    (&key inputs outputs term auxiliary unclassified children)
   "A CHC's symbol table"
   (make-instance 'chc:symbol-table
                  :inputs (u:ensure-vector inputs)
                  :outputs (u:ensure-vector outputs)
                  :term term
                  :auxiliary (u:ensure-vector auxiliary)
+                 :unclassified (u:ensure-vector unclassified)
                  :children (u:ensure-vector children)))
 
 ;;;

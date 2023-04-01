@@ -42,6 +42,10 @@ in the associated signature: either the CHC head relation or the term constructo
               :initarg :auxiliary
               :type list
               :documentation "Symbols that are bound over the CHC body")
+   (unclassified :reader unclassified-symbols
+                 :initarg :unclassified
+                 :type (vector symbol-entry)
+                 :documentation "Symbols in the CHC head that aren't annotated")
    (children :reader child-symbols
              :initarg :children
              :type list
