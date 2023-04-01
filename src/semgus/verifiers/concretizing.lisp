@@ -12,7 +12,7 @@
       (smt:dump-commands solver body-defns)
 
       (smt:declare-constants solver constraint)
-      (smt:add solver (smt:$not constraint))
+      (smt:add-assertion solver (smt:$not constraint))
 
       (let ((q-res (smt:check-sat solver)))
         (cond
@@ -334,7 +334,7 @@ first value, and the concrete function name as the second value."
              (smt:with-solver* (solver smt:*cvc5*)
                (smt:with-scope (solver)
                  (smt:declare-constants solver to-query)
-                 (smt:add solver to-query)
+                 (smt:add-assertion solver to-query)
                  (let ((qres (smt:check-sat solver)))
                    (case qres
                      (:unknown :unknown)

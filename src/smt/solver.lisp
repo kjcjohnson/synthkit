@@ -95,7 +95,7 @@
     (let ((constants (reduce #'append (map 'list #'find-constants assertions))))
       (dolist (c constants)
         (cl-smt-lib:write-to-smt smt `((|declare-const| ,(intern (identifier-smt (name c))) ,(intern (name (sort c))))))))
-    (apply #'add smt assertions)
+    (apply #'add-assertion smt assertions)
     (let ((sat (check-sat smt)))
       (prog1
           (if (eql :sat sat) (get-model smt) sat)

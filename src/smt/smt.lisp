@@ -21,11 +21,11 @@
 ;;
 ;; Solvers and solving
 ;;
-(defclass solver ()
+(defclass solver* ()
   ((program :reader program :initarg :program)
    (arguments :reader arguments :initarg :arguments)))
 
-(defparameter *cvc4* (make-instance 'solver
+(defparameter *cvc4* (make-instance 'solver*
                                     :program #P"d:/bin/cvc4-1.8-win64-opt.exe"
                                     :arguments (list "--lang" "smt2"
                                                      "--produce-models"
@@ -33,7 +33,7 @@
                                                      "--tlimit-per" "10000"
                                                      )))
 
-(defparameter *cvc5* (make-instance 'solver
+(defparameter *cvc5* (make-instance 'solver*
                                     :program "cvc5"
                                     :arguments (list "--lang" "smt2"
                                                      "--produce-models"
@@ -48,65 +48,9 @@
     (dolist (c constants)
       (cl-smt-lib:write-to-smt solver `((,(intern "declare-const") ,(intern (identifier-smt (name c))) ,(intern (name (sort c)))))))))
 
-(defun push-scope (solver)
-  (assert-smt-solver-enabled)
-  (cl-smt-lib:write-to-smt solver `((,(intern "push") 1))))
-
-(defun pop-scope (solver)
-  (assert-smt-solver-enabled)
-  (cl-smt-lib:write-to-smt solver `((,(intern "pop") 1))))
-
-(defmacro with-scope ((solver) &body body)
-  "Executes BODY in a new SMT scope."
-  (a:with-gensyms (solver-var)
-    `(let ((,solver-var ,solver))
-       (push-scope ,solver-var)
-       (unwind-protect
-            (progn ,@body)
-         (pop-scope ,solver-var)))))
-
-(defun add (solver &rest assertions)
-  (assert-smt-solver-enabled)
-  (let ((as (intern "assert")))
-    (dolist (a assertions)
-      (cl-smt-lib:write-to-smt solver `((,as ,(to-smt a)))))))
-
 (defun dump-commands (solver commands)
   (assert-smt-solver-enabled)
     (cl-smt-lib:write-to-smt solver commands))
-
-(defun check-sat (solver)
-  (assert-smt-solver-enabled)
-  (cl-smt-lib:write-to-smt solver `((,(intern "check-sat"))))
-  (let ((result (cl-smt-lib:read-from-smt solver t)))
-    (cond ((eql (intern "sat") result) :sat)
-          ((eql (intern "unsat") result) :unsat)
-          (t :unknown))))
-
-(defun get-model (solver)
-  (assert-smt-solver-enabled)
-  (flet ((fixup-value (value)
-           "Fixes up a value. Rewrites negatives to negatives"
-           (?:match value
-             ((list - v)
-              (- v))
-             (v
-              v))))
-
-    (cl-smt-lib:write-to-smt solver `((,(intern "get-model"))))
-    (let ((output (cl-smt-lib:read-from-smt solver t)))
-      ;; CVC4 has the string "model", cvc5 does not
-      (when (symbolp (first output))
-        (assert (string= "model" (symbol-name (first output))))
-        (setf output (rest output)))
-      (map 'list #'(lambda (dfn)
-                     (destructuring-bind (df-kw name args type value) dfn
-                       (declare (ignore args))
-                       (assert (string= "define-fun" (symbol-name df-kw)))
-                       (cons (variable (ensure-identifier (symbol-name name))
-                                       (make-instance 'sort :name (symbol-name type)))
-                             (fixup-value value))))
-           output))))
 
 (defgeneric copy-node (node &key &allow-other-keys)
   (:documentation "Makes a shallow copy of an SMT node"))

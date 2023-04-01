@@ -27,7 +27,8 @@
                "trivial-garbage"
                "trivia"
                "graph"
-               "alexandria")
+               "alexandria"
+               "serapeum")
   :pathname "src"
   :components ((:file "package")
                (:file "utilities" :depends-on ("package"))))
@@ -43,6 +44,7 @@
   :serial t
   :components ((:file "package")
                (:file "protocol-hash-code")
+               (:file "protocol-solver")
                (:file "solver")
                (:file "smt")
                (:file "theory-dispatch")
@@ -58,7 +60,11 @@
                (:file "predicates")
                (:file "states")
                (:file "trivia-extensions")
-               (:file "traversal")))
+               (:file "traversal")
+               (:module "solvers"
+                :serial t
+                :components ((:file "package")
+                             (:file "cl-smt-lib")))))
 
 (asdf:defsystem "com.kjcjohnson.synthkit/grammar"
   :description "Regular tree grammars"

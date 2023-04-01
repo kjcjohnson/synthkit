@@ -4,6 +4,7 @@
 (defpackage #:com.kjcjohnson.synthkit.smt
   (:use #:cl)
   (:local-nicknames (#:a #:alexandria)
+                    (#:* #:serapeum/bundle)
                     (#:? #:trivia))
   (:shadow #:sort #:variable)
   (:export #:name #:children #:to-smt #:definition #:sort #:child-sorts #:arity
@@ -42,7 +43,7 @@
 
   ;; Solvers
   (:export #:*solver* #:with-solver #:with-solver* #:with-lazy-solver
-           #:solver #:*cvc5* #:arguments
+           #:solver #:solver* #:*cvc5* #:arguments #:add-assertion
            #:solve)
 
   ;; Traversals
