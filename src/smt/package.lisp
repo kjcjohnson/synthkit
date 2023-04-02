@@ -44,6 +44,7 @@
   ;; Solvers
   (:export #:*solver* #:with-solver #:with-solver* #:with-lazy-solver
            #:solver #:solver* #:*cvc5* #:arguments #:add-assertion
+           #:declare-constant
            #:solve)
 
   ;; Traversals

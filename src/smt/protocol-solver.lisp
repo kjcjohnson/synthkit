@@ -32,10 +32,13 @@
        (pop-scope ,solver ,levels))))
 
 ;;;
-;;; Assertions
+;;; Assertions and declarations
 ;;;
 (defgeneric add-assertion (solver &rest assertions)
   (:documentation "Adds ASSERTIONS to SOLVER"))
+
+(defgeneric declare-constant (solver &rest constants)
+  (:documentation "Declares a constant. CONSTANTS is a list of SMT:CONSTANT objects."))
 
 ;;;
 ;;; Checking

@@ -45,8 +45,7 @@
   "Declares all constants in the given formula."
   (assert-smt-solver-enabled)
   (let ((constants (find-constants formula)))
-    (dolist (c constants)
-      (cl-smt-lib:write-to-smt solver `((,(intern "declare-const") ,(intern (identifier-smt (name c))) ,(intern (name (sort c)))))))))
+    (apply #'declare-constant solver constants)))
 
 (defun dump-commands (solver commands)
   (assert-smt-solver-enabled)

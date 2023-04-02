@@ -19,6 +19,13 @@
     (dolist (a assertions)
       (cl-smt-lib:write-to-smt solver `((,as ,(smt:to-smt a)))))))
 
+(defmethod smt:declare-constant ((solver process-two-way-stream) &rest constants)
+  "Declares constants in list CONSTANTS"
+  (dolist (c constants)
+    (cl-smt-lib:write-to-smt solver `((,(intern "declare-const")
+                                       ,(intern (smt:identifier-smt (smt:name c)))
+                                       ,(intern (smt:name (smt:sort c))))))))
+
 (defmethod smt:check-sat ((solver process-two-way-stream))
   "Checks satisfibility"
   (cl-smt-lib:write-to-smt solver `((,(intern "check-sat"))))
