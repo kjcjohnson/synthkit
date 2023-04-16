@@ -3,6 +3,12 @@
 ;;;
 (in-package #:com.kjcjohnson.synthkit.ast)
 
+(defvar *candidate-concrete-programs* 0 "Count of candidate concrete programs
+considered. What this specifically means is up to the individual algorithm.")
+
+(defvar *candidate-partial-programs* 0 "Count of candidate partial programs
+considered. What this specifically means is up to the individual algorithm.")
+
 (defgeneric semantics-descriptors-for-non-terminal (semantics non-terminal)
   (:documentation "Gets a list of semantics descriptors valid for NON-TERMINAL."))
 

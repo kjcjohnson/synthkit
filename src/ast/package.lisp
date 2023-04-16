@@ -35,4 +35,6 @@
            #:compile-program
            #:execute-program
            #:as-smt-query
-           #:*execution-counter*))
+           #:*execution-counter*
+           #:*candidate-concrete-programs*
+           #:*candidate-partial-programs*))
