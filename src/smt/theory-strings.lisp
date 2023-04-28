@@ -142,8 +142,21 @@
 
 (defsmtfun "re.*" :strings (reglan)
   "Kleene closure"
-  (%reglan
-   `(:greedy-repetition 0 nil ,(%parse-tree reglan))))
+  ;; Apparent bug in CL-PPCRE causes stack overflow on some nested repetitions
+  ;; so if we get a nested redundant repetitions, combine with this new one.
+  (let ((child-tree (%parse-tree reglan)))
+    (?:match child-tree
+      ;; ((<x>)*)* --> (<x>)*
+      ((list :greedy-repetition 0 nil _)
+       reglan)
+      ;; ((<x>)?)* --> (<x>)*
+      ((list :greedy-repetition 0 1 subtree)
+       (%reglan
+        `(:greedy-repetition 0 nil ,subtree)))
+      ;; Anything else is fine for now
+      (otherwise
+       (%reglan
+        `(:greedy-repetition 0 nil ,(%parse-tree reglan)))))))
 
 ;; re.diff
 
