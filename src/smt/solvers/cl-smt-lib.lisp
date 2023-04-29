@@ -34,7 +34,7 @@
           ((eql (intern "unsat") result) :unsat)
           (t :unknown))))
 
-(defmethod get-model ((solver process-two-way-stream))
+(defmethod smt:get-model ((solver process-two-way-stream))
   "Gets an SMT model"
   (flet ((fixup-value (value)
            "Fixes up a value. Rewrites negatives to negatives"
