@@ -55,7 +55,8 @@
                        (declare (ignore args))
                        (assert (string= "define-fun" (symbol-name df-kw)))
                        (cons (smt:variable (smt:ensure-identifier (symbol-name name))
-                                       (make-instance 'sort :name (symbol-name type)))
+                                           (make-instance 'smt:sort
+                                                          :name (symbol-name type)))
                              (fixup-value value))))
            output))))
 
