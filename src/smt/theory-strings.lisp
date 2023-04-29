@@ -87,11 +87,30 @@
   (check-type reglan regular-language)
   (regular-language-parse-tree reglan))
 
+;;;
+;;; Patterns for matching regular expression constructs
+;;;
+(?:defpattern re.* (child)
+  "Matches a Kleene closure in a regex parse tree"
+  `(list :greedy-repetition 0 nil ,child))
+
+(?:defpattern re.opt (child)
+  "Matches an optional element in a regex parse tree"
+  `(list :greedy-repetition 0 1 ,child))
+
+(?:defpattern re.union (left right &rest rest)
+  "Matches a two-element union"
+  `(list :alternation ,left ,right ,@rest))
+
+;;;
+;;; Definitions
+;;;
 (defsmtfun "str.in_re" :strings (str reglan)
   "Checks if STR is in the regular language REGLAN"
   (check-type str string)
   (check-type reglan regular-language)
   (let ((parse-tree (%parse-tree reglan)))
+    ;;(format t "REGEX: ~s on [~a]~%" parse-tree str)
     (if (null (ppcre:scan `(:group
                             (:flags :single-line-mode-p)
                             :start-anchor
@@ -147,16 +166,19 @@
   (let ((child-tree (%parse-tree reglan)))
     (?:match child-tree
       ;; ((<x>)*)* --> (<x>)*
-      ((list :greedy-repetition 0 nil _)
-       reglan)
+      ((re.* _) reglan)
       ;; ((<x>)?)* --> (<x>)*
-      ((list :greedy-repetition 0 1 subtree)
-       (%reglan
-        `(:greedy-repetition 0 nil ,subtree)))
+      ((re.opt subtree) (%reglan `(:greedy-repetition 0 nil ,subtree)))
+      ;; ((<x>)*|(<y>)*)* --> (<x>|<y>)*
+      ((re.union (or (re.* x) (re.opt x)) (or (re.* y) (re.opt y)))
+       (%reglan `(:greedy-repetition 0 nil (:alternation ,x ,y))))
+      ;; (<x>|(<y>)*)* --> (<x>|<y>)* [and variants]
+      ((or (re.union x (or (re.* y) (re.opt y)))
+           (re.union (or (re.* y) (re.opt y)) x))
+       (%reglan `(:greedy-repetition 0 nil (:alternation ,x ,y))))
       ;; Anything else is fine for now
       (otherwise
-       (%reglan
-        `(:greedy-repetition 0 nil ,(%parse-tree reglan)))))))
+       (%reglan `(:greedy-repetition 0 nil ,(%parse-tree reglan)))))))
 
 ;; re.diff
 
@@ -167,8 +189,15 @@
 
 (defsmtfun "re.opt" :strings (reglan)
   "Optional element"
-  (%reglan
-   `(:greedy-repetition 0 1 ,(%parse-tree reglan))))
+  (let ((child-tree (%parse-tree reglan)))
+    (?:match child-tree
+      ;; ((<x>)?)? --> (<x>)?
+      ((re.opt _) reglan)
+      ;; ((<x>)*)? --> (<x>)*
+      ((re.* _) reglan)
+      ;; Anything else is fine for now
+      (otherwise
+       (%reglan `(:greedy-repetition 0 1 ,(%parse-tree reglan)))))))
 
 ;; Empty character classes aren't allowed, so define a filter to do it
 (defun %empty-char-class-filter (pos)
