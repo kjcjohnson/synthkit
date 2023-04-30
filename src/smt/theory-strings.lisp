@@ -102,6 +102,10 @@
   "Matches a two-element union"
   `(list :alternation ,left ,right ,@rest))
 
+(?:defpattern re.++ (left right &rest rest)
+  "Matches a two-element sequence"
+  `(list :sequence ,left ,right ,@rest))
+
 ;;;
 ;;; Definitions
 ;;;
@@ -162,23 +166,72 @@
 (defsmtfun "re.*" :strings (reglan)
   "Kleene closure"
   ;; Apparent bug in CL-PPCRE causes stack overflow on some nested repetitions
-  ;; so if we get a nested redundant repetitions, combine with this new one.
-  (let ((child-tree (%parse-tree reglan)))
-    (?:match child-tree
-      ;; ((<x>)*)* --> (<x>)*
-      ((re.* _) reglan)
-      ;; ((<x>)?)* --> (<x>)*
-      ((re.opt subtree) (%reglan `(:greedy-repetition 0 nil ,subtree)))
-      ;; ((<x>)*|(<y>)*)* --> (<x>|<y>)*
-      ((re.union (or (re.* x) (re.opt x)) (or (re.* y) (re.opt y)))
-       (%reglan `(:greedy-repetition 0 nil (:alternation ,x ,y))))
-      ;; (<x>|(<y>)*)* --> (<x>|<y>)* [and variants]
-      ((or (re.union x (or (re.* y) (re.opt y)))
-           (re.union (or (re.* y) (re.opt y)) x))
-       (%reglan `(:greedy-repetition 0 nil (:alternation ,x ,y))))
-      ;; Anything else is fine for now
-      (otherwise
-       (%reglan `(:greedy-repetition 0 nil ,(%parse-tree reglan)))))))
+  ;; so match and rewrite dangerous patterns into equivalent patterns
+  (labels ((rewrite (child-tree)
+             "Rewrites a tree to be applied to *. Returns the tree and t if no changes"
+             (?:match child-tree
+               ;; ((<x>)*)* --> (<x>)*
+               ((re.* x) x)
+               ;; ((<x>)?)* --> (<x>)*
+               ((re.opt x) x)
+               ;; ((<x>)*|(<y>)*)* --> (<x>|<y>)*
+               ;; (<x>|(<y>)*)* --> (<x>|<y>)* [and variants]
+               ((re.union _ _)
+                (values (rewrite-alternation child-tree) t))
+               ;; Certain sequences
+               ((?:guard (re.++ _ _)
+                         (sequence-of-repetitions? child-tree))
+                (rewrite-sequence child-tree))
+               ;; Anything else is fine for now
+               (otherwise
+                (values child-tree t))))
+           (sequence-of-repetitions? (child-tree)
+             "Checks if CHILD-TREE is a (possibly nested) sequence of * or ?"
+             (?:match child-tree
+               ((re.++ (or (re.* _) (re.opt _))
+                       (or (re.* _) (re.opt _)))
+                t)
+               ((re.++ (or (re.* _) (re.opt _)) x)
+                (sequence-of-repetitions? x))
+               ((re.++ x (or (re.* _) (re.opt _)))
+                (sequence-of-repetitions? x))
+               ((re.++ x y)
+                (and (sequence-of-repetitions? x)
+                     (sequence-of-repetitions? y)))
+               (otherwise
+                nil)))
+           ;; (<foo>*<bar>*...<bat>*)* --> (<foo>|<bar>|...|<bat>)*
+           (rewrite-sequence (child-tree)
+             "Rewrites a sequence of repetitions in CHILD-TREE"
+             (?:match child-tree
+               ((re.++ (or (re.* x) (re.opt x))
+                       (or (re.* y) (re.opt y)))
+                `(:alternation ,x ,y))
+               ((re.++ (or (re.* x) (re.opt x)) y)
+                `(:alternation ,x ,(rewrite-sequence y)))
+               ((re.++ x (or (re.* y) (re.opt y)))
+                `(:alternation ,(rewrite-sequence x) ,y))
+               (otherwise
+                (values child-tree t))))
+           ;; (<foo>*|<bar>|...|<bat>)* --> (<foo>|<bar>|...|<bat>)*
+           (rewrite-alternation (child-tree)
+             "Rewrites an alternation of repetitions in CHILD-TREE"
+             (?:match child-tree
+               ((re.union (or (re.* x) (re.opt x) x)
+                          (or (re.* y) (re.opt y) y))
+                `(:alternation ,(rewrite-alternation x)
+                               ,(rewrite-alternation y)))
+               (otherwise
+                child-tree)))
+           (rewrite-loop (reglan)
+             "Rewrites REGLAN in a loop, until reaching a fixpoint"
+             (loop with child-tree = (%parse-tree reglan)
+                   with done = nil
+                   until done
+                   do (setf (values child-tree done) (rewrite child-tree))
+                   finally (return child-tree))))
+
+    (%reglan `(:greedy-repetition 0 nil ,(rewrite-loop reglan)))))
 
 ;; re.diff
 
