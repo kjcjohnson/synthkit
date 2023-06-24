@@ -53,3 +53,17 @@ of IO specification leaves and intersection joiners."
   "Gets a list of examples, but only if SPEC satisfies IS-PBE?"
   (assert (is-pbe? spec))
   (leaves spec))
+
+(defun filter-examples (spec predicate &key key)
+  "Creates a new PBE spec from SPEC with only examples satisfying PREDICATE"
+  (make-instance 'intersection-specification
+                 :components (remove-if-not predicate (leaves spec) :key key)))
+
+(defun filter-examples-by-descriptor (spec &key include exclude)
+  "Filters examples by descriptors"
+  (setf include (a:ensure-list include))
+  (setf exclude (a:ensure-list exclude))
+  (flet ((predicate (descriptor)
+           (and (member descriptor include)
+                (not (member descriptor exclude)))))
+    (filter-examples spec #'predicate :key #'descriptor)))

@@ -48,6 +48,8 @@
 
            #:examples
            #:leaves
+           #:filter-examples
+           #:filter-examples-by-descriptor
 
            #:is-cegis?
            #:convert-to-cegis
