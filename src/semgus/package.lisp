@@ -12,6 +12,7 @@
                     (#:a #:alexandria)
                     (#:? #:trivia))
   (:export #:semgus-problem
+           #:metadata
            #:replace-specification
            #:load-semgus-problem
            #:grammar
@@ -21,6 +22,7 @@
            #:operational-semantics
            #:specification
            #:context
+           #:path
            #:chcs
            #:name
            #:constructor
@@ -47,7 +49,7 @@
            #:constraint)
 
   ;; Context
-  (:export #:lookup-head #:add-head #:lookup-root)
+  (:export #:lookup-head #:add-head #:lookup-root #:semgus-context)
 
   ;; Reader things
   (:export #:*semgus-context*

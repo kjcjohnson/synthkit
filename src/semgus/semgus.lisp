@@ -1,6 +1,6 @@
-;;;
-;;; Semgus.lisp - grammar + semantics
-;;;
+;;;;
+;;;; Semgus.lisp - grammar + semantics
+;;;;
 (in-package #:com.kjcjohnson.synthkit.semgus)
 
 (defclass semgus-problem ()
@@ -15,10 +15,17 @@
    (specification
     :initarg :specification
     :initform (error "A specification is required.")
-    :reader specification)
+    :accessor specification)
    (context
     :initarg :context
     :reader context)))
+
+;;;
+;;; Context pass-through methods
+;;;
+(defmethod metadata ((problem semgus-problem))
+  "Gets metadata from a SemGuS problem's context"
+  (metadata (context problem)))
 
 (defun replace-specification (semgus-problem new-specification)
   "Returns a possibly-new SemGuS problem, identical to SEMGUS-PROBLEM except with the
@@ -38,7 +45,7 @@ current specification, the original problem is returned."
     (smt::set-function-definition (car aux) (cdr aux) context)))
 
 ;;
-;; Specification types
+;; Specification types - DEPRECATED ???
 ;;
 (defclass io-specification ()
   ((examples

@@ -5,4 +5,4 @@
 
 (defun com.kjcjohnson.synthkit.semgus.reader.user::set-info (name &optional prop)
   "Set info...not well implemented"
-  (declare (ignore name prop)))
+  (setf (gethash name (semgus:metadata semgus:*semgus-context*)) prop))

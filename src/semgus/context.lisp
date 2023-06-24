@@ -21,12 +21,22 @@
    (term-type :accessor term-type
               :initarg :term-type)
    (auxiliary-functions :accessor auxiliary-functions
-                        :initarg :auxiliary-functions))
+                        :initarg :auxiliary-functions)
+   (metadata
+    :initarg :metadata
+    :reader metadata
+    :type hash-table
+    :documentation "Arbitrary key-value metadata")
+   (path
+    :initarg :path
+    :reader path))
   (:default-initargs
    :chcs nil
    :head-relations nil
    :constraints nil
-   :auxiliary-functions nil))
+   :auxiliary-functions nil
+   :metadata (make-hash-table)
+   :path nil))
 
 (defun lookup-head (name &optional (context *semgus-context*))
   "Looks up a CHC head with the given name"
