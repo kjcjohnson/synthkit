@@ -91,7 +91,9 @@
        thing)
       ((cl:= 1 (length thing))
        (first thing))
-      ((cl:and (typep (first thing) 'string) (string= (first thing) "_Sy" :end1 3))
+      ((cl:and (typep (first thing) 'string)
+               (>= (length (first thing)) 3)
+               (string= (first thing) "_Sy" :end1 3))
        (princ-to-string (second thing)))
       (t
        (princ-to-string thing)))))

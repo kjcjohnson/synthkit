@@ -39,7 +39,12 @@
 
            #:is-application?
 
+           #:defsmtfun
            #:do-call-smt #:call-smt)
+
+  ;; Natives
+  (:export #:make-native-literal #:native-literal? #:native-value
+           #:make-native-break #:native-break? #:native-break-condition)
 
   ;; Solvers
   (:export #:*solver* #:with-solver #:with-solver* #:with-lazy-solver

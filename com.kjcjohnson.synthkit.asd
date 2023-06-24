@@ -47,6 +47,7 @@
                (:file "protocol-solver")
                (:file "solver")
                (:file "smt")
+               (:file "native")
                (:file "theory-dispatch")
                (:file "theory-ints")
                (:file "theory-bitvectors")

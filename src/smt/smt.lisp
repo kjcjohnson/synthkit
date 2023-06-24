@@ -170,19 +170,22 @@
   (print-unreadable-object (constant stream :type t)
     (format stream "~A : ~A" (name constant) (name (sort constant)))))
 
-(defgeneric to-smt (expr))
-(defmethod to-smt ((constant constant))
-  (intern (identifier-smt (name constant))))
-(defmethod to-smt ((integer integer))
+(defgeneric to-smt (expr &key pprint))
+(defmethod to-smt ((constant constant) &key pprint)
+  (if pprint
+      (identifier-string (name constant))
+      (intern (identifier-smt (name constant)))))
+(defmethod to-smt ((integer integer) &key pprint)
+  (declare (ignore pprint))
   (if (< integer 0)
       `(- ,(- integer))
       integer))
-(defmethod to-smt ((expression expression))
+(defmethod to-smt ((expression expression) &key pprint)
   (if (zerop (length (children expression)))
       (intern (identifier-smt (name expression)))
       `(,(intern (identifier-smt (name expression)))
-        ,@(map 'list #'to-smt (children expression)))))
-(defmethod to-smt ((fn function-declaration))
+        ,@(map 'list (a:rcurry #'to-smt :pprint pprint) (children expression)))))
+(defmethod to-smt ((fn function-declaration) &key pprint)
   (if (cl:not (null (definition fn)))
       `(,(intern "define-fun")
         ,(intern (name fn))
@@ -190,17 +193,20 @@
                 #'(lambda (arg sort) (list (intern (name arg)) (intern (name sort))))
                 (arguments fn) (argument-sorts fn)))
         ,(intern (name (return-sort fn)))
-        ,(to-smt (definition fn)))
+        ,(to-smt (definition fn) :pprint pprint))
       `(,(intern "declare-fun")
         ,(intern (name fn))
         (,@(map 'list
                 #'(lambda (x) (intern (name x))) (argument-sorts fn)))
         ,(intern (name (return-sort fn))))))
 
-(defmethod to-smt ((lit literal))
+(defmethod to-smt ((lit literal) &key pprint)
+  (declare (ignore pprint))
   (value lit))
 
-(defmethod to-smt (l) l) ; dump anything directly if no applicable method
+(defmethod to-smt (l &key pprint)
+  (declare (ignore pprint))
+  l) ; dump anything directly if no applicable method
 
 (defun maybe-quote (name)
   (if (symbolp name)
@@ -365,10 +371,10 @@
                  :children (list expr1 expr2)
                  :child-sorts (list (sort expr1) (sort expr2))))
 
-(defun $= (expr1 expr2)
+(defun $= (expr1 expr2 &optional (smt *smt*))
   "Compares two expressions."
   (make-instance 'expression
-                 :name "="
+                 :name (ensure-identifier "=" smt)
                  :sort *bool-sort*
                  :arity 2
                  :children (list expr1 expr2)
@@ -384,7 +390,7 @@
 
 (defun $and (&rest exprs)
   (make-instance 'expression
-                 :name "and"
+                 :name (ensure-identifier "and")
                  :sort *bool-sort*
                  :arity (length exprs)
                  :children exprs
@@ -392,7 +398,7 @@
 
 (defun $or (&rest exprs)
   (make-instance 'expression
-                 :name "or"
+                 :name (ensure-identifier "or")
                  :sort *bool-sort*
                  :arity (length exprs)
                  :children exprs
