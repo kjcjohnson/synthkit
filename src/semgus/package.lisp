@@ -79,7 +79,11 @@
   ;; Reader protocol
   (:export #:process-chcs-for-relational-semantics
            #:read-problem-from-stream
-           #:derive-specification)
+           #:derive-specification
+           #:on-context-load
+           #:on-operationalization-load
+           #:on-problem-load
+           #:register-load-processor)
 
   ;; CHC-related exports
   (:export #:arguments #:body #:head #:head-relations

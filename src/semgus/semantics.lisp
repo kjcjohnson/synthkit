@@ -22,6 +22,10 @@
                                                      production)
   (funcall (operational-semantics sem) descriptor production))
 
+(defmethod ast:operational-semantics-for-hole ((sem default-semantics)
+                                               descriptor)
+  (funcall (operational-semantics sem) descriptor :hole))
+
 (defmethod ast:relational-semantics-for-production
     ((sem default-semantics) descriptor production)
   "Gets an SMT expression for these semantics"
