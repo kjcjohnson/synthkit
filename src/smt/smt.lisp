@@ -310,7 +310,7 @@
                           (map 'list #'sort (list ,@bindings))
                           ,expression))
 
-(defmethod to-smt ((expr quantifier))
+(defmethod to-smt ((expr quantifier) &key pprint)
   (assert (cl:or (string= (name expr) "forall")
               (string= (name expr) "exists")) nil
           "Quantifiers must be 'forall' or 'exists', but got: ~S" (name expr))
@@ -321,7 +321,7 @@
                                        (intern (name s))))
                                   (arguments expr)
                                   (argument-sorts expr)))
-    ,(to-smt (first (children expr)))))
+    ,(to-smt (first (children expr)) :pprint pprint)))
 
 ;;
 ;; Expression operators
