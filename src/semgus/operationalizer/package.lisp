@@ -10,5 +10,4 @@
                     (#:semgus #:com.kjcjohnson.synthkit.semgus)
                     (#:u #:com.kjcjohnson.synthkit.utilities)
                     (#:chc #:com.kjcjohnson.synthkit.semgus.chc)
-                    (#:c #:com.kjcjohnson.synthkit.collections)
                     (#:? #:trivia)))
