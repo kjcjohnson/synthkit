@@ -135,6 +135,7 @@
                (:file "semgus")
                (:file "protocol-reader")
                (:file "semantics")
+               (:file "protocol-operationalizer")
                (:module "operationalizer"
                 :serial t
                 :components ((:file "package")

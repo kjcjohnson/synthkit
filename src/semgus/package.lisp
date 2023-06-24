@@ -85,6 +85,9 @@
            #:on-problem-load
            #:register-load-processor)
 
+  ;; Operationalizer protocol
+  (:export #:operationalize-chc)
+
   ;; CHC-related exports
   (:export #:arguments #:body #:head #:head-relations
            #:input-variables #:output-variables #:term-name #:variables

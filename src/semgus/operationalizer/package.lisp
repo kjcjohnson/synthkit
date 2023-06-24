@@ -7,9 +7,8 @@
   (:local-nicknames (#:g #:com.kjcjohnson.synthkit.grammar)
                     (#:ast #:com.kjcjohnson.synthkit.ast)
                     (#:smt #:com.kjcjohnson.synthkit.smt)
+                    (#:semgus #:com.kjcjohnson.synthkit.semgus)
                     (#:u #:com.kjcjohnson.synthkit.utilities)
                     (#:chc #:com.kjcjohnson.synthkit.semgus.chc)
-                    (#:? #:trivia))
-  (:export #:operationalize-chc+))
-
-  
+                    (#:c #:com.kjcjohnson.synthkit.collections)
+                    (#:? #:trivia)))

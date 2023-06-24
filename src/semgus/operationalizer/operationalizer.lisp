@@ -547,15 +547,14 @@
                      :head-symbol (chc:name head)
                      :is-head-input? (every #'eql inputs-a inputs-f)))))
 
-(defun operationalize-chc+ (chc smt-ctx semgus-ctx)
+(defmethod semgus:operationalize-chc (chc smt-ctx semgus-ctx)
   (let* ((symbol-table (chc:symbol-table chc))
          (is (map 'list #'chc:symbol-name (chc:input-symbols symbol-table)))
          (os (map 'list #'chc:symbol-name (chc:output-symbols symbol-table)))
          (as (map 'list #'chc:symbol-name (chc:auxiliary-symbols symbol-table)))
          (ts (cons (chc:symbol-name (chc:term-symbol symbol-table))
                    (map 'list #'chc:symbol-name (chc:child-symbols symbol-table)))))
-    (when (eql (smt:ensure-identifier "$findMatches") (chc:name (chc:constructor chc)))
-      (break))
+
     (operationalize
      (%extract-conjuncts (chc:constraint chc) smt-ctx)
      :name (chc:name (chc:constructor chc))

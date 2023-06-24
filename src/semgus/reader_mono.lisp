@@ -44,7 +44,7 @@
                  (warn "No production in grammar for CHC with operator: ~a"
                        (chc:name (chc:constructor chc)))
                  (push
-                  (operationalize-chc chc)
+                  (operationalize-chc chc smt:*smt* *semgus-context*)
                   (gethash (g:operator prod) subtable)))
           unless (null prod)
             do (pushnew descriptor
@@ -79,8 +79,3 @@
                         descriptor prod))
                (gethash prod subtable))))
      desc-map)))
-
-(defun operationalize-chc (chc)
-  "Creates a semantic function for a CHC. The result is a function that takes an
-input state and semantic functions for each child term"
-  (com.kjcjohnson.synthkit.semgus.operationalizer:operationalize-chc+ chc smt:*smt* *semgus-context*))
