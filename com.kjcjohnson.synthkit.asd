@@ -90,6 +90,7 @@
                "com.kjcjohnson.synthkit/smt")
   :serial t
   :components ((:file "package")
+               (:file "counters")
                (:file "atom")
                (:file "node")
                (:file "hole")

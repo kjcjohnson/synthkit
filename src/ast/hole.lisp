@@ -32,6 +32,10 @@
   "Checks if this hole has a hole...so, yes."
   t)
 
+(defmethod hole-count ((hole program-hole))
+  "Gets the count of holes in this program...1"
+  1)
+
 ;;;
 ;;; Printing protocol
 ;;;

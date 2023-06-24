@@ -3,17 +3,14 @@
 ;;;
 (in-package #:com.kjcjohnson.synthkit.ast)
 
-(defvar *candidate-concrete-programs* 0 "Count of candidate concrete programs
-considered. What this specifically means is up to the individual algorithm.")
-
-(defvar *candidate-partial-programs* 0 "Count of candidate partial programs
-considered. What this specifically means is up to the individual algorithm.")
-
 (defgeneric semantics-descriptors-for-non-terminal (semantics non-terminal)
   (:documentation "Gets a list of semantics descriptors valid for NON-TERMINAL."))
 
 (defgeneric operational-semantics-for-production (semantics descriptor production)
   (:documentation "Maps from a production to a list of state transformation semantic functions."))
+
+(defgeneric operational-semantics-for-hole (semantics descriptor)
+  (:documentation "Maps from a descriptor to semantics for a hole"))
 
 (defgeneric relational-semantics-for-production (semantics descriptor production)
   (:documentation "Maps from a production to CHC-based relational semantics."))

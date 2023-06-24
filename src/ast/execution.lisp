@@ -11,11 +11,6 @@
   (funcall *program-execution-exit-hook*))
 
 ;;;
-;;; Counts number of programs executed
-;;;
-(defvar *execution-counter* 0)
-
-;;;
 ;;; Handles simple unbounded-recursion detection
 ;;;
 (defvar *self-recursion-counter* 0

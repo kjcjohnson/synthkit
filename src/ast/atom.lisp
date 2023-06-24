@@ -31,6 +31,9 @@
 (defgeneric has-hole? (program)
   (:documentation "Checks if the given program has any holes"))
 
+(defgeneric hole-count (program)
+  (:documentation "Counts the number of holes in PROGRAM"))
+
 (defmacro swap-nth-child (place n thing)
   "Swaps the Nth child of THING with PLACE."
   `(psetf ,place (nth-child ,n ,thing)

@@ -24,6 +24,7 @@
            #:print-program-operator
            #:semantics-descriptors-for-non-terminal
            #:operational-semantics-for-production
+           #:operational-semantics-for-hole
            #:relational-semantics-for-production
            #:relational-semantics-for-non-terminal
            #:children
@@ -31,10 +32,15 @@
            #:swap-nth-child
            #:program-size
            #:has-hole?
+           #:hole-count
            #:copy-program
            #:compile-program
            #:execute-program
-           #:as-smt-query
-           #:*execution-counter*
+           #:as-smt-query)
+  ;; Counters
+  (:export #:*execution-counter*
            #:*candidate-concrete-programs*
-           #:*candidate-partial-programs*))
+           #:*candidate-partial-programs*
+           #:*prune-candidate-counter*
+           #:*prune-attempt-counter*
+           #:*prune-success-counter*))

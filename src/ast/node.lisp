@@ -56,6 +56,10 @@
   "Checks if any children of this node has holes."
   (some #'has-hole? (children node)))
 
+(defmethod hole-count ((node program-node))
+  "Counts the holes in each child of this node"
+  (reduce #'+ (children node) :key #'hole-count))
+
 ;;;
 ;;; Printing
 ;;;
