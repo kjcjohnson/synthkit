@@ -10,4 +10,5 @@
                     (#:semgus #:com.kjcjohnson.synthkit.semgus)
                     (#:u #:com.kjcjohnson.synthkit.utilities)
                     (#:chc #:com.kjcjohnson.synthkit.semgus.chc)
-                    (#:? #:trivia)))
+                    (#:? #:trivia))
+  (:export #:*default-optimization*))

@@ -3,6 +3,8 @@
 ;;;;
 (in-package #:com.kjcjohnson.synthkit.semgus.operationalizer)
 
+(defvar *default-optimization* '((speed 3)) "Optimization setting for functions")
+
 (defclass uninterpreted-signature ()
   ((inputs  :initarg :inputs  :reader inputs)
    (outputs :initarg :outputs :reader outputs)
@@ -369,7 +371,7 @@
         (setf block-name lblock))
       `(lambda (,is-var ,cs-var)
          (declare (ignorable ,is-var ,cs-var))
-         (declare (optimize (debug 3)))
+         (declare (optimize ,@*default-optimization*))
          (block ,lblock
            ;;
            ;; Declare all variables up front.
