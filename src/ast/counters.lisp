@@ -9,6 +9,27 @@
 (defvar *execution-counter* 0 "Count of program executions - NOT unique programs")
 
 ;;;
+;;; Checkpoints for notable events in a synthesis run's lifetime
+;;;
+(defvar *checkpoint-times* nil "Plist of times when checkpoints were reached
+
+*CHECKPOINT-TIMES* is a plist mapping a checkpoint atom (string, symbol, etc.) to a
+time in seconds from the beginning of the synthesis run. Synthesis algorithms should
+call ``ADD-CHECKPOINT`` at appropriate times to mark a new checkpoint in the execution.
+")
+
+(defun add-checkpoint (checkpoint)
+  "Adds a new checkpoint to the current synthesis execution
+
+CHECKPOINT can be any indicator that can be serialized to an execution engine."
+  (setf (getf *checkpoint-times* checkpoint)
+        (/ (get-internal-real-time) internal-time-units-per-second)))
+
+(defun clear-all-checkpoints ()
+  "Clears all checkpoints"
+  (setf *checkpoint-times* nil))
+
+;;;
 ;;; Counters for program types considered
 ;;;
 (defvar *candidate-concrete-programs* 0 "Count of candidate concrete programs
@@ -17,6 +38,7 @@ considered. What this specifically means is up to the individual algorithm.")
 (defvar *candidate-partial-programs* 0 "Count of candidate partial programs
 considered. What this specifically means is up to the individual algorithm.")
 
+(defvar *concrete-candidates-by-size* nil "Plist of size --> candidate count")
 ;;;
 ;;; Pruning counters
 ;;;

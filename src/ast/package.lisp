@@ -39,8 +39,12 @@
            #:as-smt-query)
   ;; Counters
   (:export #:*execution-counter*
+           #:*checkpoint-times*
+           #:add-checkpoint
+           #:clear-all-checkpoints
            #:*candidate-concrete-programs*
            #:*candidate-partial-programs*
+           #:*concrete-candidates-by-size*
            #:*prune-candidate-counter*
            #:*prune-attempt-counter*
            #:*prune-success-counter*))
