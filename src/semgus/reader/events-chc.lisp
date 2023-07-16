@@ -27,7 +27,7 @@
                  :return-sort return-sort))
 
 (defun com.kjcjohnson.synthkit.semgus.reader.user::chc
-    (&key head body constraint
+    (&key head body constraint id
        input-variables output-variables variables symbols
        constructor)
   "Creates a CHC"
@@ -55,6 +55,7 @@
                   :head head
                   :body body
                   :constraint constraint
+                  :id id
                   :symbol-table symbols
                   :constructor constructor)
    (semgus:chcs semgus:*semgus-context*)))

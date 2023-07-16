@@ -132,5 +132,13 @@ ROLES and DATA should be sequences of the same length. Returns a list."
    (constructor :reader constructor
                 :initarg :constructor
                 :type constructor
-                :documentation "Constructor for this CHC"))
+                :documentation "Constructor for this CHC")
+   (id :reader id
+       :initarg :id
+       :type symbol
+       :documentation "A unique identifier for this CHC")
+   (data :reader data
+         :initarg :data
+         :type hash-table
+         :documentation "Arbitrary map of auxiliary data for this CHC"))
   (:documentation "A CHC."))
