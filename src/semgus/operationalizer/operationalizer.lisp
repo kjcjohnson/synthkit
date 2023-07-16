@@ -343,6 +343,15 @@
     ((bit-vector-p expression)
      expression)
 
+    ((smt:native-literal? expression)
+     (smt:native-value expression))
+
+    ((smt:native-break? expression)
+     `(progn
+        (when (funcall ,(smt:native-break-condition expression))
+          (break))
+        t))
+
     ;; Case two: single assignment
     ((and (not assigning)
           (typep expression 'smt::expression)
@@ -370,15 +379,34 @@
          (t ; Not an assignment - do an equality check instead
           `(smt::core-= ,arg1 ,arg2)))))
 
-    ;; Case three: sequenced operations
-    #|((and (typep expression 'smt::expression)
-          (eql (smt:name expression) (smt:ensure-identifier "and")))
-     `(progn
+    ;; Case 3a: Conditional sequences: Run all, but stop running when the first
+    ;;          one returns NIL. Note that the one that returns NIL will not have
+    ;;          its side effects undone!
+    ((and (not assigning)
+          (typep expression 'smt::expression)
+          (or (eql (smt:name expression) (smt:ensure-identifier "and"))
+              (string= (smt:name expression) "and")))
+     `(and
         ,@(map 'list #'(lambda (x) (%operationalize-expression x
                                                                input-vars
                                                                output-vars))
                (smt:children expression))))
-    |#
+
+    ;; Case 3b: Conditional sequences. Run all, up until one returns T
+    ;;          This is sort of sketchy, because the side effects of any that
+    ;;          return NIL will not be undone, and we don't attempt any sort
+    ;;          of reordering operation. Ideally, we should put guards first!
+    ((and (not assigning)
+          (typep expression 'smt::expression)
+          (or
+           (eql (smt:name expression) (smt:ensure-identifier "or"))
+           (string= (smt:name expression) "or"))) ; :/
+     `(or
+        ,@(map 'list #'(lambda (x) (%operationalize-expression x
+                                                               input-vars
+                                                               output-vars))
+               (smt:children expression))))
+
     ;; Case four: known operators
     ((typep expression 'smt::expression)
      (let ((fn (smt:get-compiled-function (smt:name expression))))

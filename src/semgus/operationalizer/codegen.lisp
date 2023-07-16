@@ -100,9 +100,11 @@ to the state variables. If ACTUALS is not provided, defaults to FORMALS."
 
 (defun %codegen-expression-node (expression input-vars output-vars)
   "Generates code for an expression node."
-  (let* ((exp-code (operationalize-smt-expression expression
-                                                  input-vars
-                                                  output-vars))
+  (let* ((exp-code
+           #|(operationalize-smt-expression expression
+           input-vars
+           output-vars))|# ; KNOTE: ???
+           (%operationalize-expression expression input-vars output-vars))
          (exp-call
            (if (%size-at-least? exp-code *sub-compile-threshold*)
                (let (comp-fn)
