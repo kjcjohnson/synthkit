@@ -37,6 +37,10 @@
            #:compile-program
            #:execute-program
            #:as-smt-query)
+  ;; Debugging controls - EXPORTED BUT UNSTABLE
+  (:export #:*exe-debug*
+           #:*exe-level*
+           #:*exe-debug-match*)
   ;; Counters
   (:export #:*execution-counter*
            #:*checkpoint-times*

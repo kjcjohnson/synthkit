@@ -17,26 +17,40 @@
   "Counts recursion depth to find probably-non-terminating programs.")
 (defparameter *self-recursion-limit* 200)
 
+;;;
+;;; Debugging controls
+;;;
+(defvar *exe-debug* nil "Set to T when execution debugging is triggered")
+(defvar *exe-level* 0 "Level of nested program execution")
+(defvar *exe-debug-match* nil "If non-nil, must be a string that, when contained in the
+serialization of a program node, triggers ``*EXE-DEBUG*`` to be set to T.")
+(declaim (type (or null string) *exe-debug-match*))
 
 ;;;
 ;;; Public execution interface
 ;;;
 (defun execute-program (semantics descriptor node input-state)
   (incf *execution-counter*)
-  (let (result abort-exit)
-    (tagbody
-       (let ((*program-execution-exit-hook* #'(lambda () (go abort-execution)))
-             (*self-recursion-counter* 0))
-         (setf result (%execute-program semantics descriptor node input-state)))
-       (go finish-execution)
-     abort-execution
-       (setf abort-exit t)
-     finish-execution)
-    (if abort-exit
-        (progn
-          ;(format *trace-output* "; ABORT EXIT: ~a~%" node)
-          (values nil nil))
-        (values (canonicalize-result semantics result) t))))
+  (unwind-protect
+       (let (result abort-exit)
+         (when (and *exe-debug-match*
+                    (str:contains? *exe-debug-match* (format nil "~a" node)))
+           (format *trace-output* "=============================~%")
+           (setf *exe-debug* t))
+         (tagbody
+            (let ((*program-execution-exit-hook* #'(lambda () (go abort-execution)))
+                  (*self-recursion-counter* 0))
+              (setf result (%execute-program semantics descriptor node input-state)))
+            (go finish-execution)
+          abort-execution
+            (setf abort-exit t)
+          finish-execution)
+         (if abort-exit
+             (progn
+               ;; (format *trace-output* "; ABORT EXIT: ~a~%" node)
+               (values nil nil))
+             (values (canonicalize-result semantics result) t)))
+    (setf *exe-debug* nil)))
 
 ;;;
 ;;; Building semantic functions
@@ -88,6 +102,11 @@
              node
              (children node))))
 
+(defun %hole-helper (semantics descriptor input-state)
+  "Runs semantics for a hole, maybe. Returns the output state, or NIL if no semantics"
+  (a:when-let (sem-fn (operational-semantics-for-hole semantics descriptor))
+    (funcall sem-fn input-state)))
+
 ;;;
 ;;; Internal execution helper
 ;;;
@@ -95,16 +114,21 @@
 
   ;;; Short-circuit and yell if we attempt to execute a hole as a program
   (when (typep node 'program-hole)
-    (error "Attempting to execute hole: ~a" node))
+    (let ((hole-val (%hole-helper semantics descriptor input-state)))
+      (if (null hole-val)
+          (error "Attempting to execute hole: ~a" node)
+          (return-from %execute-program (values hole-val t)))))
 
   (dolist (calling-card (operational-semantics-for-production semantics
                                                               descriptor
                                                               (production node)))
+    (when *exe-debug* (format *trace-output* "~aCALL: ~a [~a]~%" (make-string *exe-level* :initial-element #\Space) node input-state))
     (multiple-value-bind (result valid)
-        (funcall (build-semantics-from-calling-card semantics calling-card node)
-                 input-state)
-
-      (when (or (not (null result)) valid)
-        (return-from %execute-program (values result t)))))
+        (let ((*exe-level* (1+ *exe-level*)))
+          (funcall (build-semantics-from-calling-card semantics calling-card node)
+                   input-state))
+        (when *exe-debug* (format *trace-output* "~aRETN: ~a [~:[INVALID~;VALID~]]~%" (make-string *exe-level* :initial-element #\Space) result valid))
+        (when (or (not (null result)) valid)
+          (return-from %execute-program (values result t)))))
   (error "No applicable semantics: ~a [descriptor: ~a]"
          (g:name (operator node)) descriptor))
