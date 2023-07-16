@@ -48,6 +48,39 @@
   "Gets the node for an ID."
   (gethash id (car index-table)))
 
+(defun pprint-usage-table (stream usage-table)
+  "Pretty prints a usage table hash table"
+  (flet ((print-usage (usage)
+           "Makes a better attempt at readable usages"
+           (typecase usage
+             (symbol usage)
+             (uninterpreted-signature "child")
+             (smt::expression (smt:to-smt usage :pprint t))
+             (otherwise "other"))))
+    (format stream "~&--Usage Table--~%")
+    (let ((left-max 0))
+      (maphash #'(lambda (name data)
+                   (declare (ignore data))
+                   (setf left-max (max left-max (length (smt:identifier-string name)))))
+               usage-table)
+      (maphash #'(lambda (name data)
+                   (format stream "~va [~a]~%"
+                           left-max
+                           (smt:identifier-string name)
+                           (%symbol-type data))
+                   (loop for usage in (%symbol-usages data)
+                         for type in (%symbol-usage-types data)
+                         do
+                            (format stream
+                                    " ~a ~a~%"
+                                    (case type
+                                      (:consumes "consumed by:")
+                                      (:produces "produced by:")
+                                      (otherwise "****NIL****:"))
+                                    (print-usage usage)))
+                   (format stream "---------------~%"))
+               usage-table))))
+
 (defun %build-usage-table (conjuncts
                            input-symbols
                            output-symbols
@@ -159,6 +192,20 @@
                    (:auxiliary ; If a producer exists, the rest are consumers
                     (when (> (count :produces usage-types) 0)
                       (%list-replace-all nil :consumes usage-types))))))
+           usage-table))
+
+(defun %apply-usage-table-rule-2 (usage-table)
+  "Rule 2: one and only one usage must produce a variable"
+  (maphash #'(lambda (name data)
+               (declare (ignore name))
+               (let ((usage-types (%symbol-usage-types data)))
+                 (cond
+                   ((= 1 (count :produces usage-types))
+                    (%list-replace-all nil :consumes usage-types))
+
+                   ((and (zerop (count :produces usage-types))
+                         (= 1 (count nil usage-types)))
+                    (%list-replace-all nil :produces usage-types)))))
            usage-table))
 
 (defclass %semantic-node ()
@@ -467,9 +514,12 @@
                                          output-symbols
                                          auxiliary-symbols
                                          child-signatures)))
+    ;; Do we need to run these until we reach a fixpoint?
     (%apply-usage-table-rule-1 usage-table)
+    (%apply-usage-table-rule-2 usage-table)
 
     (unless (%is-usage-table-complete? usage-table)
+      (pprint-usage-table *error-output* usage-table)
       (error 'operationalization-error :message "Usage table incomplete."))
 
     (let* ((node-table (%build-semantic-node-table conjuncts
