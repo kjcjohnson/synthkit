@@ -31,7 +31,14 @@
                "serapeum")
   :pathname "src"
   :components ((:file "package")
-               (:file "utilities" :depends-on ("package"))))
+               (:file "utilities" :depends-on ("package"))
+               (:module "collections"
+                :serial t
+                :components ((:file "package")
+                             (:file "collections")
+                             (:file "classes")
+                             (:file "sets")
+                             (:file "maps")))))
 
 (asdf:defsystem "com.kjcjohnson.synthkit/smt"
   :description "SMT-LIB2 objects and processing"
