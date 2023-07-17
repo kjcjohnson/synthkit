@@ -56,6 +56,7 @@
                (:file "types")
                (:file "theory-core")
                (:file "context")
+               (:file "builders")
                (:file "compiler")
                (:file "evaluator")
                (:file "predicates")
