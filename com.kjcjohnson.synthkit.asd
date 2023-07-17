@@ -139,6 +139,9 @@
                (:module "operationalizer"
                 :serial t
                 :components ((:file "package")
+                             (:file "operationalization")
+                             (:file "opnodes")
+                             (:file "op-graph-parser")
                              (:file "expressions")
                              (:file "codegen")
                              (:file "operationalizer")))

@@ -428,6 +428,62 @@
                       "CHC Operationalizer fall-through on: ~a~%"
                       expression)))))
 
+(defun %build-operationalization-graph (input-symbols
+                                        output-symbols
+                                        auxiliary-symbols
+                                        ordering
+                                        node-table
+                                        index-table
+                                        name
+                                        child-signatures
+                                        term-symbols)
+  (declare (ignore auxiliary-symbols index-table child-signatures))
+  (flet ((only-of-type (vars types type)
+           "Returns only variables in VARS with TYPE in TYPES"
+           (loop for var in vars
+                 for vt in types
+                 when (eql vt type) collect var)))
+    (let* ((start (make-instance 'begin-node :name name :terms term-symbols))
+           (curr start))
+      (loop for ix in ordering
+            for node = (gethash ix node-table)
+            for semantics = (%node-semantics node)
+            for inputs = (only-of-type (%node-usages node)
+                                       (%node-usage-types node)
+                                       :consumes)
+            for outputs = (only-of-type (%node-usages node)
+                                        (%node-usage-types node)
+                                        :produces)
+            do
+               (cond
+                 ((eql :input semantics)
+                  (setf (node-next curr) (make-instance 'input-node
+                                                        :outputs input-symbols)))
+                 ((eql :output semantics)
+                  (setf (node-next curr)
+                        (make-instance 'output-node
+                                       :inputs output-symbols)))
+                 ((typep semantics 'uninterpreted-signature)
+                  (setf (node-next curr)
+                        (make-instance 'child-node
+                                       :descriptor (head-symbol semantics)
+                                       :term (term-symbol semantics)
+                                       :inputs (only-of-type (%node-usages node)
+                                                             (%node-usage-types node)
+                                                             :consumes)
+                                       :outputs (only-of-type (%node-usages node)
+                                                              (%node-usage-types node)
+                                                              :produces))))
+
+                 (t
+                  (setf (node-next curr)
+                        (parse-block-node semantics inputs outputs nil))))
+            do (loop until (null (node-next curr))
+                     do (setf curr (node-next curr))))
+      (setf (node-next curr) (make-instance 'end-node :next nil))
+      ;;(format t "------------------------------------------------------------~%")
+      ;;(pprint-opgraph t start)
+      start)))
 
 (defun %build-operational-function (input-symbols
                                     output-symbols
@@ -555,7 +611,15 @@
                                                    usage-table
                                                    index-table))
            (ordering (%sort-usages usage-table node-table index-table))
-
+           (opgraph (%build-operationalization-graph input-symbols
+                                                     output-symbols
+                                                     auxiliary-symbols
+                                                     ordering
+                                                     node-table
+                                                     index-table
+                                                     name
+                                                     child-signatures
+                                                     term-symbols))
            (opfun (%build-operational-function input-symbols
                                                output-symbols
                                                auxiliary-symbols
