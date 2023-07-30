@@ -40,6 +40,7 @@
 
 (defun lookup-head (name &optional (context *semgus-context*))
   "Looks up a CHC head with the given name"
+  (setf name (smt:ensure-identifier name))
   (find name (head-relations context) :key #'chc:name))
 
 (defun add-head (head &optional (context *semgus-context*))
@@ -51,3 +52,8 @@
 (defun lookup-root (name &optional (context *semgus-context*))
   "Looks up a CHC root with the given name"
   (find name (root-relations context) :key #'chc:name))
+
+(defun lookup-chc (id &optional (context *semgus-context*))
+  "Looks up a CHC in CONTEXT with the given identifier ID"
+  (setf id (smt:ensure-identifier id))
+  (find id (chcs context) :key #'chc:id))
