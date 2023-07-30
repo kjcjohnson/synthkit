@@ -88,6 +88,12 @@
   (regular-language-parse-tree reglan))
 
 ;;;
+;;; For debugging failed regex
+;;;
+(defvar *last-regex-executed* nil "The last regex that the engine attempted")
+(defvar *last-string-scanned* nil "The last string that the engine attempted to match")
+
+;;;
 ;;; Patterns for matching regular expression constructs
 ;;;
 (?:defpattern re.* (child)
@@ -106,6 +112,12 @@
   "Matches a two-element sequence"
   `(list :sequence ,left ,right ,@rest))
 
+;; Regex filter that always fails to match
+(defun %empty-set-filter (pos)
+  "Matches the empty set. Always fail."
+  (declare (ignore pos))
+  nil)
+
 ;;;
 ;;; Definitions
 ;;;
@@ -114,6 +126,8 @@
   (check-type str string)
   (check-type reglan regular-language)
   (let ((parse-tree (%parse-tree reglan)))
+    (setf *last-regex-executed* parse-tree)
+    (setf *last-string-scanned* str)
     ;;(format t "REGEX: ~s on [~a]~%" parse-tree str)
     (if (null (ppcre:scan `(:group
                             (:flags :single-line-mode-p)
@@ -132,7 +146,8 @@
 
 (defsmtfun "re.none" :strings ()
   "The empty expression"
-  (%reglan :void))
+  (%reglan `(:filter ,#'%empty-set-filter)))
+  ;;(%reglan :void))
 
 (defsmtfun "re.all" :strings ()
   "The set of all strings"
@@ -144,19 +159,33 @@
 
 (defsmtfun "re.++" :strings (reglan1 reglan2 &rest reglans)
   "Concatentates regular languages in sequence"
-  (%reglan
-   `(:sequence
-     ,(%parse-tree reglan1)
-     ,(%parse-tree reglan2)
-     ,@(map 'list #'%parse-tree reglans))))
+  (let ((reglan-pts
+          `(,(%parse-tree reglan1)
+            ,(%parse-tree reglan2)
+            ,@(map 'list #'%parse-tree reglans))))
+    (setf reglan-pts (delete :void reglan-pts))
+    (%reglan
+     (cond ((endp reglan-pts)
+            :void)
+           ((= 1 (length reglan-pts))
+            (first reglan-pts))
+          (t
+           `(:sequence ,@reglan-pts))))))
 
 (defsmtfun "re.union" :strings (reglan1 reglan2 &rest reglans)
   "Union of regular languages"
-  (%reglan
-   `(:alternation
-     ,(%parse-tree reglan1)
-     ,(%parse-tree reglan2)
-     ,@(map 'list #'%parse-tree reglans))))
+  (let ((reglan-pts
+          `(,(%parse-tree reglan1)
+            ,(%parse-tree reglan2)
+            ,@(map 'list #'%parse-tree reglans))))
+    (setf reglan-pts (delete :HYAAAAAAAA!!!! reglan-pts))
+    (%reglan
+     (cond ((endp reglan-pts)
+            :void)
+           ((= 1 (length reglan-pts))
+            (first reglan-pts))
+          (t
+           `(:alternation ,@reglan-pts))))))
 
 (defsmtfun "re.intersection" :strings (reglan1 reglan2 &rest reglans)
   "Intersection of regular languages"
@@ -252,12 +281,6 @@
       (otherwise
        (%reglan `(:greedy-repetition 0 1 ,(%parse-tree reglan)))))))
 
-;; Empty character classes aren't allowed, so define a filter to do it
-(defun %empty-char-class-filter (pos)
-  "Always fail."
-  (declare (ignore pos))
-  nil)
-
 (defsmtfun "re.range" :strings (strl stru)
   "Character class from strl to stru"
   (check-type strl string)
@@ -265,7 +288,7 @@
   (if (and (= 1 (length strl))
            (= 1 (length stru)))
       `(%reglan (:char-class (:range ,(elt strl 0) ,(elt stru 0))))
-      `(%reglan (:filter ,#'%empty-char-class-filter))))
+      `(%reglan (:filter ,#'%empty-set-filter))))
 
 ;; (_ re.^ n)
 

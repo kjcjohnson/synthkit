@@ -17,6 +17,7 @@
 (defparameter *int-sort* (make-instance 'sort :name "Int"))
 (defparameter *bool-sort* (make-instance 'sort :name "Bool"))
 (defparameter *string-sort* (make-instance 'sort :name "String"))
+(defparameter *reglan-sort* (make-instance 'sort :name "RegLan"))
 
 ;;
 ;; Solvers and solving

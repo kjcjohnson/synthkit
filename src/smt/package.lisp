@@ -10,6 +10,7 @@
   (:export #:name #:children #:to-smt #:definition #:sort #:child-sorts #:arity
            #:*int-sort* #:*bool-sort* #:*string-sort* #:variable
            #:$int #:$bool #:$string #:$function
+           #:*reglan-sort*
            #:$exists #:$forall #:$true #:$false #:$apply
            #:$+ #:$- #:$< #:$> #:$* #:$=
            #:$not #:$and #:$or #:$xor

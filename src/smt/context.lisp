@@ -41,7 +41,9 @@
   (setf (gethash (ensure-identifier "Bool" ctx) (sort-forward ctx))
         *bool-sort*)
   (setf (gethash (ensure-identifier "String" ctx) (sort-forward ctx))
-        *string-sort*))
+        *string-sort*)
+  (setf (gethash (ensure-identifier "RegLan" ctx) (sort-forward ctx))
+        *reglan-sort*))
 
 (defun get-sort (sort-id &optional (ctx *smt*))
   "Gets a sort by ID"
