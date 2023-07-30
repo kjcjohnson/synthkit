@@ -112,6 +112,12 @@ ROLES and DATA should be sequences of the same length. Returns a list."
 (defmethod name ((relation relation)) (name (head relation)))
 (defmethod signature ((relation relation)) (signature (head relation)))
 
+(defun output-actuals (relation)
+  "Returns a list of output actuals of RELATION"
+  (loop for oi in (output-indices (head relation))
+        for output = (aref (actuals relation) oi)
+        collecting output))
+
 (defclass chc ()
   ((symbols :reader symbol-table
             :initarg :symbol-table

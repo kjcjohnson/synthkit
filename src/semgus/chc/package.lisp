@@ -24,7 +24,7 @@
            #:filter-role
            #:role-indices
            #:input-indices #:input-formals #:output-indices #:output-formals
-
+           #:output-actuals
            #:relation #:head #:actuals)
   ;; CHCs
   (:export #:chc
