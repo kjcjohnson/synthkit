@@ -9,7 +9,7 @@
   (:shadow #:sort #:variable)
   (:export #:name #:children #:to-smt #:definition #:sort #:child-sorts #:arity
            #:*int-sort* #:*bool-sort* #:*string-sort* #:variable
-           #:$int #:$bool #:$string #:$function
+           #:$int #:$bool #:$string #:$function #:$literal
            #:*reglan-sort*
            #:$exists #:$forall #:$true #:$false #:$apply
            #:$+ #:$- #:$< #:$> #:$* #:$=

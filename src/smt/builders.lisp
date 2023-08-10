@@ -12,6 +12,12 @@
 (defmacro $string (name)
   `(string-variable ,(maybe-quote name)))
 
+(defun $literal (value sort)
+  (make-instance 'literal
+                 :value value
+                 :sort sort
+                 :name "<literal>"))
+
 (defmacro $function (name (&rest arg-sorts) ret-sort &optional args expression)
   (if (cl:not (null expression))
       `(function-declaration ,(maybe-quote name)
