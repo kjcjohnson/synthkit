@@ -140,7 +140,7 @@
                  (progn
                    (setf (gethash (name nt) nts) nt)
                    nt)
-                 (let* ((nt-as-string (string nt))
+                 (let* ((nt-as-string nt) ; TODO: not really
                         (nt-as-object (gethash nt-as-string nts)))
                    (when (null nt-as-object)
                      (setf nt-as-object (make-instance 'non-terminal :name nt-as-string)
