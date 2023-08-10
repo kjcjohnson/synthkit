@@ -10,30 +10,6 @@
   #+synthkit-disable-smt-solver
   (error "SMT solver support is disabled."))
 
-(defun init-solver (solver-spec)
-  "Initializes an SMT solver"
-  (assert-smt-solver-enabled)
-  (apply #'cl-smt-lib:make-smt (program solver-spec) (arguments solver-spec)))
-
-(defun deinit-solver (solver)
-  "Deinitializes an SMT solver. Returns the solver status code and any unread forms"
-  (close (cl-smt-lib/process-two-way-stream:output solver))
-  (let ((status (uiop:wait-process
-                 (cl-smt-lib/process-two-way-stream:process solver))))
-    (unless (zerop status)
-      (error "SMT solver failed with exit status ~S" status))
-    (values
-     status
-     (loop for form = (cl-smt-lib:read-from-smt solver t nil :eof)
-           while (cl:not (equal :eof form))
-           collect form))))
-
-(defun cleanup-solver (solver)
-  "Final solver cleanup steps."
-  (uiop:terminate-process
-   (cl-smt-lib/process-two-way-stream:process solver))
-  (close solver))
-
 #+synthkit-disable-smt-solver
 (defmacro with-solver ((solver solver-spec) &body body)
   `(let ((solver nil))
@@ -43,46 +19,55 @@
 #-synthkit-disable-smt-solver
 (defmacro with-solver ((solver solver-spec) &body body)
   (let ((result (gensym)))
-    `(let ((,solver (init-solver ,solver-spec)))
+    `(let ((,solver (make-solver ,solver-spec)))
        (unwind-protect
             (progn
               (let ((,result (progn ,@body)))
                 (multiple-value-bind (status unread-forms)
-                    (deinit-solver ,solver)
+                    (finalize-solver ,solver)
                   (values ,result unread-forms status))))
          ;; Ensure the process is terminated.
          ;(format *trace-output* "; Terminating SMT process...~%")
          (cleanup-solver ,solver)))))
 
-(defclass lazy-solver ()
+(defclass lazy-solver (solver)
   ((solver-spec :reader %solver-spec
                 :initarg :solver-spec
                 :documentation "Solver specification to initialize"))
   (:documentation "A solver that gets lazily initialized"))
+
+(defmethod initialize-solver ((solver-class (eql 'lazy-solver)) config)
+  "Creates a lazy solver"
+  (make-instance 'lazy-solver :solver-spec config))
+
+(defmethod finalize-solver ((solver lazy-solver))
+  "Finalizes a lazy solver. Does nothing"
+  nil)
+
+(defmethod cleanup-solver ((solver lazy-solver))
+  "Cleans up a lazy solver. Does nothing"
+  nil)
 
 (defun %is-lazy-solver? (solver)
   "Checks if SOLVER is a lazy solver"
   (typep solver 'lazy-solver))
 
 (defmacro with-lazy-solver ((spec) &body body)
-  "Lazily initializes a solver specification. Calls to WITH-SOLVER* will initialize it."
+  "Lazily initializes a solver specification. Calls to WITH-SOLVER* will initialize it"
   (let ((result-var (gensym)))
-    `(let ((*solver* (make-instance 'lazy-solver :solver-spec ,spec)))
+    `(let ((*solver* (initialize-solver 'lazy-solver ,spec)))
        (unwind-protect
             (let ((,result-var (progn ,@body)))
-              (if (%is-lazy-solver? *solver*)
-                  ,result-var
-                  (multiple-value-bind (status unread-forms)
-                      (deinit-solver *solver*)
-                    (values ,result-var unread-forms status))))
-         (unless (%is-lazy-solver? *solver*)
-           (cleanup-solver *solver*))))))
+              (multiple-value-bind (status unread-forms)
+                  (finalize-solver *solver*)
+                (values ,result-var unread-forms status)))
+           (cleanup-solver *solver*)))))
 
 (defmacro with-solver* ((solver spec) &body body)
   `(if (and (boundp '*solver*) (not (null *solver*)))
        (progn
          (when (%is-lazy-solver? *solver*)
-           (setf *solver* (init-solver (%solver-spec *solver*))))
+           (setf *solver* (make-solver (%solver-spec *solver*))))
          (let ((,solver *solver*))
            ,@body))
        (with-solver (,solver ,spec)

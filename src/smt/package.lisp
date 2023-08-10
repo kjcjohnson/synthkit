@@ -15,7 +15,8 @@
            #:$+ #:$- #:$< #:$> #:$* #:$=
            #:$not #:$and #:$or #:$xor
            #:$iff #:$implies #:$ite
-           #:with-solver #:make-solver #:close-solver #:check-sat #:get-model
+           #:with-solver #:make-solver #:close-solver
+           #:check-sat #:read-model #:get-model
            #:push-scope #:pop-scope #:with-scope
            #:add #:declare-constants #:dump-commands #:set-model
            #:copy-node
@@ -48,9 +49,11 @@
            #:make-native-break #:native-break? #:native-break-condition)
 
   ;; Solvers
-  (:export #:*solver* #:with-solver #:with-solver* #:with-lazy-solver
+  (:export #:*solver* #:program #:arguments
+           #:with-solver #:with-solver* #:with-lazy-solver
+           #:make-solver #:initialize-solver #:finalize-solver #:cleanup-solver
            #:solver #:solver* #:*cvc5* #:arguments #:add-assertion
-           #:declare-constant
+           #:declare-constant #:dump #:reset-solver #:set-logic
            #:solve)
 
   ;; Traversals

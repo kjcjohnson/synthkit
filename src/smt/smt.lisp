@@ -26,7 +26,11 @@
   ((program :reader program :initarg :program)
    (arguments :reader arguments :initarg :arguments)))
 
-(defparameter *cvc4* (make-instance 'solver*
+(defclass solver-configuration (solver*)
+  ()
+  (:documentation "Transitional class renaming"))
+
+(defparameter *cvc4* (make-instance 'solver-configuration
                                     :program #P"d:/bin/cvc4-1.8-win64-opt.exe"
                                     :arguments (list "--lang" "smt2"
                                                      "--produce-models"
@@ -34,7 +38,7 @@
                                                      "--tlimit-per" "10000"
                                                      )))
 
-(defparameter *cvc5* (make-instance 'solver*
+(defparameter *cvc5* (make-instance 'solver-configuration
                                     :program "cvc5"
                                     :arguments (list "--lang" "smt2"
                                                      "--produce-models"
@@ -187,23 +191,35 @@
       `(,(intern (identifier-smt (name expression)))
         ,@(map 'list (a:rcurry #'to-smt :pprint pprint) (children expression)))))
 (defmethod to-smt ((fn function-declaration) &key pprint)
-  (if (cl:not (null (definition fn)))
-      `(,(intern "define-fun")
-        ,(intern (name fn))
-        (,@(map 'list
-                #'(lambda (arg sort) (list (intern (name arg)) (intern (name sort))))
-                (arguments fn) (argument-sorts fn)))
-        ,(intern (name (return-sort fn)))
-        ,(to-smt (definition fn) :pprint pprint))
-      `(,(intern "declare-fun")
-        ,(intern (name fn))
-        (,@(map 'list
-                #'(lambda (x) (intern (name x))) (argument-sorts fn)))
-        ,(intern (name (return-sort fn))))))
+  (flet ((i-or-p (thing)
+           (if pprint
+               (etypecase thing
+                 (string thing)
+                 (symbol (identifier-string thing)))
+               (intern thing))))
+      (if (cl:not (null (definition fn)))
+          `(,(i-or-p "define-fun")
+            ,(i-or-p (name fn))
+            (,@(map 'list
+                    #'(lambda (arg sort)
+                        (list (i-or-p (name arg)) (i-or-p (name sort))))
+                    (arguments fn) (argument-sorts fn)))
+            ,(i-or-p (name (return-sort fn)))
+            ,(to-smt (definition fn) :pprint pprint))
+          `(,(i-or-p "declare-fun")
+            ,(i-or-p (name fn))
+            (,@(map 'list
+                    #'(lambda (x) (i-or-p (name x))) (argument-sorts fn)))
+            ,(i-or-p (name (return-sort fn)))))))
 
 (defmethod to-smt ((lit literal) &key pprint)
-  (declare (ignore pprint))
-  (value lit))
+  ;; Special case for Boolean literals
+  (if pprint
+      (if (eql (sort lit) *bool-sort*)
+          (if (value lit)
+              "true"
+              "false"))
+      (value lit)))
 
 (defmethod to-smt (l &key pprint)
   (declare (ignore pprint))
@@ -213,6 +229,8 @@
   (if (symbolp name)
       `(quote ,name)
       name))
+
+(defmethod name ((symbol symbol)) symbol)
 
 (defmethod sort ((int integer)) *int-sort*)
 (defmethod arity ((int integer)) 0)
@@ -255,7 +273,7 @@
 
 (defun function-declaration (name arg-sorts ret-sort &optional arguments definition)
   (make-instance 'function-declaration
-                 :name (string name)
+                 :name name
                  :arity (length arg-sorts)
                  :return-sort ret-sort
                  :argument-sorts arg-sorts
