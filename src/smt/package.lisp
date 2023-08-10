@@ -57,4 +57,5 @@
   (:export #:map-expression #:update-expression)
 
   ;; Trivia patterns
-  (:export #:application #:fn #:quantifier #:forall #:exists #:var))
+  (:export #:application #:fn #:quantifier #:forall #:exists #:var
+           #:sort #:bool-sort #:int-sort #:string-sort #:reglan-sort))

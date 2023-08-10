@@ -47,3 +47,24 @@ to capture all bindings, or a list to capture each binding individually."
   "Matches against an variable."
   (declare (ignore context))
   `(class constant :name ,name :sort ,(if (null sort) '_ sort)))
+
+(?:defpattern sort (name &key (context '*smt*))
+  "Matches against a sort."
+  (declare (ignore context))
+  `(class sort :name ,name))
+
+(?:defpattern bool-sort ()
+  "Matches Boolean sorts"
+  `(sort "Bool"))
+
+(?:defpattern int-sort ()
+  "Matches Integer sorts"
+  `(sort "Int"))
+
+(?:defpattern string-sort ()
+  "Matches String sorts"
+  `(sort "String"))
+
+(?:defpattern reglan-sort ()
+  "Matches Reglan sorts"
+  `(sort "RegLan"))
