@@ -123,7 +123,8 @@
   :depends-on ("com.kjcjohnson.synthkit/base"
                "com.kjcjohnson.synthkit/grammar"
                "com.kjcjohnson.synthkit/ast"
-               "com.kjcjohnson.synthkit/smt")
+               "com.kjcjohnson.synthkit/smt"
+               "com.kjcjohnson.synthkit/specification")
   :serial t
   :components ((:module "chc"
                 :serial t
