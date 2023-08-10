@@ -23,6 +23,21 @@
     :initform (make-hash-table)
     :reader %extra-data)))
 
+(defgeneric lookup-non-terminal (grammar name)
+  (:documentation "Looks up a non-terminal by name")
+  (:method ((grammar regular-tree-grammar) name)
+    (find name (non-terminals grammar) :key #'name)))
+
+(defgeneric lookup-operator (grammar name)
+  (:documentation "Looks up an operator by name")
+  (:method ((grammar regular-tree-grammar) name)
+    (find name (operators grammar) :key #'name)))
+
+(defgeneric lookup-production (grammar name)
+  (:documentation "Looks up a production by name")
+  (:method ((grammar regular-tree-grammar) name)
+    (find name (productions grammar) :key #'name)))
+
 (defun extra-data (grammar key &optional default)
   "Retrieves a piece of extra data from a grammar."
   (gethash key (%extra-data grammar) default))
@@ -61,6 +76,11 @@
 (defmethod print-object ((nt non-terminal) stream)
   (print-unreadable-object (nt stream :type t)
     (format stream "~s" (name nt))))
+
+(defgeneric non-terminals-for-term-type (grammar term-type)
+  (:documentation "Gets a list of all non-terminals with term type TERM-TYPE")
+  (:method ((grammar regular-tree-grammar) term-type)
+    (remove term-type (non-terminals grammar) :test-not #'eql :key #'term-type)))
 
 (defclass operator (named-grammar-element)
   (
