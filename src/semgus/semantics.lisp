@@ -23,8 +23,9 @@
   (funcall (operational-semantics sem) descriptor production))
 
 (defmethod ast:operational-semantics-for-hole ((sem default-semantics)
-                                               descriptor)
-  (funcall (operational-semantics sem) descriptor :hole))
+                                               descriptor
+                                               non-terminal)
+  (funcall (operational-semantics sem) descriptor non-terminal))
 
 (defmethod ast:relational-semantics-for-production
     ((sem default-semantics) descriptor production)

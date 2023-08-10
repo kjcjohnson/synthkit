@@ -56,26 +56,34 @@
 
     (values
      #'(lambda (descriptor prod)
-         (if (typep prod 'g:production)
-             (if (null (g:name prod))
-                 ;; Special case: NT-to-NT productions
-                 (list (make-instance 'ast:calling-card
-                                      :builder-function
-                                      #'(lambda (sem-fns node node-children)
-                                          (declare (ignore node node-children))
-                                          (first sem-fns)) ;; Just return the child fn
-                                      :descriptor-requests
-                                      (list
-                                       (make-instance 'ast:semantics-descriptor-request
-                                                      :descriptor descriptor
-                                                      :node-id 0))))
-                 (let ((subtable (gethash descriptor opsem)))
-                   (unless subtable
-                     (error "No semantics for descriptor: ~s" descriptor))
-                   (gethash (g:operator prod) subtable)))
-             (let ((subtable (gethash descriptor opsem)))
-               (unless subtable
-                 (error "No auxiliary semantics for descriptor: ~s and: ~a"
-                        descriptor prod))
-               (gethash prod subtable))))
+         (cond
+           ((typep prod 'g:production)
+            (if (null (g:name prod))
+                ;; Special case: NT-to-NT productions
+                (list (make-instance 'ast:calling-card
+                                     :builder-function
+                                     #'(lambda (sem-fns node node-children)
+                                         (declare (ignore node node-children))
+                                         (first sem-fns)) ;; Just return the child fn
+                                     :descriptor-requests
+                                     (list
+                                      (make-instance 'ast:semantics-descriptor-request
+                                                     :descriptor descriptor
+                                                     :node-id 0))))
+                (let ((subtable (gethash descriptor opsem)))
+                  (unless subtable
+                    (error "No semantics for descriptor: ~s" descriptor))
+                  (gethash (g:operator prod) subtable))))
+           ((typep prod 'g:non-terminal)
+            ;; Hole here
+            (let ((subtable (gethash descriptor opsem)))
+              (unless subtable
+                (error "No hole semantics for descriptor: ~s" descriptor))
+              (gethash prod subtable)))
+           (t
+            (let ((subtable (gethash descriptor opsem)))
+              (unless subtable
+                (error "No auxiliary semantics for descriptor: ~s and: ~a"
+                       descriptor prod))
+              (gethash prod subtable)))))
      desc-map)))
