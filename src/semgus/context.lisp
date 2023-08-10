@@ -57,3 +57,36 @@
   "Looks up a CHC in CONTEXT with the given identifier ID"
   (setf id (smt:ensure-identifier id))
   (find id (chcs context) :key #'chc:id))
+
+(defun lookup-chcs-by-operator (operator &optional (context *semgus-context*))
+  "Looks up all CHCs in CONTEXT with a constructor matching OPERATOR"
+  (let ((name (smt:ensure-identifier (g:name operator))))
+    (remove-if-not (a:curry #'eql name)
+                   (chcs context)
+                   :key (a:compose #'chc:name #'chc:constructor))))
+
+;;;
+;;; Grammar helpers
+;;;
+(defmethod g:lookup-non-terminal ((context semgus-context) name)
+  (let ((nt (g:lookup-non-terminal (grammar context) (smt:ensure-identifier name))))
+    (if (null nt) ;; Sometimes the term type name gets used...as a string
+        (find name (g:non-terminals (grammar context))
+              :test #'string=
+              :key #'(lambda (nt) (first (smt:name (g:term-type nt)))))
+        nt)))
+
+(defmethod g:lookup-operator ((context semgus-context) name)
+  (g:lookup-operator (grammar context) (smt:ensure-identifier name)))
+
+(defmethod g:lookup-production ((context semgus-context) name)
+  (g:lookup-production (grammar context) (smt:ensure-identifier name)))
+
+(defmethod g:non-terminals-for-term-type ((context semgus-context) term-type)
+  (g:non-terminals-for-term-type (grammar context) term-type))
+
+(defmethod g:non-terminals ((context semgus-context))
+  (g:non-terminals (grammar context)))
+
+(defmethod g:productions ((context semgus-context))
+  (g:productions (grammar context)))
