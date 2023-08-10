@@ -27,6 +27,12 @@ serialization of a program node, triggers ``*EXE-DEBUG*`` to be set to T.")
 (declaim (type (or null string) *exe-debug-match*))
 
 ;;;
+;;; Stores the root input state
+;;;
+(defvar *root-input-state* nil "The initial input state passed to EXECUTE-PROGRAM")
+(defvar *root-input-descriptor* nil "The initial descriptor passed to EXECUTE-PROGRAM")
+
+;;;
 ;;; Public execution interface
 ;;;
 (defun execute-program (semantics descriptor node input-state)
@@ -39,7 +45,9 @@ serialization of a program node, triggers ``*EXE-DEBUG*`` to be set to T.")
            (setf *exe-debug* t))
          (tagbody
             (let ((*program-execution-exit-hook* #'(lambda () (go abort-execution)))
-                  (*self-recursion-counter* 0))
+                  (*self-recursion-counter* 0)
+                  (*root-input-state* input-state)
+                  (*root-input-descriptor* descriptor))
               (setf result (%execute-program semantics descriptor node input-state)))
             (go finish-execution)
           abort-execution
@@ -102,9 +110,10 @@ serialization of a program node, triggers ``*EXE-DEBUG*`` to be set to T.")
              node
              (children node))))
 
-(defun %hole-helper (semantics descriptor input-state)
+(defun %hole-helper (semantics hole descriptor input-state)
   "Runs semantics for a hole, maybe. Returns the output state, or NIL if no semantics"
-  (a:when-let (sem-fn (operational-semantics-for-hole semantics descriptor))
+  (a:when-let (sem-fn (operational-semantics-for-hole
+                       semantics descriptor (non-terminal hole)))
     (funcall sem-fn input-state)))
 
 ;;;
@@ -114,7 +123,7 @@ serialization of a program node, triggers ``*EXE-DEBUG*`` to be set to T.")
 
   ;;; Short-circuit and yell if we attempt to execute a hole as a program
   (when (typep node 'program-hole)
-    (let ((hole-val (%hole-helper semantics descriptor input-state)))
+    (let ((hole-val (%hole-helper semantics node descriptor input-state)))
       (if (null hole-val)
           (error "Attempting to execute hole: ~a" node)
           (return-from %execute-program (values hole-val t)))))

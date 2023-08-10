@@ -9,7 +9,7 @@
 (defgeneric operational-semantics-for-production (semantics descriptor production)
   (:documentation "Maps from a production to a list of state transformation semantic functions."))
 
-(defgeneric operational-semantics-for-hole (semantics descriptor)
+(defgeneric operational-semantics-for-hole (semantics descriptor non-terminal)
   (:documentation "Maps from a descriptor to semantics for a hole"))
 
 (defgeneric relational-semantics-for-production (semantics descriptor production)

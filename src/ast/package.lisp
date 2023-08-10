@@ -41,6 +41,9 @@
   (:export #:*exe-debug*
            #:*exe-level*
            #:*exe-debug-match*)
+  ;; Ugh. I'd rather not export these as variables
+  (:export #:*root-input-state*
+           #:*root-input-descriptor*)
   ;; Counters
   (:export #:*execution-counter*
            #:*checkpoint-times*
