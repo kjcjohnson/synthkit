@@ -66,3 +66,28 @@ For convenience, the readers for this class are also defined on CHC."))
 (defmethod term-symbol ((chc chc)) (term-symbol (symbol-table chc)))
 (defmethod auxiliary-symbols ((chc chc)) (auxiliary-symbols (symbol-table chc)))
 (defmethod child-symbols ((chc chc)) (child-symbols (symbol-table chc)))
+
+;;;
+;;; Convenience readers for heads
+;;;
+(defmethod input-symbols ((head head))
+  (map 'vector #'(lambda (ix)
+                   (make-instance 'symbol-entry
+                                  :index ix
+                                  :sort (elt (signature head) ix)
+                                  :name (elt (formals head) ix)))
+       (input-indices head)))
+
+(defmethod output-symbols ((head head))
+  (map 'vector #'(lambda (ix)
+                   (make-instance 'symbol-entry
+                                  :index ix
+                                  :sort (elt (signature head) ix)
+                                  :name (elt (formals head) ix)))
+       (output-indices head)))
+
+(defmethod term-symbol ((head head))
+  (make-instance 'symbol-entry
+                 :index (term-index head)
+                 :sort (term-type head)
+                 :name (term-name head)))

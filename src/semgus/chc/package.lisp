@@ -24,11 +24,12 @@
            #:filter-role
            #:role-indices
            #:input-indices #:input-formals #:output-indices #:output-formals
-           #:output-actuals
+           #:input-actuals #:output-actuals #:term-actual
            #:relation #:head #:actuals)
   ;; CHCs
   (:export #:chc
-           #:symbol-table #:head #:body #:constraint #:constructor #:data #:id)
+           #:symbol-table #:head #:body #:constraint #:constructor #:data #:get-data
+           #:id)
   ;; Symbol tables
   (:export #:symbol-entry
            #:symbol-name #:symbol-sort #:symbol-index

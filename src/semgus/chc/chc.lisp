@@ -112,11 +112,21 @@ ROLES and DATA should be sequences of the same length. Returns a list."
 (defmethod name ((relation relation)) (name (head relation)))
 (defmethod signature ((relation relation)) (signature (head relation)))
 
+(defun input-actuals (relation)
+  "Returns a list of input actuals of RELATION"
+  (loop for ii in (input-indices (head relation))
+        for input = (aref (actuals relation) ii)
+        collecting input))
+
 (defun output-actuals (relation)
   "Returns a list of output actuals of RELATION"
   (loop for oi in (output-indices (head relation))
         for output = (aref (actuals relation) oi)
         collecting output))
+
+(defun term-actual (relation)
+  "Returns the actual term variable name of RELATION"
+  (aref (actuals relation) (term-index (head relation))))
 
 (defclass chc ()
   ((symbols :reader symbol-table
@@ -129,7 +139,7 @@ ROLES and DATA should be sequences of the same length. Returns a list."
          :documentation "The head associated with this CHC")
    (body :reader body
          :initarg :body
-         :type (vector relation)
+         :type list ; of relation
          :documentation "Child semantic relations used in this CHC")
    (constraint :reader constraint
                :initarg :constraint
@@ -147,4 +157,13 @@ ROLES and DATA should be sequences of the same length. Returns a list."
          :initarg :data
          :type hash-table
          :documentation "Arbitrary map of auxiliary data for this CHC"))
+  (:default-initargs :data (make-hash-table))
   (:documentation "A CHC."))
+
+(defun get-data (key chc &optional default)
+  "Gets a piece of CHC extra data"
+  (gethash key (data chc) default))
+
+(defun (setf get-data) (value key chc)
+  "Sets a piece of CHC extra data"
+  (setf (gethash key (data chc)) value))
