@@ -26,8 +26,9 @@
     (5am:is (%in-re "tEsT" reglan)))) 
 
 (5am:def-test re.none/works ()
+  ;; None is the empty _set_, not the empty _string_
   (let ((reglan (smt:call-smt "re.none")))
-    (5am:is (%in-re "" reglan))
+    (5am:is (not (%in-re "" reglan)))
     (5am:is (not (%in-re "asdf" reglan)))
     (5am:is (not (%in-re "." reglan)))))
 
