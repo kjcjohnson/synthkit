@@ -10,13 +10,17 @@
   "Defines a built-in SMT theory function named SMT-NAME. This function will be
 associated with a theory THEORY (denoted by a keyword) with given LAMBDA-LIST), and an
 implementation given by BODY."
-  (check-type smt-name string)
+  (check-type smt-name (or string list))
+  (when (listp smt-name)
+    (assert (not (zerop (length smt-name))))
+    (check-type (first smt-name) string)
+    (map nil #'(lambda (x) (check-type x (or string integer symbol))) smt-name))
   (check-type theory keyword)
   (let ((fn-name (intern (format nil "SMT[~a]~a" theory smt-name))))
     `(eval-when (:compile-toplevel :load-toplevel :execute)
        (defun ,fn-name ,lambda-list
          ,@body)
-       (setf (gethash (a:ensure-list ,smt-name) *builtin-smt-functions*)
+       (setf (gethash ',(a:ensure-list smt-name) *builtin-smt-functions*)
              (cons ',fn-name #',fn-name)))))
 
 (defun lookup-theory-function (name)

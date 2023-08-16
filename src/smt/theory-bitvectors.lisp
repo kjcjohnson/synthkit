@@ -77,3 +77,9 @@
   "Bit vector unsigned less-than"
   (declare (type bit-vector bv1 bv2))
   (< (bit-smasher:int<- bv1) (bit-smasher:int<- bv2)))
+
+(defsmtfun ("extract" i j) :bv (bv)
+  "Extracts bits I down to J from BV"
+  (declare (type bit-vector bv))
+  (declare (ignore bv))
+  nil)
