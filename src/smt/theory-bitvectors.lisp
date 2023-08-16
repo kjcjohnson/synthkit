@@ -72,3 +72,8 @@
   (clip
    (bit-smasher:bit-sum (bit-not bv) 1)
    bv))
+
+(defsmtfun "bvult" :bv (bv1 bv2)
+  "Bit vector unsigned less-than"
+  (declare (type bit-vector bv1 bv2))
+  (< (bit-smasher:int<- bv1) (bit-smasher:int<- bv2)))

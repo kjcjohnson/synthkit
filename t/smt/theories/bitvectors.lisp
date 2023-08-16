@@ -44,3 +44,9 @@
   (5am:is (equal #*1111 (smt:call-smt "bvneg" #*0001)))
   (5am:is (equal #*00 (smt:call-smt "bvneg" #*00)))
   (5am:is (equal #*010 (smt:call-smt "bvneg" #*110))))
+
+(5am:test bvult/works
+  (5am:is-true (smt:call-smt "bvult" #*0001 #*0010))
+  (5am:is-true (smt:call-smt "bvult" #*0001 #*1111))
+  (5am:is-false (smt:call-smt "bvult" #*0001 #*0000))
+  (5am:is-false (smt:call-smt "bvult" #*0011 #*0011)))
