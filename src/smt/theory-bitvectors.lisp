@@ -63,5 +63,12 @@
   "Bit vector subtraction (modulo length)"
   (declare (type bit-vector bv1 bv2))
   (clip
-   (bit-smasher:bit-difference bv1 bv2)
+   (bit-smasher:bit-sum bv1 (bit-not bv2) 1)
    bv1))
+
+(defsmtfun "bvneg" :bv (bv)
+  "Bit vector 2's complement negation"
+  (declare (type bit-vector bv))
+  (clip
+   (bit-smasher:bit-sum (bit-not bv) 1)
+   bv))

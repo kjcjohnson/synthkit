@@ -211,6 +211,7 @@
                              (:module "theories"
                               :serial t
                               :components ((:file "main")
+                                           (:file "bitvectors")
                                            (:file "strings")
                                            (:file "regex")))))
                (:module "vsa"
