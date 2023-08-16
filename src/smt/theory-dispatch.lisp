@@ -4,7 +4,7 @@
 (in-package #:com.kjcjohnson.synthkit.smt)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (defvar *builtin-smt-functions* nil))
+  (defvar *builtin-smt-functions* (make-hash-table :test 'equal)))
 
 (defmacro defsmtfun (smt-name theory lambda-list &body body)
   "Defines a built-in SMT theory function named SMT-NAME. This function will be
@@ -16,40 +16,28 @@ implementation given by BODY."
     `(eval-when (:compile-toplevel :load-toplevel :execute)
        (defun ,fn-name ,lambda-list
          ,@body)
-       (a:if-let (cell (assoc ,smt-name *builtin-smt-functions* :test #'string=))
-         (setf (cdr cell) (cons ',fn-name #',fn-name))
-         (setf *builtin-smt-functions*
-               (acons ,smt-name
-                      (cons ',fn-name #',fn-name)
-                      *builtin-smt-functions*))))))
+       (setf (gethash (a:ensure-list ,smt-name) *builtin-smt-functions*)
+             (cons ',fn-name #',fn-name)))))
 
 (defun lookup-theory-function (name)
   "Looks up an SMT theory function"
-  (flet ((ensure-list (thing)
-           "Ensures that THING is a list. Makes a single element list if not."
-           (if (consp thing)
-               thing
-               (list thing))))
+  (setf name (a:ensure-list name))
+  (let ((looked-up (gethash name *builtin-smt-functions*)))
+    (unless (null looked-up)
+      (return-from lookup-theory-function (cdr looked-up))))
 
-    (setf name (ensure-list name))
-    (let ((looked-up (assoc name *builtin-smt-functions*
-                            :key #'ensure-list
-                            :test #'equal)))
-      (unless (null looked-up)
-        (return-from lookup-theory-function (cddr looked-up))))
-
-    ;; Not a theory function
-    nil))
+  ;; Not a theory function
+  nil)
 
 (defun map-built-in-definitions (operation)
   "Iterates over built-in function definitions. OPERATION accepts two args"
-  (dolist (defn-form *builtin-smt-functions*)
-    (funcall operation (car defn-form) (cdr (cdr defn-form)))))
+  (maphash #'(lambda (key value)
+               (funcall operation key (cdr value)))
+           *builtin-smt-functions*))
 
 (defun lookup-theory-function-symbol (name)
   "Looks up a function name for a theory function"
-  (let ((looked-up (cdr (assoc name *builtin-smt-functions*
-                               :test #'equal))))
+  (let ((looked-up (gethash (a:ensure-list name) *builtin-smt-functions*)))
     (if (null looked-up)
         nil
         (car looked-up))))
