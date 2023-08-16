@@ -57,7 +57,6 @@ jobs:
           echo .qlot/bin >> $GITHUB_PATH
         if: steps.cache.outputs.cache-hit == 'true'
       - uses: 40ants/setup-lisp@v2
-        if: steps.cache.outputs.cache-hit != 'true'
 
       # These steps run our tests
       # Windows needs to be run with the msys2 shell due to how roswell is installed
