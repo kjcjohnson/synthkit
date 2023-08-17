@@ -113,11 +113,31 @@ implementation given by BODY."
                                     :fn-impl #',fn-name
                                     :param-indexes ',param-ixs)))))))
 
+(defun %compile-concrete-entry (family name)
+  "Compiles a concrete SMT function definition from FAMILY and NAME"
+  (declare (ignore family name))
+  nil)
+
+(defun %lookup-theory-entry (name)
+  "Looks up a theory entry for NAME. If an abstract family, compiles a concrete entry"
+  (declare (type smt-name-type name))
+  (setf name (a:ensure-list name))
+  (if (= 1 (length name))
+      (gethash (%indexed-base-name name) *builtin-smt-functions*)
+      (let* ((concrete (%indexed-base-name name))
+             (looked-up (gethash concrete *builtin-smt-functions*)))
+        (if looked-up
+            looked-up
+            (let* ((abstract (%indexed-base-name name :concrete nil))
+                   (looked-up (gethash abstract *builtin-smt-functions*)))
+              (if looked-up
+                  (%compile-concrete-entry looked-up name)
+                  nil))))))
+
 (defun lookup-theory-function (name)
   "Looks up an SMT theory function"
   (declare (type smt-name-type name))
-  (setf name (%indexed-base-name name))
-  (let ((looked-up (gethash name *builtin-smt-functions*)))
+  (let ((looked-up (%lookup-theory-entry name)))
     (unless (null looked-up)
       (return-from lookup-theory-function (fn-impl looked-up))))
 
@@ -133,7 +153,7 @@ implementation given by BODY."
 (defun lookup-theory-function-symbol (name)
   "Looks up a function name for a theory function"
   (declare (type smt-name-type name))
-  (let ((looked-up (gethash (%indexed-base-name name) *builtin-smt-functions*)))
+  (let ((looked-up (%lookup-theory-entry name)))
     (if (null looked-up)
         nil
         (fn-name looked-up))))

@@ -8,7 +8,7 @@
   (declare (type bit-vector bv bv-template))
   (let* ((size (length bv-template))
          (new (make-array size :element-type 'bit)))
-    
+
     (loop for ix from 0 below size
           for src = (+ ix (- (length bv) size))
           doing (setf (bit new ix)
@@ -16,7 +16,7 @@
                           0
                           (bit bv src))))
     new))
-    
+
 
 (defsmtfun "bvnot" :bv (bv)
   "Bit vector not"
@@ -81,5 +81,5 @@
 (defsmtfun ("extract" i j) :bv (bv)
   "Extracts bits I down to J from BV"
   (declare (type bit-vector bv))
-  (declare (ignore bv))
+  (declare (ignore bv i j))
   nil)
