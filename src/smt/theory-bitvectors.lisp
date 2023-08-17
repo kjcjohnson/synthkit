@@ -81,5 +81,11 @@
 (defsmtfun ("extract" i j) :bv (bv)
   "Extracts bits I down to J from BV"
   (declare (type bit-vector bv))
-  (declare (ignore bv i j))
-  nil)
+  (declare (type integer i j))
+  (assert (and (> (length bv) i)
+               (>= i j 0)))
+  ;; Extract bits starting from J through I
+  ;; But bitvectors in CL are backwards
+  (let ((start (- (length bv) i 1))
+        (end (- (length bv) j)))
+    (subseq bv start end)))

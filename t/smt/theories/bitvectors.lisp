@@ -50,3 +50,9 @@
   (5am:is-true (smt:call-smt "bvult" #*0001 #*1111))
   (5am:is-false (smt:call-smt "bvult" #*0001 #*0000))
   (5am:is-false (smt:call-smt "bvult" #*0011 #*0011)))
+
+(5am:test extract/works
+  (5am:is (equal #*0 (smt:call-smt ("extract" 0 0) #*10)))
+  (5am:is (equal #*1 (smt:call-smt ("extract" 1 1) #*10)))
+  (5am:is (equal #*10 (smt:call-smt ("extract" 1 0) #*10)))
+  (5am:is (equal #*11 (smt:call-smt ("extract" 2 1) #*0110))))

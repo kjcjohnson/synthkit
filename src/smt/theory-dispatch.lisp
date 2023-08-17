@@ -180,9 +180,8 @@ the macros CALL-SMT and APPLY-SMT if possible to do the lookup at compile time."
 (defun %maybe-lookup-inline-theory-function (fnname env)
   "Attempts to look up the SMT theory function with name FNNAME. If FNNAME is a
 constant string which names an SMT theory function, that function symbol will be
-returned, otherwise NIL."
-  (when (and (constantp fnname env)
-             (stringp fnname))
+returned, or a concrete indexed identifier, otherwise NIL."
+  (when (typep fnname '(smt-name-type :concrete t) env)
     (a:when-let (fn-symb (lookup-theory-function-symbol fnname))
       (return-from %maybe-lookup-inline-theory-function fn-symb)))
 
@@ -193,7 +192,7 @@ returned, otherwise NIL."
   "Generates a form to call an SMT function with name FNNAME and arguments ARGS."
   (a:if-let (fn-symb (%maybe-lookup-inline-theory-function fnname env))
     `(,fn-symb ,@args)
-    `(funcall (lookup-theory-function ,fnname) ,@args)))
+    `(funcall (lookup-theory-function ',fnname) ,@args)))
 
 (defun %generate-smt-apply (fnname arg-list env)
   "Generates a form to call an SMT function (as if by APPLY) with name FNNAME and
