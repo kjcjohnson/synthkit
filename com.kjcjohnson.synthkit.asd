@@ -203,7 +203,8 @@
                "com.kjcjohnson.synthkit")
   :pathname "t"
   :serial "t"
-  :components ((:file "package")
+  :components ((:file "patch")
+               (:file "package")
                (:file "main")
                (:module "smt"
                 :serial t
