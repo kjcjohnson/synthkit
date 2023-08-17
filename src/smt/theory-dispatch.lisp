@@ -46,14 +46,22 @@
    (fn-impl :reader fn-impl
             :initarg :fn-impl
             :type function
-            :documentation "The function implementation for this entry"))
+            :documentation "The function implementation for this entry")
+   (fn-theory :reader fn-theory
+              :initarg :fn-theory
+              :type keyword
+              :documentation "The theory that this entry belongs to"))
   (:documentation "A theory function entry"))
 
 (defclass theory-family-entry (theory-entry)
   ((param-indexes :reader param-indexes
                   :initarg :param-indexes
                   :type list
-                  :documentation "The index of symbols in the index that are args"))
+                  :documentation "The index of symbols in the index that are args")
+   (lambda-list :reader lambda-list
+                :initarg :lambda-list
+                :type list
+                :documentation "The lambda list of the family implementation"))
   (:documentation "A family of theory functions, i.e., indexed identifiers"))
 
 (defclass theory-fn-entry (theory-entry)
@@ -106,17 +114,23 @@ implementation given by BODY."
                     `(make-instance 'theory-fn-entry
                                     :smt-name ',smt-name
                                     :fn-name ',fn-name
-                                    :fn-impl #',fn-name)
+                                    :fn-impl #',fn-name
+                                    :fn-theory ,theory)
                     `(make-instance 'theory-family-entry
                                     :smt-name ',smt-name
                                     :fn-name ',fn-name
                                     :fn-impl #',fn-name
-                                    :param-indexes ',param-ixs)))))))
+                                    :fn-theory ,theory
+                                    :param-indexes ',param-ixs
+                                    :lambda-list ',lambda-list)))))))
 
 (defun %compile-concrete-entry (family name)
   "Compiles a concrete SMT function definition from FAMILY and NAME"
-  (declare (ignore family name))
-  nil)
+  ;; TODO: parse lambda list and apply properly
+  (let ((ix-args (loop for ix in (param-indexes family)
+                       collect (elt name (1+ ix))))) ; Skip base name
+    (eval `(defsmtfun ,name ,(fn-theory family) ,(lambda-list family)
+             (,(fn-name family) ,@ix-args ,@(lambda-list family))))))
 
 (defun %lookup-theory-entry (name)
   "Looks up a theory entry for NAME. If an abstract family, compiles a concrete entry"
@@ -124,7 +138,7 @@ implementation given by BODY."
   (setf name (a:ensure-list name))
   (if (= 1 (length name))
       (gethash (%indexed-base-name name) *builtin-smt-functions*)
-      (let* ((concrete (%indexed-base-name name))
+      (let* ((concrete (%indexed-base-name name :concrete t))
              (looked-up (gethash concrete *builtin-smt-functions*)))
         (if looked-up
             looked-up
