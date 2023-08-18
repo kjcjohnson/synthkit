@@ -209,7 +209,7 @@
                (etypecase thing
                  (string thing)
                  (symbol (identifier-string thing)))
-               (intern thing))))
+               (intern-identifier thing))))
       (if (cl:not (null (definition fn)))
           `(,(i-or-p "define-fun")
             ,(i-or-p (name fn))
@@ -310,7 +310,7 @@
                                   #'(lambda (a s)
                                       (list
                                        (intern (identifier-smt a))
-                                       (intern (name s))))
+                                       (intern-identifier (name s))))
                                   (arguments expr)
                                   (argument-sorts expr)))
     ,(to-smt (first (children expr)) :pprint pprint)))

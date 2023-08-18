@@ -83,7 +83,8 @@
   (dolist (c constants)
     (cl-smt-lib:write-to-smt solver `((,(intern "declare-const")
                                        ,(intern (smt:identifier-smt (smt:name c)))
-                                       ,(intern (smt:name (smt:sort c))))))))
+                                       ,(smt::intern-identifier
+                                         (smt:name (smt:sort c))))))))
 
 (defmethod smt:check-sat ((solver process-two-way-stream))
   "Checks satisfibility"
