@@ -68,7 +68,7 @@
   ()
   (:documentation "A concrete theory function entry"))
 
-(defun %indexed-base-name (smt-name &key concrete)
+(defun indexed-base-name (smt-name &key concrete)
   (cond
     ((atom smt-name)
      (format nil "~a" smt-name))
@@ -92,7 +92,7 @@
             and collect x into symbols
           finally (setf param-ixs indexes
                         param-syms symbols))
-    (let ((base-name (%indexed-base-name smt-name :concrete concrete)))
+    (let ((base-name (indexed-base-name smt-name :concrete concrete)))
       (values base-name concrete param-ixs param-syms))))
 
 (defmacro defsmtfun (smt-name theory lambda-list &body body)
@@ -137,12 +137,12 @@ implementation given by BODY."
   (declare (type smt-name-type name))
   (setf name (a:ensure-list name))
   (if (= 1 (length name))
-      (gethash (%indexed-base-name name) *builtin-smt-functions*)
-      (let* ((concrete (%indexed-base-name name :concrete t))
+      (gethash (indexed-base-name name) *builtin-smt-functions*)
+      (let* ((concrete (indexed-base-name name :concrete t))
              (looked-up (gethash concrete *builtin-smt-functions*)))
         (if looked-up
             looked-up
-            (let* ((abstract (%indexed-base-name name :concrete nil))
+            (let* ((abstract (indexed-base-name name :concrete nil))
                    (looked-up (gethash abstract *builtin-smt-functions*)))
               (if looked-up
                   (%compile-concrete-entry looked-up name)

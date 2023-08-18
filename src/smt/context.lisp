@@ -134,8 +134,15 @@
 
 (defun get-function-definition (fn-name &optional (context *smt*))
   "Gets a function definition object for the given name"
-  (gethash (ensure-identifier fn-name context)
-           (function-definitions context)))
+  (let* ((id-name (ensure-identifier fn-name context))
+         (result (gethash id-name (function-definitions context))))
+    ;; It's possible FN-NAME refers to an abstract not-yet-instantiated indexed fn
+    (if (null result)
+        (let* ((smt-name (gethash id-name (identifier-reverse context)))
+               (abs (indexed-base-name smt-name :concrete nil)))
+          (unless (null abs)
+            (set-function-definition id-name :built-in context)))
+        result)))
 
 (defun set-function-definition (fn-name definition &optional (context *smt*))
   "Sets a function definition object in the given context"
