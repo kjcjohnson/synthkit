@@ -208,6 +208,24 @@
                     (%list-replace-all nil :produces usage-types)))))
            usage-table))
 
+(defun %apply-usage-table-rule-3 (usage-table)
+  "Rule 3: try a little harder for auxiliaries that don't have a producer"
+  (maphash #'(lambda (name data)
+               (when (and (eql (%symbol-type data) :auxiliary)
+                          (not (find :produces (%symbol-usage-types data))))
+                 (loop for usage in (%symbol-usages data)
+                       for typecdr on (%symbol-usage-types data)
+                       when (?:match usage
+                              ((?:guard (smt:fn "=" ((smt:var x) _))
+                                        (eql x name))
+                               t))
+                         do (progn
+                              (setf (car typecdr) :produces)
+                              (%list-replace-all nil :consumes
+                                                 (%symbol-usage-types data))
+                              (loop-finish)))))
+           usage-table))
+
 (defclass %semantic-node ()
   ((identifier :initarg :id :reader %node-identifier)
    (semantics :initarg :semantics :reader %node-semantics)
@@ -601,6 +619,7 @@
     ;; Do we need to run these until we reach a fixpoint?
     (%apply-usage-table-rule-1 usage-table)
     (%apply-usage-table-rule-2 usage-table)
+    (%apply-usage-table-rule-3 usage-table)
 
     (unless (%is-usage-table-complete? usage-table)
       (pprint-usage-table *error-output* usage-table)
@@ -734,4 +753,3 @@ r1:
 E.Sem, r.r1
 
 |#
-
