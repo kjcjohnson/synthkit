@@ -78,6 +78,10 @@
   (declare (type bit-vector bv1 bv2))
   (< (bit-smasher:int<- bv1) (bit-smasher:int<- bv2)))
 
+(defsmtfun "concat" :bv (bv1 bv2)
+  "Concatenates BV1 and BV2"
+  (concatenate 'bit-vector bv1 bv2))
+
 (defsmtfun ("extract" i j) :bv (bv)
   "Extracts bits I down to J from BV"
   (declare (type bit-vector bv))

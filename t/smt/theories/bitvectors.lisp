@@ -56,3 +56,7 @@
   (5am:is (equal #*1 (smt:call-smt ("extract" 1 1) #*10)))
   (5am:is (equal #*10 (smt:call-smt ("extract" 1 0) #*10)))
   (5am:is (equal #*11 (smt:call-smt ("extract" 2 1) #*0110))))
+
+(5am:test concat/works
+  (5am:is (equal #*0011 (smt:call-smt "concat" #*00 #*11)))
+  (5am:is (equal #*11011 (smt:call-smt "concat" #*110 #*11))))
