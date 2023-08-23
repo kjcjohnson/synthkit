@@ -109,6 +109,14 @@
         (first thing)
         thing))) ; TODO: probably broken for indexed identifiers
 
+(defparameter *unique-id-counter* 0 "Counter for unique identifiers")
+
+(defun unique-identifier (&optional (smt *smt*))
+  "Returns a unique SMT identifier"
+  (loop for temp-id = (list (format nil "__U-~a" (incf *unique-id-counter*)))
+        until (null (gethash temp-id (identifier-forward smt)))
+        finally (return (ensure-identifier temp-id smt))))
+
 ;;;
 ;;; Functions and their definitions
 ;;;

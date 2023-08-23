@@ -11,10 +11,12 @@
                    (smt:fn "=" ((u:stash semrel (smt:fn semrel-name semrel-args))
                                 phi)))
        ;; TODO: not good enough. We have to make sure phi doesn't use the term variable
+       (setf semrel (smt:copy-node semrel))
        (a:when-let (rootrel (semgus:lookup-root semrel-name context))
          ;; Relation arguments must only be the forall bindings
          (let (inputs outputs input-sorts output-sorts)
            (loop for actual in semrel-args
+                 for ix from 0
                  for sort across (chc:signature rootrel)
                  for role across (chc:roles rootrel)
                  when (eql role :term) do
@@ -29,12 +31,24 @@
                          (fail)))
                  end
                  when (eql role :output) do
-                   (let ((var (smt:name actual)))
-                     (if (find var bindings)
-                         (progn
-                           (push var outputs)
-                           (push sort output-sorts))
-                         (fail)))
+                   (?:match actual
+                     ((smt:var var)
+                      (if (find var bindings)
+                          (progn
+                            (push var outputs)
+                            (push sort output-sorts))
+                          (fail)))
+                     ((or (type bit-vector)
+                          (type number)
+                          (type string)); TODO: any constant type
+                      (let ((temp (smt:unique-identifier)))
+                        (push temp outputs)
+                        (push sort output-sorts)
+                        (setf phi (smt:$and phi
+                                            (smt:$= (smt:variable temp sort)
+                                                    actual)))
+                        (setf (elt (smt:children semrel) ix) (smt:variable temp sort))))
+                     (_ (fail)))
                  end)
            (make-instance 'spec:universal-specification
                           :input-symbols (u:ensure-vector inputs)
@@ -56,7 +70,7 @@
                                        ((u:stash semrel
                                                  (smt:fn semrel-name semrel-args))
                                        phi))))
-       
+
        (a:when-let (rootrel (semgus:lookup-root semrel-name context))
          ;; Check relation arguments
          (let (inputs outputs input-sorts output-sorts)

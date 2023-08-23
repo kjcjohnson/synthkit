@@ -96,11 +96,25 @@
 
 (defmethod smt:read-model ((solver process-two-way-stream))
   "Reads an SMT model from the solver"
-  (labels ((fixup-value (value)
+  (labels ((fixup-value (value sort)
              "Fixes up a value. Rewrites negatives to negatives"
              (?:match value
                ((list '- v)
                 (- v))
+               ((?:guard (integer)
+                         (string= "BitVec" (first (smt:identifier-smt
+                                                   (smt:name sort)))))
+                (let* ((width (second (smt:identifier-smt (smt:name sort))))
+                       (bv (make-array width :element-type 'bit)))
+                  (loop with src = (bit-smasher:bits<- value)
+                        for ix from 0 below width
+                        for src-ix = (- (length src) ix 1)
+                        for bv-ix = (- width ix 1)
+                        if (>= src-ix 0)
+                          do (setf (bit bv bv-ix) (bit src src-ix))
+                        else
+                          do (setf (bit bv bv-ix) 0))
+                  bv))
                (v
                 v)))
            (parse-expr (expr known-symbols)
@@ -127,7 +141,20 @@
                    (smt:ensure-sort (symbol-name (second s))))
                   (smt:variable
                    (smt:ensure-identifier (symbol-name expr))
-                   nil))))))
+                   nil)))))
+           (sort-from-type (type)
+             (if (listp type)
+                 (progn
+                   (assert (string= (symbol-name (first type)) "_"))
+                   (smt:ensure-sort
+                    (smt:ensure-identifier
+                     (map 'list #'(lambda (x)
+                                    (typecase x
+                                      (string x)
+                                      (symbol (symbol-name x))
+                                      (otherwise x)))
+                          (rest type)))))
+                 (smt:ensure-sort (symbol-name type)))))
 
     (let ((output (cl-smt-lib:read-from-smt solver t)))
       ;; CVC4 has the string "model", cvc5 does not
@@ -137,24 +164,24 @@
       (map 'list #'(lambda (dfn)
                      (destructuring-bind (df-kw name args type value) dfn
                        (assert (string= "define-fun" (symbol-name df-kw)))
-                       (if (null args)
-                           (cons (smt:variable
-                                  (smt:ensure-identifier (symbol-name name))
-                                  (make-instance 'smt:sort
-                                                 :name (symbol-name type)))
-                                 (fixup-value value))
-                           (smt::function-declaration
-                            (smt:ensure-identifier (symbol-name name))
-                            (map 'list
-                                 (a:compose #'smt:ensure-sort #'symbol-name #'second)
-                                 args)
-                            (smt:ensure-sort (symbol-name type))
-                            (map 'list
-                                 (a:compose #'smt:ensure-identifier
-                                            #'symbol-name
-                                            #'first)
-                                 args)
-                            (parse-expr value args)))))
+                       (let ((typesort (sort-from-type type)))
+                         (if (null args)
+                             (cons (smt:variable
+                                    (smt:ensure-identifier (symbol-name name))
+                                    typesort)
+                                   (fixup-value value typesort))
+                             (smt::function-declaration
+                              (smt:ensure-identifier (symbol-name name))
+                              (map 'list
+                                   (a:compose #'sort-from-type #'second)
+                                   args)
+                              typesort
+                              (map 'list
+                                   (a:compose #'smt:ensure-identifier
+                                              #'symbol-name
+                                              #'first)
+                                   args)
+                              (parse-expr value args))))))
            output))))
 
 (defmethod smt:get-model ((solver process-two-way-stream))

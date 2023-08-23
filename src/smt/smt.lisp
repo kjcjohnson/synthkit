@@ -234,6 +234,26 @@
               "false"))
       (value lit)))
 
+(defclass smt-bv-wrapper ()
+  ((bv :reader %bv
+       :initarg :bv
+       :type bit-vector
+       :documentation "Underlying bit vector"))
+  (:documentation "Wrapper class to facilitate printing bit vectors"))
+
+(defmethod print-object ((bvw smt-bv-wrapper) stream)
+  (format stream "~a" (to-smt (%bv bvw) :pprint t)))
+
+(defmethod to-smt ((bv bit-vector) &key pprint)
+  (if pprint
+      (let ((str (format nil "~a" bv)))
+        (setf (elt str 1) #\b) ; Just need to swap * for b
+        str)
+      (make-instance 'smt-bv-wrapper :bv bv)))
+
+(defmethod sort ((bv bit-vector))
+  (ensure-sort (ensure-identifier (list "BitVec" (length bv)))))
+
 (defmethod to-smt (l &key pprint)
   (declare (ignore pprint))
   l) ; dump anything directly if no applicable method

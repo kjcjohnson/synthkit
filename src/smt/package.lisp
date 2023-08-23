@@ -23,6 +23,7 @@
 
            #:*smt* #:init-smt
            #:ensure-identifier #:ensure-sort #:identifier-string #:identifier-smt
+           #:unique-identifier
 
            #:get-function-definition #:set-function-definition
            #:get-compiled-function #:evaluate-expression

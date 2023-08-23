@@ -214,7 +214,8 @@
                               :components ((:file "main")
                                            (:file "bitvectors")
                                            (:file "strings")
-                                           (:file "regex")))))
+                                           (:file "regex")))
+                             (:file "to-smt")))
                (:module "vsa"
                 :serial t
                 :components ((:file "main")
