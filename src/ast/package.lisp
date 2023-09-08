@@ -47,8 +47,10 @@
   ;; Counters
   (:export #:*execution-counter*
            #:*checkpoint-times*
+           #:*program-trace-stream*
            #:add-checkpoint
            #:clear-all-checkpoints
+           #:trace-program
            #:*candidate-concrete-programs*
            #:*candidate-partial-programs*
            #:*concrete-candidates-by-size*

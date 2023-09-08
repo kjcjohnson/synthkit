@@ -9,8 +9,10 @@
 (defvar *execution-counter* 0 "Count of program executions - NOT unique programs")
 
 ;;;
-;;; Checkpoints for notable events in a synthesis run's lifetime
+;;; Checkpoints and tracing for notable events in a synthesis run's lifetime
 ;;;
+(defvar *program-trace-stream* nil "Stream to write program traces to")
+
 (defvar *checkpoint-times* nil "Plist of times when checkpoints were reached
 
 *CHECKPOINT-TIMES* is a plist mapping a checkpoint atom (string, symbol, etc.) to a
@@ -23,11 +25,19 @@ call ``ADD-CHECKPOINT`` at appropriate times to mark a new checkpoint in the exe
 
 CHECKPOINT can be any indicator that can be serialized to an execution engine."
   (setf (getf *checkpoint-times* checkpoint)
-        (/ (get-internal-real-time) internal-time-units-per-second)))
+        (/ (get-internal-real-time) internal-time-units-per-second))
+  (when *program-trace-stream*
+    (format *program-trace-stream* "~&=========== [~a] ===========~%" checkpoint)))
 
 (defun clear-all-checkpoints ()
   "Clears all checkpoints"
   (setf *checkpoint-times* nil))
+
+(declaim (inline trace-program))
+(defun trace-program (program)
+  "Report PROGRAM to the program trace stream"
+  (when *program-trace-stream*
+    (format *program-trace-stream* "~&~a~%" program)))
 
 ;;;
 ;;; Counters for program types considered
