@@ -102,8 +102,9 @@
                ((list '- v)
                 (- v))
                ((?:guard (integer)
-                         (string= "BitVec" (first (smt:identifier-smt
-                                                   (smt:name sort)))))
+                         (let ((name (smt:identifier-smt (smt:name sort))))
+                            (and (listp name)
+                                 (string= "BitVec" (first name)))))
                 (let* ((width (second (smt:identifier-smt (smt:name sort))))
                        (bv (make-array width :element-type 'bit)))
                   (loop with src = (bit-smasher:bits<- value)
