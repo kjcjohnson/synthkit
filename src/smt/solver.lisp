@@ -17,15 +17,18 @@
      ,@body))
 
 #-synthkit-disable-smt-solver
-(defmacro with-solver ((solver solver-spec) &body body)
-  (let ((result (gensym)))
+(defmacro with-solver ((solver solver-spec &key status unread) &body body)
+  (let ((status-var (gensym))
+        (unread-var (gensym)))
     `(let ((,solver (make-solver ,solver-spec)))
        (unwind-protect
-            (progn
-              (let ((,result (progn ,@body)))
-                (multiple-value-bind (status unread-forms)
-                    (finalize-solver ,solver)
-                  (values ,result unread-forms status))))
+            (multiple-value-prog1
+                (progn ,@body)
+              (multiple-value-bind (,status-var ,unread-var)
+                  (finalize-solver ,solver)
+                (declare (ignorable ,status-var ,unread-var))
+                ,(when status `(setf ,status ,status-var))
+                ,(when unread `(setf ,unread ,unread-var))))
          ;; Ensure the process is terminated.
          ;(format *trace-output* "; Terminating SMT process...~%")
          (cleanup-solver ,solver)))))
@@ -52,25 +55,30 @@
   "Checks if SOLVER is a lazy solver"
   (typep solver 'lazy-solver))
 
-(defmacro with-lazy-solver ((spec) &body body)
+(defmacro with-lazy-solver ((spec &key status unread) &body body)
   "Lazily initializes a solver specification. Calls to WITH-SOLVER* will initialize it"
-  (let ((result-var (gensym)))
+  (let ((status-var (gensym))
+        (unread-var (gensym)))
+    (declare (ignorable status-var unread-var))
     `(let ((*solver* (initialize-solver 'lazy-solver ,spec)))
        (unwind-protect
-            (let ((,result-var (progn ,@body)))
-              (multiple-value-bind (status unread-forms)
+            (multiple-value-prog1
+                (progn ,@body)
+              (multiple-value-bind (,status-var ,unread-var)
                   (finalize-solver *solver*)
-                (values ,result-var unread-forms status)))
+                (declare (ignorable ,status-var ,unread-var))
+                ,(when status `(setf ,status ,status-var))
+                ,(when unread `(setf ,unread ,unread-var))))
            (cleanup-solver *solver*)))))
 
-(defmacro with-solver* ((solver spec) &body body)
+(defmacro with-solver* ((solver spec &key status unread) &body body)
   `(if (and (boundp '*solver*) (not (null *solver*)))
        (progn
          (when (%is-lazy-solver? *solver*)
            (setf *solver* (make-solver (%solver-spec *solver*))))
          (let ((,solver *solver*))
            ,@body))
-       (with-solver (,solver ,spec)
+       (with-solver (,solver ,spec :status ,status :unread ,unread)
          ,@body)))
 
 (defun solve (solver-spec &rest assertions)
