@@ -72,3 +72,14 @@
 (defmethod print-program-node (n stream)
   "Prints a program node in the standard way, as just printing the operator."
   (print-program-operator (operator n) (children n) stream))
+
+(defmethod print-program-node-as-smt (n stream)
+  "Prints a program node N in SMT format"
+  (if (null (children n))
+      (format stream "~a" (smt:identifier-string (g:name (operator n))))
+      (flet ((print-helper (n)
+               (format stream " ")
+               (print-program-node-as-smt n stream)))
+        (format stream "(~a" (smt:identifier-string (g:name (operator n))))
+        (map nil #'print-helper (children n))
+        (format stream ")"))))

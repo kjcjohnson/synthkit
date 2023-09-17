@@ -41,3 +41,6 @@
 ;;;
 (defmethod print-program-node ((h program-hole) stream)
   (format stream "??_~a" (g:name (non-terminal h))))
+
+(defmethod print-program-node-as-smt ((h program-hole) stream)
+  (format stream "??_~a" (g:name (non-terminal h))))

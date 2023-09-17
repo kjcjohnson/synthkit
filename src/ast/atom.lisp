@@ -16,6 +16,9 @@
   (:documentation
    "Prints a program node N to STREAM."))
 
+(defgeneric print-program-node-as-smt (n stream)
+  (:documentation "Prints a program node N to STREAM in SMT format"))
+
 (defgeneric nth-child (n thing)
   (:documentation "Retrieves the nth child of the thing"))
 

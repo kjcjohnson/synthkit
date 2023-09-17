@@ -22,6 +22,7 @@
            #:production
            #:operator
            #:print-program-operator
+           #:print-program-node-as-smt
            #:semantics-descriptors-for-non-terminal
            #:operational-semantics-for-production
            #:operational-semantics-for-hole
