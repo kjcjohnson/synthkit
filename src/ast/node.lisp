@@ -75,11 +75,22 @@
 
 (defmethod print-program-node-as-smt (n stream)
   "Prints a program node N in SMT format"
-  (if (null (children n))
-      (format stream "~a" (smt:identifier-string (g:name (operator n))))
-      (flet ((print-helper (n)
-               (format stream " ")
-               (print-program-node-as-smt n stream)))
-        (format stream "(~a" (smt:identifier-string (g:name (operator n))))
-        (map nil #'print-helper (children n))
-        (format stream ")"))))
+  (let ((children (children n))
+        (op-name (g:name (operator n))))
+    (cond
+      ;; NT-to-NT production. Just pass through to the one (and only) child
+      ((null op-name)
+       (assert (= 1 (length children)) (children)
+               "NT-to-NT operators require 1 child, but got: ~s" children)
+       (print-program-node-as-smt (first children) stream))
+      ;; Arity zero. Print without parentheses
+      ((null children)
+       (format stream "~a" (smt:identifier-string op-name)))
+      ;; Normal printing. TODO: handle non-term children (e.g., constants)
+      (t
+       (flet ((print-helper (n)
+                (format stream " ")
+                (print-program-node-as-smt n stream)))
+         (format stream "(~a" (smt:identifier-string op-name))
+         (map nil #'print-helper children)
+         (format stream ")"))))))
