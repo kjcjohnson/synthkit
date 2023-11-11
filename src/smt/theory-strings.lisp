@@ -164,13 +164,18 @@
             ,(%parse-tree reglan2)
             ,@(map 'list #'%parse-tree reglans))))
     (setf reglan-pts (delete :void reglan-pts))
-    (%reglan
-     (cond ((endp reglan-pts)
-            :void)
-           ((= 1 (length reglan-pts))
-            (first reglan-pts))
-          (t
-           `(:sequence ,@reglan-pts))))))
+    (?:match reglan-pts
+      ((?:guard (list (re.* x) (re.* y))
+                (equal x y))
+       (%reglan (first reglan-pts)))
+      (_
+       (%reglan
+        (cond ((endp reglan-pts)
+               :void)
+              ((= 1 (length reglan-pts))
+               (first reglan-pts))
+              (t
+               `(:sequence ,@reglan-pts))))))))
 
 (defsmtfun "re.union" :strings (reglan1 reglan2 &rest reglans)
   "Union of regular languages"
@@ -184,8 +189,11 @@
             :void)
            ((= 1 (length reglan-pts))
             (first reglan-pts))
-          (t
-           `(:alternation ,@reglan-pts))))))
+           ((let ((first (first reglan-pts)))
+              (every #'(lambda (x) (equal x first)) reglan-pts))
+            (first reglan-pts))
+           (t
+            `(:alternation ,@reglan-pts))))))
 
 (defsmtfun "re.intersection" :strings (reglan1 reglan2 &rest reglans)
   "Intersection of regular languages"
@@ -287,8 +295,8 @@
   (check-type stru string)
   (if (and (= 1 (length strl))
            (= 1 (length stru)))
-      `(%reglan (:char-class (:range ,(elt strl 0) ,(elt stru 0))))
-      `(%reglan (:filter ,#'%empty-set-filter))))
+      (%reglan `(:char-class (:range ,(elt strl 0) ,(elt stru 0))))
+      (%reglan `(:filter ,#'%empty-set-filter))))
 
 ;; (_ re.^ n)
 
