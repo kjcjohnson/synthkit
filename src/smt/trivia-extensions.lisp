@@ -68,3 +68,9 @@ to capture all bindings, or a list to capture each binding individually."
 (?:defpattern reglan-sort ()
   "Matches Reglan sorts"
   `(sort "RegLan"))
+
+(?:defpattern bv-sort (&optional width)
+  "Matches BitVec sorts"
+  (if width
+      `(sort (list "BitVec" ,width))
+      `(sort (list "BitVec" _))))

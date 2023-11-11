@@ -62,4 +62,4 @@
 
   ;; Trivia patterns
   (:export #:application #:fn #:quantifier #:forall #:exists #:var
-           #:sort #:bool-sort #:int-sort #:string-sort #:reglan-sort))
+           #:sort #:bool-sort #:int-sort #:string-sort #:reglan-sort #:bv-sort))
