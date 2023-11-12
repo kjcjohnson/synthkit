@@ -28,6 +28,12 @@
       (string (char str ix))
       ""))
 
+(defsmtfun "str.is_digit" :strings (str)
+  "Checks if STR is a digit (0 - 9)"
+  (and (= (length str) 1)
+       (digit-char-p (elt str 0))
+       t))
+
 (defsmtfun "str.from_int" :strings (int)
   "Gets a string with the text of INT"
   (declare (type integer int))
@@ -74,6 +80,16 @@
   "Checks if STR contains WHAT"
   (declare (type string str what))
   (str:contains? what str))
+
+(defsmtfun "str.<" :strings (str1 str2)
+  "Checks if STR1 is lexographically less than STR2"
+  ;; not -> null -> since string< returns NULL when false and int otherwise
+  (not (null (string< str1 str2))))
+
+(defsmtfun "str.<=" :strings (str1 str2)
+  "Checks if STR1 is lexographically less than or equal to STR2"
+  ;; not -> null -> since string< returns NULL when false and int otherwise
+  (not (null (string<= str1 str2))))
 
 ;;;
 ;;; Basic regex functions
