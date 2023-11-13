@@ -76,7 +76,8 @@
   (:export #:cegis-supported-for-specification?
            #:cegis-supported?
            #:cegis-wrapper
-           #:maybe-with-cegis)
+           #:maybe-with-cegis
+           #:cegis-next-example)
 
   ;; Reader protocol
   (:export #:process-chcs-for-relational-semantics

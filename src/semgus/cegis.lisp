@@ -94,7 +94,12 @@
   (spec:cegis-supported-for-specification? (specification semgus-problem)
                                            (context semgus-problem)))
 
-(defun cegis-wrapper (semgus-problem synth-fun)
+(defgeneric cegis-next-example (thing problem cegis-spec
+                                descriptor input-state output-state)
+  (:documentation "Called on a new CEGIS example")
+  (:method (thing problem cegis-spec descriptor input-state output-state) (values)))
+
+(defun cegis-wrapper (solver semgus-problem synth-fun)
   "Does CEGIS. SYNTH-FUN should be a function taking a semgus problem as the only arg."
   (assert (cegis-supported? semgus-problem))
 
@@ -151,13 +156,18 @@ output --> ~a
 ---------------------------------~%~%"
                            (pp-varlist input-vars)
                            (pp-varlist output-vars)))
-                 (spec:add-example
-                  cegis-spec
-                  (first (spec:descriptors spec))
-                  (smt:make-state input-vars)
-                  (smt:make-state output-vars)))))))
+                 (let ((new-input-state (smt:make-state input-vars))
+                       (new-output-state (smt:make-state output-vars))
+                       (descriptor (first (spec:descriptors spec))))
+                   (spec:add-example
+                    cegis-spec
+                    descriptor
+                    new-input-state
+                    new-output-state)
+                   (cegis-next-example solver semgus-problem cegis-spec descriptor
+                                       new-input-state new-output-state)))))))
 
-(defmacro maybe-with-cegis ((problem &optional (problem-var problem)) &body body)
+(defmacro maybe-with-cegis ((solver problem &optional (problem-var problem)) &body body)
   "Runs BODY, maybe with CEGIS if PROBLEM has a CEGIS specification. PROBLEM is
 rebound inside of BODY to a new problem that does not have a CEGIS specification."
   (assert (symbolp problem-var))
@@ -165,6 +175,5 @@ rebound inside of BODY to a new problem that does not have a CEGIS specification
     `(let ((,prob ,problem))
        (flet ((body-fn (,problem-var) ,@body))
          (if (spec:is-cegis? (specification ,prob))
-             (cegis-wrapper ,prob #'body-fn)
+             (cegis-wrapper ,solver ,prob #'body-fn)
              (funcall #'body-fn ,prob))))))
-
