@@ -20,13 +20,16 @@ specifications and cannot produce counter-examples."))
      semgus-problem program &key produce-cex)
   "Operationally verifies a program."
   (assert (not produce-cex))
-  (if (funcall (spec:predicate spec)
-               (ast:execute-program (semgus:semantics semgus-problem)
-                                    (spec:descriptor spec)
-                                    program
-                                    (spec:input-state spec)))
-      :valid
-      :invalid))
+  (multiple-value-bind (res valid)
+      (ast:execute-program (semgus:semantics semgus-problem)
+                           (spec:descriptor spec)
+                           program
+                           (spec:input-state spec))
+    (if valid
+        (if (funcall (spec:predicate spec) res)
+            :valid
+            :invalid)
+        :unknown)))
 
 (defmethod semgus:verify-program
     ((verifier operational-verifier) (spec spec:io-specification)
