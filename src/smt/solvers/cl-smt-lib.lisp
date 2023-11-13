@@ -116,6 +116,10 @@
                         else
                           do (setf (bit bv bv-ix) 0))
                   bv))
+               ((?:guard (symbol) (string= (smt:name sort) "Bool"))
+                (cond ((string-equal "FALSE" (symbol-name value)) nil)
+                      ((string-equal "TRUE" (symbol-name value)) t)
+                      (t (error "Unknown Boolean symbol: ~a" value))))
                (v
                 v)))
            (parse-expr (expr known-symbols)
