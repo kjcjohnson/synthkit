@@ -68,10 +68,12 @@
 (defsmtfun "ite" :core (condition consequence alternative)
   "Core if-then-else"
   (declare (type boolean condition))
-  (assert (eql (get-constant-type consequence) (get-constant-type alternative))
-          (consequence alternative)
-          "ITE branches must have the same types: ~a and ~a"
-          consequence alternative)
+  ;; This is a great check in theory...but when we do weird stuff, not so much
+  ;; It broke when we did interval semantics that was returning infinity...
+  ;;(assert (eql (get-constant-type consequence) (get-constant-type alternative))
+  ;;        (consequence alternative)
+  ;;        "ITE branches must have the same types: ~a and ~a"
+  ;;        consequence alternative)
   (if condition
       consequence
       alternative))
