@@ -48,9 +48,12 @@
 (defsmtfun "bvshl" :bv (bv count)
   "Bit vector shift left"
   (declare (type bit-vector bv count))
-  (clip
-   (bit-smasher:lshift bv (bit-smasher:bits->int count))
-   bv))
+  (let ((n (bit-smasher:bits->int count)))
+    (if (< (length bv) n)
+        (clip #* bv)
+        (clip
+         (bit-smasher:lshift bv n)
+         bv))))
 
 (defsmtfun "bvadd" :bv (bv1 bv2)
   "Bit vector addition (modulo length)"
