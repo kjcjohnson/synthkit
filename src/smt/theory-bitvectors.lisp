@@ -78,6 +78,11 @@
   (declare (type bit-vector bv1 bv2))
   (< (bit-smasher:int<- bv1) (bit-smasher:int<- bv2)))
 
+(defsmtfun "bvule" :bv (bv1 bv2)
+  "Bit vector unsigned less-than-or-equal"
+  (declare (type bit-vector bv1 bv2))
+  (<= (bit-smasher:int<- bv1) (bit-smasher:int<- bv2)))
+
 (defsmtfun "concat" :bv (bv1 bv2)
   "Concatenates BV1 and BV2"
   (concatenate 'bit-vector bv1 bv2))
