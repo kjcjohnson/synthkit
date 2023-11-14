@@ -95,6 +95,13 @@
        (bit-smasher:bit-quotient bv1 bv2)
        bv1)))
 
+(defsmtfun "bvmul" :bv (bv1 bv2)
+  "Bit vector multiplication"
+  (declare (type bit-vector bv1 bv2))
+  (clip
+   (bit-smasher:bit-product bv1 bv2)
+   bv1))
+
 (defsmtfun "concat" :bv (bv1 bv2)
   "Concatenates BV1 and BV2"
   (concatenate 'bit-vector bv1 bv2))
