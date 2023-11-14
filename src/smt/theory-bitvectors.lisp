@@ -86,6 +86,15 @@
   (declare (type bit-vector bv1 bv2))
   (<= (bit-smasher:int<- bv1) (bit-smasher:int<- bv2)))
 
+(defsmtfun "bvudiv" :bv (bv1 bv2)
+  "Bit vector unsigned division"
+  (declare (type bit-vector bv1 bv2))
+  (if (every #'zerop bv2)
+      (make-array (length bv1) :initial-element 1 :element-type 'bit)
+      (clip
+       (bit-smasher:bit-quotient bv1 bv2)
+       bv1)))
+
 (defsmtfun "concat" :bv (bv1 bv2)
   "Concatenates BV1 and BV2"
   (concatenate 'bit-vector bv1 bv2))
