@@ -14,3 +14,11 @@
     ;; Pretty is just a string
     (5am:is (stringp pretty))
     (5am:is (string= "#b1010" pretty))))
+
+(5am:test to-smt/literal/boolean/true
+  (5am:is (string= "true" (symbol-name (smt:to-smt (smt:$true) :pprint nil))))
+  (5am:is (string= "true" (smt:to-smt (smt:$true) :pprint t))))
+
+(5am:test to-smt/literal/boolean/false
+  (5am:is (string= "false" (symbol-name (smt:to-smt (smt:$false) :pprint nil))))
+  (5am:is (string= "false" (smt:to-smt (smt:$false) :pprint t))))

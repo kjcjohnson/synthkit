@@ -229,9 +229,12 @@
   ;; Special case for Boolean literals
   (if pprint
       (if (eql (sort lit) *bool-sort*)
-          (if (value lit)
-              "true"
-              "false"))
+          (let ((val (string-downcase (symbol-name (value lit)))))
+            (cond
+              ((string-equal val "true") "true")
+              ((string-equal val "false")"false")
+              (t (error "Illegal Boolean value: ~a" val))))
+          (error "Unhandled pprint literal: ~a" lit))
       (value lit)))
 
 (defclass smt-bv-wrapper ()
