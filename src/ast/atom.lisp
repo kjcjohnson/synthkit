@@ -37,6 +37,9 @@
 (defgeneric hole-count (program)
   (:documentation "Counts the number of holes in PROGRAM"))
 
+(defgeneric non-terminal (program)
+  (:documentation "Returns the root non-terminal of PROGRAM"))
+
 (defmacro swap-nth-child (place n thing)
   "Swaps the Nth child of THING with PLACE."
   `(psetf ,place (nth-child ,n ,thing)

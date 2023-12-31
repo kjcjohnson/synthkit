@@ -21,6 +21,7 @@
 
            #:production
            #:operator
+           #:non-terminal
            #:print-program-operator
            #:print-program-node-as-smt
            #:semantics-descriptors-for-non-terminal

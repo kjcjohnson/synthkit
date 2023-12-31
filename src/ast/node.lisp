@@ -37,6 +37,10 @@
 (defmethod (setf nth-child) (value n (thing program-node))
   (setf (nth n (children thing)) value))
 
+(defmethod non-terminal ((atom program-node))
+  "Returns the non-terminal that this node is rooted at"
+  (g:instance (production atom)))
+
 ;;;
 ;;; Helpers
 ;;;
