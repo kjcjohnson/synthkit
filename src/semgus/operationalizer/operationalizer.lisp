@@ -349,8 +349,7 @@
           (eql (smt:name expression) (smt:ensure-identifier "false")))
      'nil)
 
-    ((typep expression 'smt::constant)
-     (smt:name expression))
+    ;; Constants done later
 
     ((stringp expression)
      expression)
@@ -370,7 +369,7 @@
           (break))
         t))
 
-    ;; Case two: single assignment
+    ;; Case 2a: single assignment
     ((and (not assigning)
           (typep expression 'smt::expression)
           (eql (smt:name expression) (smt:ensure-identifier "=")))
@@ -396,6 +395,26 @@
 
          (t ; Not an assignment - do an equality check instead
           `(smt::core-= ,arg1 ,arg2)))))
+
+    ;; Case 2b: Single Boolean variable assertions
+    ((and (not assigning)
+          (zerop (length input-vars))
+          (= 1 (length output-vars))
+          (?:match expression
+            ((?:guard (smt:var vname :sort smt:*bool-sort*)
+                      (eql vname (first output-vars)))
+             `(progn
+                (setf ,(first output-vars) t)
+                t))
+            ((?:guard (smt:fn "not" ((smt:var vname :sort smt:*bool-sort*)))
+                      (eql vname (first output-vars)))
+             `(progn
+                (setf ,(first output-vars) nil)
+                t)))))
+
+    ;; Case 2c: Regular constants that aren't outputs - use their value
+    ((typep expression 'smt::constant)
+     (smt:name expression))
 
     ;; Case 3a: Conditional sequences: Run all, but stop running when the first
     ;;          one returns NIL. Note that the one that returns NIL will not have

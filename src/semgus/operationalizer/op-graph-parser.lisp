@@ -69,6 +69,26 @@ if the output sort is not Boolean."
                             :smt expr
                             :inputs inputs
                             :outputs outputs)))))
+
+    ;;
+    ;; Special case - simple Boolean assignments
+    ;;
+    ((and (= 1 (length outputs))
+          (zerop (length inputs))
+          (?:match semantics
+            ((?:guard (smt:var vname :sort smt:*bool-sort*)
+                      (eql vname (first outputs)))
+             (make-instance 'assignment-node
+                            :smt (smt:$true)
+                            :inputs inputs
+                            :outputs outputs))
+            ((?:guard (smt:fn "not" ((smt:var vname :sort smt:*bool-sort*)))
+                      (eql vname (first outputs)))
+             (make-instance 'assignment-node
+                            :smt (smt:$false)
+                            :inputs inputs
+                            :outputs outputs)))))
+
     ;;
     ;; This shouldn't happen if we classified everything correctly...
     ;;
