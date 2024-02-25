@@ -21,6 +21,8 @@
            #:add #:declare-constants #:dump-commands #:set-model
            #:copy-node
 
+           #:recursive-declaration-grouper #:make-rec-group #:group #:group-type
+
            #:*smt* #:init-smt
            #:ensure-identifier #:ensure-sort #:identifier-string #:identifier-smt
            #:unique-identifier

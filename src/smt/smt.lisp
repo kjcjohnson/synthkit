@@ -117,26 +117,6 @@
                  :sort (sort node)
                  :value (value node)))
 
-(defclass function-declaration (smt-node)
-  ((name :reader name
-         :initarg :name
-         :initform (error "Name is required."))
-   (arity :reader arity
-          :initarg :arity
-          :initform (error "Arity is required."))
-   (return-sort :reader return-sort
-                :initarg :return-sort
-                :initform (error "Return sort is required."))
-   (argument-sorts :reader argument-sorts
-                   :initarg :argument-sorts
-                   :initform (error "Argument sorts are required."))
-   (arguments :reader arguments
-              :initarg :arguments
-              :initform nil)
-   (definition :reader definition
-               :initarg :definition
-               :initform nil)))
-
 (defclass quantifier (expression)
   ((arity :initform 1)
    (arguments :reader arguments
@@ -203,27 +183,6 @@
       (intern-identifier (name expression))
       `(,(intern-identifier (name expression))
         ,@(map 'list (a:rcurry #'to-smt :pprint pprint) (children expression)))))
-(defmethod to-smt ((fn function-declaration) &key pprint)
-  (flet ((i-or-p (thing)
-           (if pprint
-               (etypecase thing
-                 (string thing)
-                 (symbol (identifier-string thing)))
-               (intern-identifier thing))))
-      (if (cl:not (null (definition fn)))
-          `(,(i-or-p "define-fun")
-            ,(i-or-p (name fn))
-            (,@(map 'list
-                    #'(lambda (arg sort)
-                        (list (i-or-p (name arg)) (i-or-p (name sort))))
-                    (arguments fn) (argument-sorts fn)))
-            ,(i-or-p (name (return-sort fn)))
-            ,(to-smt (definition fn) :pprint pprint))
-          `(,(i-or-p "declare-fun")
-            ,(i-or-p (name fn))
-            (,@(map 'list
-                    #'(lambda (x) (i-or-p (name x))) (argument-sorts fn)))
-            ,(i-or-p (name (return-sort fn)))))))
 
 (defmethod to-smt ((lit literal) &key pprint)
   ;; Special case for Boolean literals
@@ -306,15 +265,6 @@
 (defun string-variable (name)
   "Returns a string variable of the given name."
   (variable name *string-sort*))
-
-(defun function-declaration (name arg-sorts ret-sort &optional arguments definition)
-  (make-instance 'function-declaration
-                 :name name
-                 :arity (length arg-sorts)
-                 :return-sort ret-sort
-                 :argument-sorts arg-sorts
-                 :arguments arguments
-                 :definition definition))
 
 (defun quantifier-expression (type arguments sorts expression)
   (assert (= (length arguments) (length sorts)) nil "Arguments and sorts must have the same length.")
