@@ -23,12 +23,24 @@
                    (progn)
                  end
                  when (eql role :input) do
-                   (let ((var (smt:name actual)))
-                     (if (find var bindings)
-                         (progn
-                           (push var inputs)
-                           (push sort input-sorts))
-                         (fail)))
+                   (?:match actual
+                     ((smt:var var)
+                      (if (find var bindings)
+                          (progn
+                            (push var inputs)
+                            (push sort input-sorts))
+                          (fail)))
+                     ((or (type bit-vector)
+                          (type number)
+                          (type string)); TODO: any constant type
+                      (let ((temp (smt:unique-identifier)))
+                        (push temp inputs)
+                        (push sort input-sorts)
+                        (setf phi (smt:$and phi
+                                            (smt:$= (smt:variable temp sort)
+                                                    actual)))
+                        (setf (elt (smt:children semrel) ix) (smt:variable temp sort))))
+                     (_ (fail)))
                  end
                  when (eql role :output) do
                    (?:match actual
