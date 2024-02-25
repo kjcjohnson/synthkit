@@ -30,7 +30,7 @@
            #:get-function-definition #:set-function-definition
            #:get-compiled-function #:evaluate-expression
 
-           #:get-sort
+           #:get-sort #:sort-parameters
            #:datatype #:datatype-constructor #:constructors
            #:add-datatype-constructor
            #:datatype=

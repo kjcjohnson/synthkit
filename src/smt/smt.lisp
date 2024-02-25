@@ -8,11 +8,22 @@
 ;; Declaring variables of these types
 ;;
 (defclass sort ()
-  ((name :reader name :initarg :name :initform (error "Sort name is required."))))
+  ((name :reader name
+         :initarg :name
+         :initform (error "Sort name is required."))
+   (parameters :reader sort-parameters
+               :initarg :parameters
+               :type list
+               :initform nil
+               :documentation "Any sort parameters associated with this sort")))
 
 (defmethod print-object ((sort sort) stream)
   (print-unreadable-object (sort stream :type t)
     (prin1 (name sort) stream)))
+
+(defmethod arity ((sort sort))
+  "Gets the arity of a sort - the number of parameters it has"
+  (length (sort-parameters sort)))
 
 (defparameter *int-sort* (make-instance 'sort :name "Int"))
 (defparameter *bool-sort* (make-instance 'sort :name "Bool"))
