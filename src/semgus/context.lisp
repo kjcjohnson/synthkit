@@ -29,14 +29,19 @@
     :documentation "Arbitrary key-value metadata")
    (path
     :initarg :path
-    :reader path))
+    :reader path)
+   (term-types :accessor term-types
+               :initarg :term-types
+               :type list ; of SORTs
+               :documentation "Term types for this problem"))
   (:default-initargs
    :chcs nil
    :head-relations nil
    :constraints nil
    :auxiliary-functions nil
    :metadata (make-hash-table)
-   :path nil))
+   :path nil
+   :term-types nil))
 
 (defun lookup-head (name &optional (context *semgus-context*))
   "Looks up a CHC head with the given name"
@@ -90,3 +95,38 @@
 
 (defmethod g:productions ((context semgus-context))
   (g:productions (grammar context)))
+
+;;;
+;;; Term types (n.b.: these aren't actually used for synthesis, but we need them
+;;;  to export problem data to other systems. So we save them for bookkeeping.)
+;;;
+(defclass term-type (smt:sort)
+  ((constructors :reader term-type-constructors
+                 :initarg :constructors
+                 :type list
+                 :documentation "A list of term type constructors for this term type"))
+  (:default-initargs :constructors nil)
+  (:documentation "A term type"))
+
+(defclass term-type-constructor ()
+  ((parent :reader parent-term-type
+           :initarg :parent
+           :type term-type
+           :documentation "The LHS of this term type constructor")
+   (operator :reader operator
+             :initarg :operator
+             :documentation "The operator symbol of this constructor")
+   (children :reader children
+             :initarg :children
+             :type list
+             :documentation "The children of this constructor"))
+  (:default-initargs :children nil)
+  (:documentation "A constructor (i.e., production) for a term type"))
+
+(defun add-term-type-constructor (term-type operator children)
+  "Adds a new constructor to TERM-TYPE with OPERATOR and CHILDREN"
+  (declare (type term-type term-type))
+  (push (make-instance 'term-type-constructor :parent term-type
+                                              :operator operator
+                                              :children children)
+        (slot-value term-type 'constructors)))
