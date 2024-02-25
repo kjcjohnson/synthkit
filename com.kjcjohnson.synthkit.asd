@@ -22,6 +22,7 @@
   :license "MIT"
   :depends-on ("cl-smt-lib"
                "closer-mop"
+               "com.inuoe.jzon"
                "str"
                "bit-smasher"
                "trivial-garbage"
@@ -164,6 +165,13 @@
                              (:file "constraints")
                              (:file "semantics")
                              (:file "reader")))
+               (:file "protocol-writer")
+               (:module "writer"
+                :serial t
+                :components ((:file "package")
+                             (:file "json-serializers")
+                             (:file "json-events")
+                             (:file "json-writer")))
                (:file "verifier")
                (:module "verifiers"
                 :serial t

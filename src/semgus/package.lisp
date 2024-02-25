@@ -88,6 +88,9 @@
            #:on-problem-load
            #:register-load-processor)
 
+  ;; Writer protocol
+  (:export #:write-problem)
+
   ;; Operationalizer protocol
   (:export #:operationalize-chc)
 
