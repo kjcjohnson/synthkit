@@ -33,3 +33,12 @@
     (jzon:write-value writer (chc:signature relation))
     (jzon:write-key writer "arguments")
     (jzon:write-value writer (map 'list #'smt:identifier-smt (chc:actuals relation)))))
+
+(defmethod jzon:write-value ((writer jzon:writer) (ttc semgus:term-type-constructor))
+  "Writes a term type constructor"
+  (jzon:with-object writer
+    (jzon:write-key writer "name")
+    (jzon:write-value writer (smt:identifier-smt (semgus:operator ttc)))
+    (jzon:write-key writer "children")
+    (jzon:with-array writer
+      (map nil (*:curry #'jzon:write-value writer) (semgus:children ttc)))))

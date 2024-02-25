@@ -42,3 +42,51 @@
   ()
   (:default-initargs :type "smt")
   (:documentation "Superclass for smt-type events"))
+
+;;;
+;;; Event implementations
+;;;
+
+(defclass declare-term-type-event (semgus-event)
+  ((name :reader term-name
+         :initarg :name
+         :type semgus:term-type))
+  (:default-initargs :event "declare-term-type")
+  (:documentation "Event for declaring a term type's existence"))
+
+(defclass define-term-type-event (semgus-event)
+  ((name :reader term-name
+         :initarg :name
+         :type semgus:term-type)
+   (constructors :reader constructors
+                 :initarg :constructors
+                 :type list))
+  (:default-initargs :event "define-term-type")
+  (:documentation "Event for defining a term type's constructors"))
+
+(defmethod initialize-instance :after ((ev define-term-type-event) &key name)
+  "Sets the constructors for the term type definition event"
+  (unless (slot-boundp ev 'constructors)
+    (setf (slot-value ev 'constructors) (semgus:term-type-constructors name))))
+
+(defclass chc-event (semgus-event)
+  ((head :reader chc-head
+         :initarg :head
+         :type chc:head)
+   (body :reader chc-body
+         :initarg :body
+         :type list))
+  (:default-initargs :event "chc"))
+
+(defclass check-synth-event (semgus-event)
+  ()
+  (:default-initargs :event "check-synth")
+  (:documentation "Event for the check-synth command"))
+
+(defclass set-info-event (meta-event)
+  ((keyword :reader info-keyword
+            :initarg :keyword
+            :type string)
+   (value :reader info-value
+          :initarg :value))
+  (:default-initargs :event "set-info"))

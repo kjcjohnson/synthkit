@@ -52,7 +52,7 @@
   (:export #:lookup-head #:add-head
            #:lookup-root #:lookup-chc #:lookup-chcs-by-operator
            #:term-type #:term-types #:term-type-constructors
-           #:term-type-constructor #:add-term-type-constructor
+           #:term-type-constructor #:add-term-type-constructor #:operator #:children
            #:semgus-context)
 
   ;; Reader things
