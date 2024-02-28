@@ -126,7 +126,12 @@
 (defun add-term-type-constructor (term-type operator children)
   "Adds a new constructor to TERM-TYPE with OPERATOR and CHILDREN"
   (declare (type term-type term-type))
-  (push (make-instance 'term-type-constructor :parent term-type
-                                              :operator operator
-                                              :children children)
-        (slot-value term-type 'constructors)))
+  (*:push-end (make-instance 'term-type-constructor :parent term-type
+                                                    :operator operator
+                                                    :children children)
+              (slot-value term-type 'constructors)))
+
+(defun reset-term-type-constructors (term-type)
+  "Resets the list of constructors on TERM-TYPE"
+  (declare (type term-type term-type))
+  (setf (slot-value term-type 'constructors) nil))

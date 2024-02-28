@@ -10,7 +10,8 @@
                     (#:chc #:com.kjcjohnson.synthkit.semgus.chc)
                     (#:spec #:com.kjcjohnson.synthkit.specification)
                     (#:a #:alexandria)
-                    (#:? #:trivia))
+                    (#:? #:trivia)
+                    (#:* #:serapeum/bundle))
   (:export #:semgus-problem
            #:metadata
            #:replace-specification
@@ -52,7 +53,8 @@
   (:export #:lookup-head #:add-head
            #:lookup-root #:lookup-chc #:lookup-chcs-by-operator
            #:term-type #:term-types #:term-type-constructors
-           #:term-type-constructor #:add-term-type-constructor #:operator #:children
+           #:term-type-constructor #:operator #:children
+           #:add-term-type-constructor #:reset-term-type-constructors
            #:semgus-context)
 
   ;; Reader things

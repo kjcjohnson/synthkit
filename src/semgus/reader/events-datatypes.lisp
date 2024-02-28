@@ -9,7 +9,9 @@
 (defun com.kjcjohnson.synthkit.semgus.reader.user::declare-term-types (&rest types)
   "Adds the list of term types used in this problem"
   (loop for tt in types
-        unless (typep tt 'semgus:term-type)
+        if (typep tt 'semgus:term-type)
+          do (semgus:reset-term-type-constructors tt)
+        else
           do (change-class tt 'semgus:term-type :constructors nil))
   (setf (semgus:term-types semgus:*semgus-context*) types))
 
