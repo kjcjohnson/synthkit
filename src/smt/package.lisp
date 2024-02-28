@@ -3,7 +3,8 @@
 ;;;;
 (defpackage #:com.kjcjohnson.synthkit.smt
   (:use #:cl)
-  (:local-nicknames (#:a #:alexandria)
+  (:local-nicknames (#:u #:com.kjcjohnson.synthkit.utilities)
+                    (#:a #:alexandria)
                     (#:* #:serapeum/bundle)
                     (#:? #:trivia))
   (:shadow #:sort #:variable)
@@ -41,6 +42,8 @@
            #:get-first-value #:get-variables
 
            #:get-constant-type
+
+           #:rank #:argument-sorts #:return-sort #:make-rank
 
            #:is-application?
 

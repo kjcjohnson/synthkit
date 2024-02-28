@@ -116,6 +116,12 @@
   "Sets the constructors for the term type definition event"
   (u:set-slot-if-unbound ev 'constructors (semgus:term-type-constructors name))))
 
+(define-event declare-function-event (smt-event) "declare-function"
+  ((name :initarg :name
+         :json-transformer smt:identifier-smt)
+   (rank :initarg :rank))
+  (:documentation "Declares a function and its associated rank"))
+
 (define-event chc-event (semgus-event) "chc"
   ((id :reader chc-id
        :initarg :id)

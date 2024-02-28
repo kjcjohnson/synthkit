@@ -93,6 +93,14 @@
     (jzon:write-key writer "operator")
     (jzon:write-value writer (smt:identifier-smt (g:name (g:operator prod))))))
 
+(defmethod jzon:write-value ((writer jzon:writer) (rank smt:rank))
+  "Writes a rank"
+  (jzon:with-object writer
+    (jzon:write-key writer "argumentSorts")
+    (jzon:write-value writer (smt:argument-sorts rank))
+    (jzon:write-key writer "returnSort")
+    (jzon:write-value writer (smt:return-sort rank))))
+
 ;;;
 ;;; Term serializers
 ;;;

@@ -48,6 +48,7 @@
                (:file "protocol-solver")
                (:file "solver")
                (:file "smt")
+               (:file "rank")
                (:file "declarations")
                (:file "native")
                (:file "theory-dispatch")

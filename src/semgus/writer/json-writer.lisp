@@ -11,6 +11,9 @@
         ;; 1. METADATA
 
         ;; 2. AUXILIARIES
+        (loop for (name rank defn) in (semgus:auxiliary-functions ctx)
+              for ev = (make-instance 'declare-function-event :name name :rank rank)
+              do (jzon:write-value* ev))
 
         ;; 3. TERM-TYPES
         (loop for tt in (semgus:term-types ctx)
