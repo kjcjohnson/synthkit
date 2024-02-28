@@ -11,4 +11,5 @@
                     (#:u #:com.kjcjohnson.synthkit.utilities)
                     (#:? #:trivia)
                     (#:* #:serapeum/bundle)
-                    (#:jzon #:com.inuoe.jzon)))
+                    (#:jzon #:com.inuoe.jzon)
+                    (#:mop #:closer-mop)))
