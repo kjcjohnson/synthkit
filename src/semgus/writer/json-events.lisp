@@ -150,6 +150,10 @@
    (grammar :initarg :grammar))
   (:documentation "The synth-fun event with grammar"))
 
+(define-event constraint-event (semgus-event) "constraint"
+  ((constraint :initarg :constraint))
+  (:documentation "A synthesis constraint"))
+
 (define-event check-synth-event (semgus-event) "check-synth"
   ()
   (:documentation "Event for the check-synth command"))

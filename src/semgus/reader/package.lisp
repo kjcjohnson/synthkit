@@ -10,6 +10,7 @@
                     (#:g #:com.kjcjohnson.synthkit.grammar)
                     (#:u #:com.kjcjohnson.synthkit.utilities)
                     (#:? #:trivia)
+                    (#:* #:serapeum/bundle)
                     (#:a #:alexandria)))
 
 ;;;

@@ -33,6 +33,9 @@
                                           :grammar (semgus:grammar ctx)))
 
         ;; N-1. CONSTRAINTS
+        (loop for constraint in (semgus:constraints ctx)
+              for ev = (make-instance 'constraint-event :constraint constraint)
+              do (jzon:write-value* ev))
 
         ;; N. CHECK-SYNTH
         (jzon:write-value* (make-instance 'check-synth-event))

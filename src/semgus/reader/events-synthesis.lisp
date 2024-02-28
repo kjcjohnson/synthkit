@@ -43,7 +43,7 @@
 
 (defun com.kjcjohnson.synthkit.semgus.reader.user::constraint (term)
   "Adds a constraint to the problem"
-  (push term (semgus:constraints semgus:*semgus-context*)))
+  (*:push-end term (semgus:constraints semgus:*semgus-context*)))
 
 (defun com.kjcjohnson.synthkit.semgus.reader.user::check-synth ()
   "Finishes the synthesis problem definition"
