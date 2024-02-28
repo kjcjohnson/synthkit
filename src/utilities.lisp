@@ -38,6 +38,15 @@
       sequence
       (map 'list #'identity sequence)))
 
+(defmacro set-slot-if-unbound (object slot newval)
+  "Sets the slot SLOT in OBJECT to NEWVAL if SLOT is unbound"
+  (let ((obj-var (gensym))
+        (slot-var (gensym)))
+    `(let ((,obj-var ,object)
+           (,slot-var ,slot))
+       (unless (slot-boundp ,obj-var ,slot-var)
+         (setf (slot-value ,obj-var ,slot-var) ,newval)))))
+
 (?:defpattern stash (var pattern)
   "Saves form being matched by PATTERN into VAR."
   `(?:<> ,pattern ,var ,var))

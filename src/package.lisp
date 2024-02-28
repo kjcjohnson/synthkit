@@ -8,4 +8,5 @@
            #:copy-instance
            #:ensure-vector
            #:ensure-list
+           #:set-slot-if-unbound
            #:stash))
