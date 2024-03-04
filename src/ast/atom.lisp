@@ -3,7 +3,58 @@
 ;;;;
 (in-package #:com.kjcjohnson.synthkit.ast)
 
-(defclass program-atom () ())
+(defclass program-atom ()
+  ((compile-cache :accessor %compile-cache
+                  :initarg :compile-cache
+                  :documentation "A-list of descriptors to compiled functions")
+   (compilation-flag :accessor %compilation-flag
+                     :initarg :compilation-flag
+                     :documentation "T if currently compiling this node, else NIL"))
+  ;;(:default-initargs :compile-cache nil :compilation-flag nil)
+  (:documentation "The top-level AST node or hole class"))
+
+;;;
+;;; Cache handling
+;;;
+(defun check-compile-cache (atom descriptor)
+  "Checks the compile cache for ATOM with descriptor DESCRIPTOR. Returns NIL if nothing
+cached, or a transformer function taking and returning states"
+  (and (slot-boundp atom 'compile-cache)
+       (*:when-let (cell (assoc descriptor (%compile-cache atom)))
+         (cdr cell))))
+
+(defun compile-or-cache (atom descriptor comp-fn)
+  "Compiles ATOM if needed, else returns value from the cache"
+  (*:if-let (fn (and (slot-boundp atom 'compile-cache)
+                     (*:assocdr descriptor (%compile-cache atom))))
+    fn
+    (if (and (slot-boundp atom 'compilation-flag)
+             (%compilation-flag atom))
+        #'(lambda (is) ; Don't recursively compile nodes - return a cache lookup lambda
+            (declare (type smt:state is))
+            (declare (optimize (speed 3)))
+            (let ((fn (*:assocdr descriptor (%compile-cache atom) :test #'eql)))
+              (declare (type (function (smt:state) smt:state) fn))
+              (cond
+                ((> *self-recursion-counter* *self-recursion-limit*)
+                 (abort-program-execution)))
+                ;; TODO: can we safely detect when we're not making loop progress?
+              (incf *self-recursion-counter*)
+              (multiple-value-prog1
+                  (funcall fn is)
+                (decf *self-recursion-counter*))))
+        (progn
+          (setf (%compilation-flag atom) t)
+          (let ((fn (funcall comp-fn)))
+            (if (slot-boundp atom 'compile-cache)
+                (push (cons descriptor fn) (%compile-cache atom))
+                (setf (%compile-cache atom) (list (cons descriptor fn))))
+            (setf (%compilation-flag atom) nil)
+            fn)))))
+
+(defmacro do-compile-or-cache ((atom descriptor) &body body)
+  (*:with-thunk (body)
+    `(compile-or-cache ,atom ,descriptor ,body)))
 
 ;;;
 ;;; Program atom protocols
@@ -39,6 +90,12 @@
 
 (defgeneric non-terminal (program)
   (:documentation "Returns the root non-terminal of PROGRAM"))
+
+(defgeneric invalidate-cache (program)
+  (:documentation "Invalidates caches on PROGRAM")
+  (:method ((atom program-atom))
+            (setf (%compile-cache atom) nil)
+            (setf (%compilation-flag atom) nil)))
 
 (defmacro swap-nth-child (place n thing)
   "Swaps the Nth child of THING with PLACE."

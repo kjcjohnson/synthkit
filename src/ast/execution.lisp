@@ -4,38 +4,9 @@
 (in-package #:com.kjcjohnson.synthkit.ast)
 
 ;;;
-;;; Allows exiting a program early
-;;;
-(defvar *program-execution-exit-hook*)
-(defun abort-program-execution ()
-  (funcall *program-execution-exit-hook*))
-
-;;;
-;;; Handles simple unbounded-recursion detection
-;;;
-(defvar *self-recursion-counter* 0
-  "Counts recursion depth to find probably-non-terminating programs.")
-(defparameter *self-recursion-limit* 200)
-
-;;;
-;;; Debugging controls
-;;;
-(defvar *exe-debug* nil "Set to T when execution debugging is triggered")
-(defvar *exe-level* 0 "Level of nested program execution")
-(defvar *exe-debug-match* nil "If non-nil, must be a string that, when contained in the
-serialization of a program node, triggers ``*EXE-DEBUG*`` to be set to T.")
-(declaim (type (or null string) *exe-debug-match*))
-
-;;;
-;;; Stores the root input state
-;;;
-(defvar *root-input-state* nil "The initial input state passed to EXECUTE-PROGRAM")
-(defvar *root-input-descriptor* nil "The initial descriptor passed to EXECUTE-PROGRAM")
-
-;;;
 ;;; Public execution interface
 ;;;
-(defun execute-program (semantics descriptor node input-state)
+(defun execute-program (semantics descriptor node input-state &key compile)
   (incf *execution-counter*)
   (unwind-protect
        (let (result abort-exit)
@@ -48,7 +19,26 @@ serialization of a program node, triggers ``*EXE-DEBUG*`` to be set to T.")
                   (*self-recursion-counter* 0)
                   (*root-input-state* input-state)
                   (*root-input-descriptor* descriptor))
-              (setf result (%execute-program semantics descriptor node input-state)))
+              (if compile
+                  (let ((comp-fn (compile-program semantics descriptor node)))
+                    (declare (type transformer comp-fn))
+                    (multiple-value-bind (res valid)
+                        (funcall comp-fn input-state)
+                      (if (or (not (null res)) valid)
+                          (go abort-execution)
+                          (setf result res))))
+                  (setf result
+                        (%execute-program semantics descriptor node input-state))))
+
+            ;; --- Validate program compiler ---
+            #+ks2-validate-program-compiler
+            (let* ((compiled-program (compile-program semantics descriptor node))
+                   (comp-ex-result (funcall compiled-program input-state)))
+              (unless (smt:state= result comp-ex-result)
+                (error "Mismatch in behavior: ~a vs. ~a on ~a"
+                       comp-ex-result result node)))
+            ;; ---------------------------------
+
             (go finish-execution)
           abort-execution
             (setf abort-exit t)
