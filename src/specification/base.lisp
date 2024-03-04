@@ -35,11 +35,11 @@
                  :documentation "Vector of sorts used by output variables")
    (relation :reader relation
              :initarg :relation
-             :type smt::expression
+             :type smt:term
              :documentation "Semantic relation application")
    (constraint :reader constraint
                :initarg :constraint
-               :type smt::expression
+               :type smt:term
                :documentation "Expression (using i/o symbols) specifying behavior"))
   (:documentation "A specification written in the form X.Sem(t,i,o) <=> Phi(i,o)."))
 
@@ -66,11 +66,11 @@
                  :documentation "Vector of sorts used by output variables")
    (relation :reader relation
              :initarg :relation
-             :type smt::expression
+             :type smt:term
              :documentation "Semantic relation application")
    (constraint :reader constraint
                :initarg :constraint
-               :type smt::expression
+               :type smt:term
                :documentation "Expression (using i/o symbols) specifying behavior"))
   (:documentation "A specification written in the form X.Sem(t,i,o)^Phi(i,o)."))
 

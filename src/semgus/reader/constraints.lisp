@@ -19,7 +19,7 @@
 (defun try-derive-pbe-constraint (constraint
                                   &optional (context semgus:*semgus-context*))
   "Attempts to derive a PBE constraint from CONSTRAINT. Returns NIL if not possible."
-    (let* ((appl-name (if (typep constraint 'smt::expression)
+    (let* ((appl-name (if (typep constraint 'smt:application)
                         (smt:name constraint)
                         nil))
          (root-rels (semgus:root-relations context))
@@ -30,7 +30,7 @@
       (appl-root
        ;; Check if we're applying to the synth-fun term
        (let ((termchild (nth (chc:term-index appl-root) (smt:children constraint))))
-         (when (and (typep termchild 'smt::expression)
+         (when (and (typep termchild 'smt:application)
                     (eql (smt:name termchild) sf-term))
            (let ((inputs (smt:make-state
                           (loop for ix in (chc:input-indices appl-root)
@@ -47,21 +47,21 @@
              (list :inputs inputs :output output :descriptor (chc:name appl-root))))))
 
       ;; Existentially quantified from SyGuS conversion
-      ((and (typep constraint 'smt::quantifier)
+      ((and (typep constraint 'smt:quantifier)
             (string= (smt:name constraint) "exists")
-            (= 1 (length (smt::arguments constraint)))
-            (= 1 (length (smt::children constraint)))
-            (typep (first (smt::children constraint)) 'smt::expression)
-            (eql (smt:name (first (smt::children constraint)))
+            (= 1 (length (smt:arguments constraint)))
+            (= 1 (length (smt:children constraint)))
+            (typep (first (smt:children constraint)) 'smt:application)
+            (eql (smt:name (first (smt:children constraint)))
                  (smt:ensure-identifier "and")))
-       (let ((output-var (first (smt::arguments constraint)))
-             (rel-appl (first (smt::children (first (smt::children constraint)))))
-             (equality (second (smt::children (first (smt:children constraint))))))
+       (let ((output-var (first (smt:arguments constraint)))
+             (rel-appl (first (smt:children (first (smt:children constraint)))))
+             (equality (second (smt:children (first (smt:children constraint))))))
          (let* ((pbe-info (try-derive-pbe-constraint rel-appl context))
                 (inputs (getf pbe-info :inputs))
                 (descriptor (getf pbe-info :descriptor)))
            (when (and (not (null inputs))
-                      (typep equality 'smt::expression)
+                      (typep equality 'smt:application)
                       (eql (smt:name equality) (smt:ensure-identifier "=")))
 
              (let ((root-rel (find descriptor root-rels :test #'eql :key #'chc:name)))
@@ -80,8 +80,8 @@
                           (list
                            (first (chc:output-formals root-rel))
                            (first (smt:children equality)))))))))))
-       
-      
+
+
         (t
         nil))))
 
@@ -115,7 +115,7 @@
                        :output-state (smt:evaluate-state (getf pbe :output))
                        :descriptor (getf pbe :descriptor))
         (%derive-relational-specification-for-constraint constraint context))))
-  
+
 (defmethod semgus:derive-specification (context)
   "Derives a specification from the current semgus CONTEXT"
   (let ((specs

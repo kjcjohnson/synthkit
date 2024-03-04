@@ -13,7 +13,7 @@
 (defun com.kjcjohnson.synthkit.semgus.reader.user::application
     (name &key argument-sorts arguments return-sort)
   "Creates a function application term"
-  (make-instance 'smt::expression
+  (make-instance 'smt:application
                  :name name
                  :sort return-sort
                  :arity (length arguments)

@@ -22,6 +22,7 @@
            #:add #:declare-constants #:dump-commands #:set-model
            #:copy-node
 
+           #:term #:application #:constant #:quantifier #:literal
            #:recursive-declaration-grouper #:make-rec-group #:group #:group-type
 
            #:*smt* #:init-smt

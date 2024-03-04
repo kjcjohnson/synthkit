@@ -73,26 +73,44 @@
 (defclass smt-node ()
   ())
 
-(defclass expression (smt-node)
-  ((name :reader name :initarg :name :initform (error "Name is required."))
-   (sort :reader sort :initarg :sort :initform (error "Sort is required."))
-   (arity :reader arity :initarg :arity :initform (error "Arity is required."))
-   (children :reader children :initarg :children :initform (error "Children are required."))
-   (child-sorts :reader child-sorts :initarg :child-sorts :initform (error "Child sorts are required."))))
+(defclass term (smt-node)
+  ((name :reader name
+         :initarg :name
+         :initform (error "Name is required.")
+         :documentation "This term's name or representative value")
+   (sort :reader sort
+         :initarg :sort
+         :initform (error "Sort is required.")))
+  (:documentation "An SMT term, which is of a particular SORT"))
 
-(defmethod copy-node ((node expression) &key children)
+(defclass expression (term)
+  ((name :reader name :initarg :name :initform (error "Name is required."))
+   (sort :reader sort :initarg :sort :initform (error "Sort is required."))))
+
+(defclass application (expression)
+  ((arity :reader arity
+          :initarg :arity
+          :initform (error "Arity is required."))
+   (children :reader children
+             :initarg :children
+             :initform (error "Children are required."))
+   (child-sorts :reader child-sorts
+                :initarg :child-sorts
+                :initform (error "Child sorts are required.")))
+  (:documentation "An application of a function named NAME to arguments CHILDREN"))
+
+(defmethod copy-node ((node application) &key children)
   "Copies an SMT expression"
-  (make-instance 'expression
+  (make-instance 'application
                  :name (name node)
                  :sort (sort node)
                  :arity (arity node)
                  :children (if children children (copy-list (children node)))
                  :child-sorts (copy-list (child-sorts node))))
 
-(defclass constant (expression)
-  ((arity :initarg nil :initform 0)
-   (children :initarg nil :initform nil)
-   (child-sorts :initarg nil :initform nil)))
+(defclass constant (application)
+  ()
+  (:default-initargs :arity 0 :children nil :child-sorts nil))
 
 (defmethod copy-node ((node constant) &key)
   "Copies a constant node"
@@ -115,11 +133,10 @@
                                 model)))
 
 
-(defclass literal (expression)
-  ((arity :initarg nil :initform 0)
-   (children :initarg nil :initform nil)
-   (child-sorts :initarg nil :initform nil)
-   (value :reader value :initarg :value :initform (error "Literal value is required."))))
+(defclass literal (term)
+  ((value :reader value :initarg :value :initform (error "Literal value is required."))))
+
+(defmethod arity ((node literal)) 0)
 
 (defmethod copy-node ((node literal) &key)
   "Copies a constant node"
@@ -129,7 +146,7 @@
                  :value (value node)))
 
 (defclass quantifier (expression)
-  ((arity :initform 1)
+  ((arity :initform 1 :reader arity)
    (arguments :reader arguments
               :initarg :arguments
               :initform (error "Arguments are required."))
@@ -137,7 +154,12 @@
                    :initarg :argument-sorts
                    :initform (error "Argument sorts are required."))
    (sort :initform *bool-sort*)
-   (children :initarg :children :initform (error "Children (single child) is required."))))
+   (children :reader children
+             :initarg :children
+             :initform (error "Children (single child) is required."))
+   (child-sorts :reader child-sorts
+                :initarg :child-sorts
+                :initform (error "Child sorts are required."))))
 
 
 (defmethod copy-node ((node quantifier) &key children)

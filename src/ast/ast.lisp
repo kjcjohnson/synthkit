@@ -35,7 +35,7 @@
          (error "No applicable semantics for production: ~a" ,production)))))
 
 (defun subst-application (relation old-fn-name new-name-computer when arg-transformer)
-  (when (typep relation 'smt::expression)
+  (when (typep relation 'smt:application)
     (when (and (string= (smt:name relation) old-fn-name)
                (apply when (smt:children relation)))
       (setf (slot-value relation 'smt:name) (apply new-name-computer (smt:children relation)))

@@ -108,9 +108,9 @@
   (:method :around (writer term)
     (jzon:write-key writer "$termType")
     (jzon:write-value writer (call-next-method)))
-  (:method (writer (term smt::expression)) "application")
-  (:method (writer (term smt::constant)) "variable")
-  (:method (writer (term smt::quantifier))
+  (:method (writer (term smt:application)) "application")
+  (:method (writer (term smt:constant)) "variable")
+  (:method (writer (term smt:quantifier))
     (?:match term
       ((smt:exists _ _) "exists")
       ((smt:forall _ _) "forall")
@@ -119,7 +119,7 @@
 inside of an active JSON object block. Primary methods should return the string
 value of the term type to write."))
 
-(defmethod jzon:write-value ((writer jzon:writer) (term smt::expression))
+(defmethod jzon:write-value ((writer jzon:writer) (term smt:term))
   "This is the application method!"
   (jzon:with-object writer
     (jzon:write-key writer "name")
@@ -132,7 +132,7 @@ value of the term type to write."))
     (jzon:write-value writer (or (smt:children term) (vector)))
     (write-term-type writer term)))
 
-(defmethod jzon:write-value ((writer jzon:writer) (term smt::constant))
+(defmethod jzon:write-value ((writer jzon:writer) (term smt:constant))
   "Writes a variable to WRITER"
   (jzon:with-object writer
     (jzon:write-key writer "name")
@@ -141,7 +141,7 @@ value of the term type to write."))
     (jzon:write-value writer (smt:sort term))
     (write-term-type writer term)))
 
-(defmethod jzon:write-value ((writer jzon:writer) (term smt::quantifier))
+(defmethod jzon:write-value ((writer jzon:writer) (term smt:quantifier))
   "Writes a quantifier to WRITER"
   (jzon:with-object writer
     (jzon:write-key writer "bindings")

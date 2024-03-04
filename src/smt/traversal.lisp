@@ -13,10 +13,11 @@
                          (funcall fn expression)))
           ;; TODO: LET and CASE will probably need special handling
           (child-result
-            (when (typep expression 'expression)
-              (if join
-                  (funcall join (map 'list #'map-expression-rec (children expression)))
-                  (map nil #'map-expression-rec (children expression))))))
+            (typecase expression
+              ((or application quantifier)
+               (if join
+                   (funcall join (map 'list #'map-expression-rec (children expression)))
+                   (map nil #'map-expression-rec (children expression)))))))
       (funcall join (list node-result child-result)))))
 
 (defun %update-expression-td (fn expression filter context)
@@ -24,8 +25,8 @@
   (let ((node expression))
     (when (funcall filter expression context)
       (setf node (funcall fn expression context)))
-    
-    (when (typep node 'expression)
+
+    (when (typep node '(or application quantifier))
       (let* ((children-changed? nil)
              (children
                (loop with new-child and changed?
@@ -37,7 +38,7 @@
 
         (when children-changed?
           (setf node (copy-node node :children children)))))
-    
+
     (values node (not (eql node expression)))))
 
 (defun update-expression (fn expression &key (filter (constantly t)) (from-top t) (context *smt*))
@@ -47,5 +48,3 @@ will have its children traversed."
   (if from-top
       (%update-expression-td fn expression filter context)
       (error "Bottom-up traversal not implemented")))
-  
-

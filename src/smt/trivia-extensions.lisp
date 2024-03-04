@@ -12,9 +12,9 @@ or _ to match against any function. Also aliased to FN."
   ;; Auto-convert to SMT names via the context
   (if (constantp name)
       (a:with-gensyms (name-var)
-        `(?:guard (expression :name ,name-var :children ,children)
+        `(?:guard (class application :name ,name-var :children ,children)
                   (eql ,name-var (ensure-identifier ,name ,context))))
-      `(expression :name ,name :children ,children)))
+      `(class application :name ,name :children ,children)))
 
 (?:defpattern fn (name children &key (context '*smt*))
   "Matches against an SMT function application. Name should be passed as a string,
