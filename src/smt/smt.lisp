@@ -184,6 +184,22 @@
   "Creates a lambda binder term, with ARGUMENTS and BODY."
   (make-instance 'lambda-binder :arguments arguments :body body))
 
+(defclass match-binder (smt-node)
+  ((pattern :reader match-pattern
+            :initarg :pattern)
+   (variables :reader match-variables
+              :initarg :variables))
+  (:documentation "A match binding. PATTERN is either a datatype constructor, in which
+case VARIABLES is a list of the same arity of the datatype constructor of symbols to
+bind, or PATTERN is NIL, in which case VARIABLES is a singleton list of a symbol to bind
+to the entire expression being matched."))
+
+(defclass match-grouper (term)
+  ()
+  (:default-initargs :name "match")
+  (:documentation "A match expression. First child is the match variable, and the rest
+of the children are match bindings."))
+
 (defmethod print-object ((constant constant) stream)
   (print-unreadable-object (constant stream :type t)
     (format stream "~A : ~A" (name constant) (name (sort constant)))))
