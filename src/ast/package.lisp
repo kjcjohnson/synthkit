@@ -60,5 +60,7 @@
            #:*prune-candidate-counter*
            #:*prune-attempt-counter*
            #:*prune-success-counter*)
+  ;; Control variables
+  (:export #:*use-program-compiler*)
   ;; Traversals
   (:export #:traverse-program #:do-traverse-program))

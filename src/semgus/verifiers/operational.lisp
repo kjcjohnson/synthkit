@@ -40,8 +40,7 @@ specifications and cannot produce counter-examples."))
   (if (smt:state= (ast::execute-program (semgus:semantics semgus-problem)
                                         (spec:descriptor spec)
                                         program
-                                        (spec:input-state spec)
-                                        :compile t)
+                                        (spec:input-state spec))
                   (spec:output-state spec))
       :valid
       :invalid))

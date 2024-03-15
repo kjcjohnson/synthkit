@@ -6,7 +6,7 @@
 ;;;
 ;;; Public execution interface
 ;;;
-(defun execute-program (semantics descriptor node input-state &key compile)
+(defun execute-program (semantics descriptor node input-state)
   (incf *execution-counter*)
   (unwind-protect
        (let (result abort-exit)
@@ -19,14 +19,14 @@
                   (*self-recursion-counter* 0)
                   (*root-input-state* input-state)
                   (*root-input-descriptor* descriptor))
-              (if compile
+              (if *use-program-compiler*
                   (let ((comp-fn (compile-program semantics descriptor node)))
                     (declare (type transformer comp-fn))
                     (multiple-value-bind (res valid)
                         (funcall comp-fn input-state)
                       (if (or (not (null res)) valid)
-                          (go abort-execution)
-                          (setf result res))))
+                          (setf result res)
+                          (go abort-execution))))
                   (setf result
                         (%execute-program semantics descriptor node input-state))))
 

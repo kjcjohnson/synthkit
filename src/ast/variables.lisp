@@ -32,3 +32,8 @@ serialization of a program node, triggers ``*EXE-DEBUG*`` to be set to T.")
 ;;;
 (defvar *root-input-state* nil "The initial input state passed to EXECUTE-PROGRAM")
 (defvar *root-input-descriptor* nil "The initial descriptor passed to EXECUTE-PROGRAM")
+
+;;;
+;;; Control variables
+;;;
+(defvar *use-program-compiler* nil "Whether or not to use the program compiler")
