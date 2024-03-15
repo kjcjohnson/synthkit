@@ -92,12 +92,15 @@
                "com.kjcjohnson.synthkit/smt")
   :serial t
   :components ((:file "package")
+               (:file "variables")
                (:file "counters")
                (:file "atom")
                (:file "node")
                (:file "hole")
+               (:file "traversal")
                (:file "ast")
                (:file "calling-card")
+               (:file "program-compiler")
                (:file "execution")))
 
 (asdf:defsystem "com.kjcjohnson.synthkit/specification"

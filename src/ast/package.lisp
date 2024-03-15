@@ -5,7 +5,8 @@
   (:use #:cl)
   (:local-nicknames (#:g #:com.kjcjohnson.synthkit.grammar)
                     (#:smt #:com.kjcjohnson.synthkit.smt)
-                    (#:a #:alexandria))
+                    (#:a #:alexandria)
+                    (#:* #:serapeum/bundle))
   (:export #:program-atom
            #:program-node
            #:program-hole
@@ -58,4 +59,8 @@
            #:*concrete-candidates-by-size*
            #:*prune-candidate-counter*
            #:*prune-attempt-counter*
-           #:*prune-success-counter*))
+           #:*prune-success-counter*)
+  ;; Control variables
+  (:export #:*use-program-compiler*)
+  ;; Traversals
+  (:export #:traverse-program #:do-traverse-program))

@@ -55,6 +55,7 @@
 
   ;; Reader things
   (:export #:*semgus-context*
+           #:*load-semgus-problem-time*
            #:auxiliary-functions
            #:constraints
            #:root-relations

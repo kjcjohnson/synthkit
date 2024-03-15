@@ -4,32 +4,38 @@
 ;;;; (note: this is not the SemGuS format. This is the sexpr parser output format)
 (in-package #:com.kjcjohnson.synthkit.semgus)
 
+(defvar *load-semgus-problem-time* nil
+  "Time (in seconds) most recent problem load took")
+
 (defun load-semgus-problem (filename)
   "Loads a SemGuS problem from the given file."
-  (smt:init-smt)
+  (let ((start-time (get-internal-real-time)))
+    (smt:init-smt)
 
-  (let ((*semgus-context* (make-instance 'semgus-context
-                                         :path (pathname filename))))
-    (with-open-file (stream filename)
-      (read-problem-from-stream stream *semgus-context*))
-    (call-context-load-processors *semgus-context*)
-    (multiple-value-bind (op-fn desc-map)
-        (operationalize-semantics)
-      (multiple-value-bind (rel-fn rel-desc-map)
-          (process-chcs-for-relational-semantics *semgus-context*)
-        (declare (ignore rel-desc-map))
-        (let ((problem
-                (make-instance 'semgus-problem
-                               :specification (derive-specification *semgus-context*)
-                               :semantics (make-instance 'default-semantics
-                                                         :operational op-fn
-                                                         :descriptor-map desc-map
-                                                         :relational rel-fn
-                                                         :relation-definitions nil)
-                               :grammar (grammar *semgus-context*)
-                               :context *semgus-context*)))
-          (call-problem-load-processors problem)
-          problem)))))
+    (let ((*semgus-context* (make-instance 'semgus-context
+                                           :path (pathname filename))))
+      (with-open-file (stream filename)
+        (read-problem-from-stream stream *semgus-context*))
+      (call-context-load-processors *semgus-context*)
+      (multiple-value-bind (op-fn desc-map)
+          (operationalize-semantics)
+        (multiple-value-bind (rel-fn rel-desc-map)
+            (process-chcs-for-relational-semantics *semgus-context*)
+          (declare (ignore rel-desc-map))
+          (let ((problem
+                  (make-instance 'semgus-problem
+                                 :specification (derive-specification *semgus-context*)
+                                 :semantics (make-instance 'default-semantics
+                                                           :operational op-fn
+                                                           :descriptor-map desc-map
+                                                           :relational rel-fn
+                                                           :relation-definitions nil)
+                                 :grammar (grammar *semgus-context*)
+                                 :context *semgus-context*)))
+            (call-problem-load-processors problem)
+            (setf *load-semgus-problem-time* (/ (- (get-internal-real-time) start-time)
+                                                internal-time-units-per-second))
+            problem))))))
 
 (defun operationalize-semantics ()
   "Operationalizes semantics - or, at least, tries to."

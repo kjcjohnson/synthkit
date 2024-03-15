@@ -37,10 +37,10 @@ specifications and cannot produce counter-examples."))
   "Operationally verifies a program."
   (assert (not produce-cex))
   (assert (typep spec 'spec:inductive-specification))
-  (if (smt:state= (ast:execute-program (semgus:semantics semgus-problem)
-                                       (spec:descriptor spec)
-                                       program
-                                       (spec:input-state spec))
+  (if (smt:state= (ast::execute-program (semgus:semantics semgus-problem)
+                                        (spec:descriptor spec)
+                                        program
+                                        (spec:input-state spec))
                   (spec:output-state spec))
       :valid
       :invalid))

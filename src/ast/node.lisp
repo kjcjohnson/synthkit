@@ -41,6 +41,11 @@
   "Returns the non-terminal that this node is rooted at"
   (g:instance (production atom)))
 
+(defmethod invalidate-cache ((node program-node))
+  "Invalidates the cache of all the node's children"
+  (call-next-method) ; Invalidate base atom cache
+  (map nil #'invalidate-cache (children node)))
+
 ;;;
 ;;; Helpers
 ;;;
