@@ -90,7 +90,8 @@
            #:register-load-processor)
 
   ;; Operationalizer protocol
-  (:export #:operationalize-chc)
+  (:export #:operationalize-chc
+           #:*debug-compile* #:when-debug-compile #:if-debug-compile)
 
   ;; CHC-related exports
   (:export #:arguments #:body #:head #:head-relations

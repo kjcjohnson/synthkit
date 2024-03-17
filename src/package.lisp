@@ -8,4 +8,5 @@
            #:copy-instance
            #:ensure-vector
            #:ensure-list
-           #:stash))
+           #:stash
+           #:with-timing))

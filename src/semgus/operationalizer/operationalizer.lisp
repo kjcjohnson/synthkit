@@ -641,7 +641,7 @@
     (%apply-usage-table-rule-3 usage-table)
 
     (unless (%is-usage-table-complete? usage-table)
-      (pprint-usage-table *error-output* usage-table)
+      (pprint-usage-table *trace-output* usage-table)
       (error 'operationalization-error :message "Usage table incomplete."))
 
     (let* ((node-table (%build-semantic-node-table conjuncts

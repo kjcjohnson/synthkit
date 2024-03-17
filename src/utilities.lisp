@@ -41,3 +41,11 @@
 (?:defpattern stash (var pattern)
   "Saves form being matched by PATTERN into VAR."
   `(?:<> ,pattern ,var ,var))
+
+(defmacro with-timing ((var) &body body)
+  "Reports timing data"
+  (let ((start-time-var (gensym)))
+    `(let ((,start-time-var (get-internal-real-time)))
+       (symbol-macrolet ((,var (/ (- (get-internal-real-time) ,start-time-var)
+                                  internal-time-units-per-second)))
+         ,@body))))
