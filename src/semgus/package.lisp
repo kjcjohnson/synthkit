@@ -71,7 +71,8 @@
   (:export #:verify-program
            #:verifier-for-specification
            #:check-program
-           #:unknown-verifier-result)
+           #:unknown-verifier-result
+           #:*check-program-time*)
 
   ;; CEGIS
   (:export #:cegis-supported-for-specification?

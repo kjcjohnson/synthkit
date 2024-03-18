@@ -8,5 +8,12 @@
            #:copy-instance
            #:ensure-vector
            #:ensure-list
-           #:stash
-           #:with-timing))
+           #:stash)
+  ;; Timing utilities
+  (:export #:with-timing
+           #:declare-timed-section
+           #:with-timed-section
+           #:get-timed-section-real-time
+           #:get-timed-section-gc-time
+           #:get-timed-section-bytes-consed
+           #:reset-timed-section-time))
