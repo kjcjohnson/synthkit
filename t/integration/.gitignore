@@ -1,0 +1,4 @@
+bin/
+test/*.test.json
+benchmarks/*.json
+benchmarks/*.sexpr

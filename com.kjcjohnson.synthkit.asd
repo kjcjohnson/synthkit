@@ -211,7 +211,7 @@
                     (symbol-call :fiveam :run! :synthkit-tests))
   :depends-on ("fiveam"
                "com.kjcjohnson.synthkit")
-  :pathname "t"
+  :pathname "t/unit"
   :serial "t"
   :components ((:file "patch")
                (:file "package")
@@ -233,3 +233,13 @@
                              (:file "leaf-program-node")
                              (:file "union-program-node")
                              (:file "cross-program-node")))))
+
+(asdf:defsystem "com.kjcjohnson.synthkit/test.json-export"
+  :description "Integration test application for JSON exports"
+  :version (:read-file-form "version.sexpr")
+  :build-operation "program-op"
+  :build-pathname "bin/synthkit-json-export"
+  :entry-point "TEST.JSON-EXPORT:MAIN"
+  :pathname "t/integration"
+  :depends-on ("com.kjcjohnson.synthkit")
+  :components ((:file "json-export")))
