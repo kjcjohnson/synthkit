@@ -9,19 +9,33 @@
     (jzon:with-writer* (:stream stream :pretty t)
       (jzon:with-array*
         ;; 1. METADATA
-
-        ;; 2. AUXILIARIES
-        (loop for (name rank defn) in (semgus:auxiliary-functions ctx)
-              for ev = (make-instance 'declare-function-event :name name :rank rank)
+        (loop for key being the hash-keys of (semgus:metadata ctx)
+                using (hash-value value)
+              for ev = (make-instance 'set-info-event
+                                      :keyword (str:downcase (symbol-name key))
+                                      :value (if (symbolp value)
+                                                 (smt:identifier-smt value)
+                                                 value))
               do (jzon:write-value* ev))
 
-        ;; 3. TERM-TYPES
+        ;; 2. TERM-TYPES
         (loop for tt in (semgus:term-types ctx)
               for ev = (make-instance 'declare-term-type-event :name tt)
               do (jzon:write-value* ev))
 
         (loop for tt in (semgus:term-types ctx)
               for ev = (make-instance 'define-term-type-event :name tt)
+              do (jzon:write-value* ev))
+
+        ;; 3. AUXILIARIES
+        (loop for (name rank defn) in (semgus:auxiliary-functions ctx)
+              for ev = (make-instance 'declare-function-event :name name :rank rank)
+              do (jzon:write-value* ev))
+
+        (loop for (name rank defn) in (semgus:auxiliary-functions ctx)
+              for ev = (make-instance 'define-function-event :name name
+                                                             :rank rank
+                                                             :definition defn)
               do (jzon:write-value* ev))
 
         ;; N-3. CHCS

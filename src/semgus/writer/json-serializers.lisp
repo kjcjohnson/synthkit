@@ -110,6 +110,7 @@
     (jzon:write-value writer (call-next-method)))
   (:method (writer (term smt:application)) "application")
   (:method (writer (term smt:constant)) "variable")
+  (:method (writer (term smt:lambda-binder)) "lambda")
   (:method (writer (term smt:quantifier))
     (?:match term
       ((smt:exists _ _) "exists")
@@ -151,4 +152,15 @@ value of the term type to write."))
             do (jzon:write-value writer (smt:variable arg sort))))
     (jzon:write-key writer "child")
     (jzon:write-value writer (first (smt:children term)))
+    (write-term-type writer term)))
+
+(defmethod jzon:write-value ((writer jzon:writer) (term smt:lambda-binder))
+  "Writes a lambda binder to WRITER"
+  (jzon:with-object writer
+    (jzon:write-key writer "arguments")
+    (jzon:with-array writer
+      (map nil #'(lambda (arg) (jzon:write-value writer (smt:identifier-smt arg)))
+           (smt:arguments term)))
+    (jzon:write-key writer "body")
+    (jzon:write-value writer (smt:body term))
     (write-term-type writer term)))

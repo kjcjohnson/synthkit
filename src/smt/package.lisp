@@ -23,6 +23,7 @@
            #:copy-node
 
            #:term #:application #:constant #:quantifier #:literal
+           #:lambda-binder #:body
            #:recursive-declaration-grouper #:make-rec-group #:group #:group-type
 
            #:*smt* #:init-smt

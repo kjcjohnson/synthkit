@@ -122,6 +122,12 @@
    (rank :initarg :rank))
   (:documentation "Declares a function and its associated rank"))
 
+(define-event define-function-event (smt-event) "define-function"
+  ((name :initarg :name
+         :json-transformer smt:identifier-smt)
+   (rank :initarg :rank)
+   (definition :initarg :definition)))
+
 (define-event chc-event (semgus-event) "chc"
   ((id :reader chc-id
        :initarg :id)
