@@ -10,6 +10,12 @@
   "Wraps a term"
   term)
 
+(defun com.kjcjohnson.synthkit.semgus.reader.user::annotated (term &rest annotations)
+  "Wraps an annotated term"
+  (loop for (key value) on annotations by #'cddr
+        do (smt:add-annotation term key value))
+  term)
+
 (defun com.kjcjohnson.synthkit.semgus.reader.user::application
     (name &key argument-sorts arguments return-sort)
   "Creates a function application term"

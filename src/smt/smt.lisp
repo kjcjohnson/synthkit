@@ -88,6 +88,12 @@
   (:default-initargs :annotations nil)
   (:documentation "An SMT term, which is of a particular SORT"))
 
+(defun add-annotation (term key value)
+  "Adds an annotation to TERM"
+  (when (null (annotations term))
+    (setf (slot-value term 'annotations) (make-hash-table :test 'equal)))
+  (setf (gethash key (annotations term)) value))
+
 (defclass expression (term)
   ((name :reader name :initarg :name :initform (error "Name is required."))
    (sort :reader sort :initarg :sort :initform (error "Sort is required."))))
