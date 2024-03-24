@@ -61,11 +61,20 @@ converted to canonical state instances!")
   "Checks if OBJECT is a datatype instance or no"
   (typep object 'datatype-instance))
 
+(defun is-datatype? (object)
+  "Checks if OBJECT is a datatype sort or no"
+  (typep object 'datatype))
+
 (defun add-datatype-constructor (datatype constructor)
   "Adds a constructor to the given datatype."
   (declare (type datatype datatype)
            (type datatype-constructor constructor))
   (push constructor (slot-value datatype 'constructors)))
+
+(defgeneric lookup-datatype-constructor (datatype name)
+  (:documentation "Looks up a datatype constructor by name")
+  (:method ((datatype datatype) name)
+    (find name (constructors datatype) :key #'name :test #'eql)))
 
 (defun make-datatype-instance (datatype constructor children)
   "Creates an instance of a datatype."

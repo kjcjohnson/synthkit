@@ -56,6 +56,7 @@
                (:file "theory-bitvectors")
                (:file "theory-strings")
                (:file "datatypes")
+               (:file "match")
                (:file "types")
                (:file "theory-core")
                (:file "context")
