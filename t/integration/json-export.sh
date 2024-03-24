@@ -43,7 +43,7 @@ fi
 for bm in benchmarks/*.sl; do
     echo "=== ${bm} ==="
     $parser --format json --mode batch --output "${bm}.json" --no-legacy-symbols "$bm"
-    $parser --format sexpr --output "${bm}.sexpr" "$bm"
+    $parser --format sexpr --output "${bm}.sexpr" --term-annotations "$bm"
     $tool "${bm}.sexpr"
     $jd -mset "${bm}.json" "${bm}.sexpr.test.json"
 done

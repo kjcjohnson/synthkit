@@ -25,7 +25,7 @@
            #:term #:application #:constant #:quantifier #:literal
            #:lambda-binder #:body
            #:recursive-declaration-grouper #:make-rec-group #:group #:group-type
-           #:add-annotation
+           #:annotations #:add-annotation
 
            #:*smt* #:init-smt
            #:ensure-identifier #:ensure-sort #:identifier-string #:identifier-smt

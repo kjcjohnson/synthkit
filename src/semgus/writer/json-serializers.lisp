@@ -122,6 +122,24 @@
 inside of an active JSON object block. Primary methods should return the string
 value of the term type to write."))
 
+(defun maybe-write-annotations (writer term)
+  "Possibly writes annotation on TERM to WRITER"
+  (let ((annotations (smt:annotations term)))
+    (unless (or (null annotations) (zerop (hash-table-count annotations)))
+      (jzon:write-key writer "annotations")
+      (jzon:with-array writer
+        (loop for key being the hash-key of annotations using (hash-value value)
+              doing
+                 (jzon:with-object writer
+                   (jzon:write-key writer "keyword")
+                   (jzon:with-object writer
+                     (jzon:write-key writer "name")
+                     (jzon:write-value writer key))
+                   (jzon:write-key writer "value")
+                   (jzon:write-value writer
+                                     (*:leaf-map #'smt:identifier-smt value))))))))
+
+
 (defmethod jzon:write-value ((writer jzon:writer) (term smt:term))
   "This is the application method!"
   (jzon:with-object writer
@@ -133,6 +151,7 @@ value of the term type to write."))
     (jzon:write-value writer (or (smt:child-sorts term) (vector)))
     (jzon:write-key writer "arguments")
     (jzon:write-value writer (or (smt:children term) (vector)))
+    (maybe-write-annotations writer term)
     (write-term-type writer term)))
 
 (defmethod jzon:write-value ((writer jzon:writer) (term smt:constant))
@@ -142,6 +161,7 @@ value of the term type to write."))
     (jzon:write-value writer (smt:identifier-smt (smt:name term)))
     (jzon:write-key writer "sort")
     (jzon:write-value writer (smt:sort term))
+    (maybe-write-annotations writer term)
     (write-term-type writer term)))
 
 (defmethod jzon:write-value ((writer jzon:writer) (term smt:quantifier))
@@ -154,6 +174,7 @@ value of the term type to write."))
             do (jzon:write-value writer (smt:variable arg sort))))
     (jzon:write-key writer "child")
     (jzon:write-value writer (first (smt:children term)))
+    (maybe-write-annotations writer term)
     (write-term-type writer term)))
 
 (defmethod jzon:write-value ((writer jzon:writer) (term smt:lambda-binder))
@@ -175,6 +196,7 @@ value of the term type to write."))
     (jzon:write-key writer "binders")
     (jzon:with-array writer
       (map nil (*:curry #'jzon:write-value writer) (smt:match-binders term)))
+    (maybe-write-annotations writer term)
     (write-term-type writer term)))
 
 (defgeneric write-match-patterns (writer pattern)
