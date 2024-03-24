@@ -59,6 +59,7 @@
 
   ;; Reader things
   (:export #:*semgus-context*
+           #:*load-semgus-problem-time*
            #:auxiliary-functions
            #:constraints
            #:root-relations
@@ -75,7 +76,8 @@
   (:export #:verify-program
            #:verifier-for-specification
            #:check-program
-           #:unknown-verifier-result)
+           #:unknown-verifier-result
+           #:*check-program-time*)
 
   ;; CEGIS
   (:export #:cegis-supported-for-specification?
@@ -97,7 +99,8 @@
   (:export #:write-problem #:write-program)
 
   ;; Operationalizer protocol
-  (:export #:operationalize-chc)
+  (:export #:operationalize-chc
+           #:*debug-compile* #:when-debug-compile #:if-debug-compile)
 
   ;; CHC-related exports
   (:export #:arguments #:body #:head #:head-relations

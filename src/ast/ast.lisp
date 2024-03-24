@@ -3,6 +3,10 @@
 ;;;
 (in-package #:com.kjcjohnson.synthkit.ast)
 
+(deftype transformer ()
+  "A function that takes an input state and returns an output state and success Boolean"
+  '(function (smt:state) (values (or null smt:state) boolean)))
+
 (defgeneric semantics-descriptors-for-non-terminal (semantics non-terminal)
   (:documentation "Gets a list of semantics descriptors valid for NON-TERMINAL."))
 
@@ -22,17 +26,6 @@
   (:documentation "Processes the output of a program into a canonical state.")
   (:method (semantics output) output)
   (:method (semantics (output smt:state)) (smt:canonicalize-state output)))
-
-(defun compile-program (node semantics)
-  (with-slots (production) node
-    (when (null production) (error "Cannot compile a program node without a production."))
-    (let ((input-state-var (gensym "INPUT"))
-          (output-state-var (gensym "OUTPUT")))
-      `(lambda (,input-state-var) ; TODO: update for descriptors properly
-         ,(dolist (s (operational-semantics-for-production semantics nil production))
-            `(let ((,output-state-var (funcall ,s ,input-state-var)))
-               (unless (null ,output-state-var) (return ,output-state-var))))
-         (error "No applicable semantics for production: ~a" ,production)))))
 
 (defun subst-application (relation old-fn-name new-name-computer when arg-transformer)
   (when (typep relation 'smt:application)
@@ -58,7 +51,7 @@
     (setf child-names (nreverse child-names))
     ;; Grab our semantics TODO - handle multiple semantics per production
     (setf rel (first (relational-semantics-for-production semantics rel-name (production node))))
-        
+
     ;; Substitute relations
     (dolist (d (map 'list #'(lambda (c) (relational-semantics-for-non-terminal semantics (g:instance (production c)))) (children node)))
       (subst-application (smt:definition rel)
@@ -81,4 +74,3 @@
 
     ;; Return SMT forms
     (append smt (list (smt:to-smt rel)))))
-    

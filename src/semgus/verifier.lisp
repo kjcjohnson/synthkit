@@ -3,6 +3,9 @@
 ;;;;
 (in-package #:com.kjcjohnson.synthkit.semgus)
 
+(u:declare-timed-section *check-program-time*
+    "Cumulative time taken to check programs")
+
 (defgeneric verify-program (verifier specification semgus-problem program
                             &key produce-cex)
   (:documentation "Verifies PROGRAM against SEMGUS-PROBLEM.
@@ -21,15 +24,16 @@ optionally a counter-example (if :INVALID) as the second value."))
 satisfies the specification in SEMGUS-PROBLEM, NIL otherwise. If PROGRAM is unable to
 be verified, signals an error of type UNKNOWN-VERIFIER-RESULT."
   (declare (type (member :error :valid :invalid)))
-  (let ((verifier (verifier-for-specification (or specification
-                                                  (specification semgus-problem))
-                                              semgus-problem
-                                              :produce-cex nil)))
-    (ecase (verify-program verifier (or specification (specification semgus-problem))
-                           semgus-problem program :produce-cex nil)
-      (:valid t)
-      (:invalid nil)
-      (:unknown (ecase on-unknown
-                  (:error (error 'unknown-verifier-result))
-                  (:valid :valid)
-                  (:invalid :invalid))))))
+  (u:with-timed-section (*check-program-time*)
+    (let ((verifier (verifier-for-specification (or specification
+                                                    (specification semgus-problem))
+                                                semgus-problem
+                                                :produce-cex nil)))
+      (ecase (verify-program verifier (or specification (specification semgus-problem))
+                             semgus-problem program :produce-cex nil)
+        (:valid t)
+        (:invalid nil)
+        (:unknown (ecase on-unknown
+                    (:error (error 'unknown-verifier-result))
+                    (:valid :valid)
+                    (:invalid :invalid)))))))
