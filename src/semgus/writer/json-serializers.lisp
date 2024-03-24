@@ -111,6 +111,8 @@
   (:method (writer (term smt:application)) "application")
   (:method (writer (term smt:constant)) "variable")
   (:method (writer (term smt:lambda-binder)) "lambda")
+  (:method (writer (term smt:match-binder)) "binder")
+  (:method (writer (term smt:match-grouper)) "match")
   (:method (writer (term smt:quantifier))
     (?:match term
       ((smt:exists _ _) "exists")
@@ -164,3 +166,38 @@ value of the term type to write."))
     (jzon:write-key writer "body")
     (jzon:write-value writer (smt:body term))
     (write-term-type writer term)))
+
+(defmethod jzon:write-value ((writer jzon:writer) (term smt:match-grouper))
+  "Writes a match grouper to WRITER"
+  (jzon:with-object writer
+    (jzon:write-key writer "term")
+    (jzon:write-value writer (smt:match-child term))
+    (jzon:write-key writer "binders")
+    (jzon:with-array writer
+      (map nil (*:curry #'jzon:write-value writer) (smt:match-binders term)))
+    (write-term-type writer term)))
+
+(defgeneric write-match-patterns (writer pattern)
+  (:method (writer (pattern smt:match-pattern-datatype))
+    (jzon:write-key writer "operator")
+    (jzon:write-value writer (smt:identifier-smt
+                              (smt:name (smt:match-pattern-constructor pattern))))
+    (jzon:write-key writer "arguments")
+    (jzon:with-array writer
+        (map nil #'(lambda (arg) (jzon:write-value writer (smt:identifier-smt arg)))
+             (smt:match-pattern-variables pattern))))
+  (:method (writer (pattern smt:match-pattern-singleton))
+    (jzon:write-key writer "operator")
+    (jzon:write-value writer nil)
+    (jzon:write-key writer "arguments")
+    (jzon:write-array writer (smt:identifier-smt
+                              (smt:match-pattern-variable pattern))))
+  (:documentation "Writes the pattern portion of a match binder to WRITER"))
+
+(defmethod jzon:write-value ((writer jzon:writer) (binder smt:match-binder))
+  "Writes a match binder to WRITER"
+  (jzon:with-object writer
+    (write-match-patterns writer (smt:match-pattern binder))
+    (jzon:write-key writer "child")
+    (jzon:write-value writer (smt:match-term binder))
+    (write-term-type writer binder)))
