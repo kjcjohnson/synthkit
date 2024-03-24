@@ -30,7 +30,7 @@
 (defun %do-descriptor-name-update (descriptor new-name expr ctx)
   "Updates a descriptor application"
   (declare (ignore descriptor)) ;; ?? because we only call on the right thing
-  (make-instance 'smt::expression
+  (make-instance 'smt:application
                  :name (smt:ensure-identifier
                         new-name
                         ctx)
@@ -76,7 +76,7 @@
               collect (elt (chc:signature relation) i) into new-s
           finally (setf new-actuals new-a new-signature new-s))
 
-    (make-instance 'smt::expression
+    (make-instance 'smt:application
                    :name new-name
                    :sort smt:*bool-sort*
                    :arity (1- old-arity)

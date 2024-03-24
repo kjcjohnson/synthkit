@@ -55,7 +55,7 @@
            (typecase usage
              (symbol usage)
              (uninterpreted-signature "child")
-             (smt::expression (smt:to-smt usage :pprint t))
+             (smt:application (smt:to-smt usage :pprint t))
              (otherwise "other"))))
     (format stream "~&--Usage Table--~%")
     (let ((left-max 0))
@@ -342,10 +342,10 @@
   "Operationalizes a CHC constraint into executable code"
   (cond
     ;; Base cases. Constants, variables, and literals
-    ((and (typep expression 'smt::expression)
+    ((and (typep expression 'smt::application)
           (eql (smt:name expression) (smt:ensure-identifier "true")))
      't)
-    ((and (typep expression 'smt::expression)
+    ((and (typep expression 'smt::application)
           (eql (smt:name expression) (smt:ensure-identifier "false")))
      'nil)
 
@@ -371,7 +371,7 @@
 
     ;; Case 2a: single assignment
     ((and (not assigning)
-          (typep expression 'smt::expression)
+          (typep expression 'smt::application)
           (eql (smt:name expression) (smt:ensure-identifier "=")))
      (let ((arg1 (%operationalize-expression (first (smt:children expression))
                                              input-vars
@@ -420,7 +420,7 @@
     ;;          one returns NIL. Note that the one that returns NIL will not have
     ;;          its side effects undone!
     ((and (not assigning)
-          (typep expression 'smt::expression)
+          (typep expression 'smt::application)
           (or (eql (smt:name expression) (smt:ensure-identifier "and"))
               (string= (smt:name expression) "and")))
      `(and
@@ -434,7 +434,7 @@
     ;;          return NIL will not be undone, and we don't attempt any sort
     ;;          of reordering operation. Ideally, we should put guards first!
     ((and (not assigning)
-          (typep expression 'smt::expression)
+          (typep expression 'smt::application)
           (or
            (eql (smt:name expression) (smt:ensure-identifier "or"))
            (string= (smt:name expression) "or"))) ; :/
@@ -445,7 +445,7 @@
                (smt:children expression))))
 
     ;; Case four: known operators
-    ((typep expression 'smt::expression)
+    ((typep expression 'smt::application)
      (let ((fn (smt:get-compiled-function (smt:name expression))))
        (if fn
            `(funcall ,fn ,@(map 'list #'(lambda (x)
@@ -694,7 +694,7 @@
 (defun %extract-conjuncts (formula ctx)
   "Extracts conjuncts as a list from FORMULA, an SMT expression."
   (?:match formula
-    ((?:guard (smt::expression (smt:name name) (smt:children children))
+    ((?:guard (smt:application name children)
               (eql name (smt:ensure-identifier "and" ctx)))
      (apply #'append
             (map 'list #'(lambda (c) (%extract-conjuncts c ctx)) children)))

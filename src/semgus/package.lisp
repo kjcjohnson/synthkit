@@ -10,7 +10,8 @@
                     (#:chc #:com.kjcjohnson.synthkit.semgus.chc)
                     (#:spec #:com.kjcjohnson.synthkit.specification)
                     (#:a #:alexandria)
-                    (#:? #:trivia))
+                    (#:? #:trivia)
+                    (#:* #:serapeum/bundle))
   (:export #:semgus-problem
            #:metadata
            #:replace-specification
@@ -51,6 +52,9 @@
   ;; Context
   (:export #:lookup-head #:add-head
            #:lookup-root #:lookup-chc #:lookup-chcs-by-operator
+           #:term-type #:term-types #:term-type-constructors
+           #:term-type-constructor #:operator #:children
+           #:add-term-type-constructor #:reset-term-type-constructors
            #:semgus-context)
 
   ;; Reader things
@@ -64,6 +68,7 @@
            #:input-names
            #:input-indices
            #:term-type
+           #:is-term-type?
            #:term-name
            #:term-index)
 
@@ -89,6 +94,9 @@
            #:on-operationalization-load
            #:on-problem-load
            #:register-load-processor)
+
+  ;; Writer protocol
+  (:export #:write-problem #:write-program)
 
   ;; Operationalizer protocol
   (:export #:operationalize-chc

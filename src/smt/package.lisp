@@ -3,7 +3,8 @@
 ;;;;
 (defpackage #:com.kjcjohnson.synthkit.smt
   (:use #:cl)
-  (:local-nicknames (#:a #:alexandria)
+  (:local-nicknames (#:u #:com.kjcjohnson.synthkit.utilities)
+                    (#:a #:alexandria)
                     (#:* #:serapeum/bundle)
                     (#:? #:trivia))
   (:shadow #:sort #:variable)
@@ -21,7 +22,10 @@
            #:add #:declare-constants #:dump-commands #:set-model
            #:copy-node
 
+           #:term #:application #:constant #:quantifier #:literal
+           #:lambda-binder #:body
            #:recursive-declaration-grouper #:make-rec-group #:group #:group-type
+           #:annotations #:add-annotation
 
            #:*smt* #:init-smt
            #:ensure-identifier #:ensure-sort #:identifier-string #:identifier-smt
@@ -30,11 +34,11 @@
            #:get-function-definition #:set-function-definition
            #:get-compiled-function #:evaluate-expression
 
-           #:get-sort
+           #:get-sort #:sort-parameters
            #:datatype #:datatype-constructor #:constructors
-           #:add-datatype-constructor
+           #:add-datatype-constructor #:lookup-datatype-constructor
            #:datatype=
-           #:is-datatype-instance?
+           #:is-datatype? #:is-datatype-instance?
 
            #:state #:make-state #:copy-state #:get-value #:state= #:state-hash-code
            #:evaluate-state #:make-temp-state #:canonicalize-state
@@ -42,10 +46,20 @@
 
            #:get-constant-type
 
+           #:rank #:argument-sorts #:return-sort #:make-rank
+
            #:is-application?
 
            #:defsmtfun
            #:do-call-smt #:call-smt)
+
+  ;; Match
+  (:export #:make-match-grouper #:make-match-binder
+           #:match-grouper #:match-binder #:match-pattern
+           #:match-pattern-singleton #:match-pattern-variable
+           #:match-child #:match-binders #:match-pattern #:match-term
+           #:match-pattern-datatype #:match-pattern-variables
+           #:match-pattern-constructor #:match-pattern-datatype)
 
   ;; Natives
   (:export #:make-native-literal #:native-literal? #:native-value

@@ -20,8 +20,8 @@ Returns an operationalized expression record")
   (:method ((expression bit-vector) input-vars output-vars)
     (declare (ignore input-vars output-vars))
     expression))
-  
-(defmethod operationalize-smt-expression ((expression smt::expression)
+
+(defmethod operationalize-smt-expression ((expression smt::application)
                                           input-vars
                                           output-vars)
   (let ((name (smt:name expression)))
@@ -43,12 +43,12 @@ Returns an operationalized expression record")
             `(progn
                (setf ,arg1 ,arg2)
                t))
-           
+
            ((find arg2 output-vars)
             `(progn
                (setf ,arg2 ,arg1)
                t))
-           
+
            (t ; Not an assignment - do an equality check instead
             `(smt::core-= ,arg1 ,arg2)))))
 

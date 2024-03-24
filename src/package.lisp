@@ -8,7 +8,9 @@
            #:copy-instance
            #:ensure-vector
            #:ensure-list
+           #:set-slot-if-unbound
            #:stash)
+
   ;; Timing utilities
   (:export #:with-timing
            #:declare-timed-section

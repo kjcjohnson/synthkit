@@ -42,7 +42,7 @@
                   (constraint chc)
                   (map 'list
                        #'(lambda (b)
-                           (make-instance 'smt::expression
+                           (make-instance 'smt:application
                                           :name (name b)
                                           :arity (length (actuals b))
                                           :children

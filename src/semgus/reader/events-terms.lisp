@@ -10,10 +10,16 @@
   "Wraps a term"
   term)
 
+(defun com.kjcjohnson.synthkit.semgus.reader.user::annotated (term &rest annotations)
+  "Wraps an annotated term"
+  (loop for (key value) on annotations by #'cddr
+        do (smt:add-annotation term key value))
+  term)
+
 (defun com.kjcjohnson.synthkit.semgus.reader.user::application
     (name &key argument-sorts arguments return-sort)
   "Creates a function application term"
-  (make-instance 'smt::expression
+  (make-instance 'smt:application
                  :name name
                  :sort return-sort
                  :arity (length arguments)
@@ -36,16 +42,22 @@
 
 (defun com.kjcjohnson.synthkit.semgus.reader.user::match (&key term binders)
   "Creates a match term"
-  (declare (ignore term binders))
-  ;; currently not supported
-  nil)
+  (let ((datatype (smt:sort term)))
+    (unless (or (semgus:is-term-type? datatype)
+                (smt:is-datatype? datatype))
+      (error "Not a datatype or term-type: ~a" datatype))
+    (smt:make-match-grouper
+     term
+     (map 'vector #'(lambda (bp)
+                      (assert (eql (first bp) :binder-proxy))
+                      (apply #'smt:make-match-binder datatype (rest bp)))
+          binders))))
 
 (defun com.kjcjohnson.synthkit.semgus.reader.user::binder
     (&key operator arguments child)
   "Creates a binder for a match clause"
-  (declare (ignore operator arguments child))
-  ;; currently not supported
-  nil)
+  ;; We don't have enough information yet to resolve operator -> constructor
+  (list :binder-proxy operator arguments child))
 
 (defun com.kjcjohnson.synthkit.semgus.reader.user::lambda (&key arguments body)
   (smt::make-lambda-binder arguments body))

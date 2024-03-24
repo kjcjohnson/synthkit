@@ -143,7 +143,7 @@ ROLES and DATA should be sequences of the same length. Returns a list."
          :documentation "Child semantic relations used in this CHC")
    (constraint :reader constraint
                :initarg :constraint
-               :type smt::expression ; TODO: do we actually want EXPRESSION exported?
+               :type smt:term
                :documentation "SMT expression for this CHC's constraint")
    (constructor :reader constructor
                 :initarg :constructor

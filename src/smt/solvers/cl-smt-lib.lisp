@@ -129,7 +129,7 @@
                 (- (second expr)))
                ((list* fn args)
                 (let ((children (map 'list (a:rcurry #'parse-expr known-symbols) args)))
-                  (make-instance 'smt::expression
+                  (make-instance 'smt:application
                                  :name (smt:ensure-identifier (symbol-name fn))
                                  :arity (length children)
                                  :children children

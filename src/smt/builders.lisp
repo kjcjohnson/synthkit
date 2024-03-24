@@ -30,7 +30,7 @@
                              ,ret-sort)))
 
 (defun $apply (fn &rest args)
-  (make-instance 'expression
+  (make-instance 'application
                  :name (name fn)
                  :sort (return-sort fn)
                  :arity (arity fn)
@@ -54,7 +54,7 @@
 ;;
 (defun $+ (expr1 expr2)
   "Adds two expressions."
-  (make-instance 'expression
+  (make-instance 'application
                  :name "+"
                  :sort *int-sort*
                  :arity 2
@@ -63,7 +63,7 @@
 
 (defun $- (expr1 expr2)
   "Subtracts two expressions."
-  (make-instance 'expression
+  (make-instance 'application
                  :name "-"
                  :sort *int-sort*
                  :arity 2
@@ -72,7 +72,7 @@
 
 (defun $* (expr1 expr2)
   "Multiplies two expressions."
-  (make-instance 'expression
+  (make-instance 'application
                  :name "*"
                  :sort *int-sort*
                  :arity 2
@@ -81,7 +81,7 @@
 
 (defun $< (expr1 expr2)
   "Compares two expressions."
-  (make-instance 'expression
+  (make-instance 'application
                  :name "<"
                  :sort *int-sort*
                  :arity 2
@@ -90,7 +90,7 @@
 
 (defun $> (expr1 expr2)
   "Compares two expressions."
-  (make-instance 'expression
+  (make-instance 'application
                  :name ">"
                  :sort *int-sort*
                  :arity 2
@@ -99,7 +99,7 @@
 
 (defun $= (expr1 expr2 &optional (smt *smt*))
   "Compares two expressions."
-  (make-instance 'expression
+  (make-instance 'application
                  :name (ensure-identifier "=" smt)
                  :sort *bool-sort*
                  :arity 2
@@ -107,7 +107,7 @@
                  :child-sorts (list (sort expr1) (sort expr2))))
 
 (defun $not (expr)
-  (make-instance 'expression
+  (make-instance 'application
                  :name "not"
                  :sort *bool-sort*
                  :arity 1
@@ -115,7 +115,7 @@
                  :child-sorts (list (sort expr))))
 
 (defun $and (&rest exprs)
-  (make-instance 'expression
+  (make-instance 'application
                  :name (ensure-identifier "and")
                  :sort *bool-sort*
                  :arity (length exprs)
@@ -123,7 +123,7 @@
                  :child-sorts (map 'list #'sort exprs)))
 
 (defun $or (&rest exprs)
-  (make-instance 'expression
+  (make-instance 'application
                  :name (ensure-identifier "or")
                  :sort *bool-sort*
                  :arity (length exprs)
@@ -131,7 +131,7 @@
                  :child-sorts (map 'list #'sort exprs)))
 
 (defun $xor (expr1 expr2)
-  (make-instance 'expression
+  (make-instance 'application
                  :name "xor"
                  :sort *bool-sort*
                  :arity 2
@@ -139,7 +139,7 @@
                  :child-sorts (list (sort expr1) (sort expr2))))
 
 (defun $implies (expr1 expr2)
-  (make-instance 'expression
+  (make-instance 'application
                  :name "=>"
                  :sort *bool-sort*
                  :arity 2
@@ -152,7 +152,7 @@
 (defun $ite (exprb exprt expre)
   (assert (equal (name (sort exprt)) (name (sort expre))))
   (assert (equal (name (sort exprb)) (name *bool-sort*)))
-  (make-instance 'expression
+  (make-instance 'application
                  :name "ite"
                  :sort (sort exprt)
                  :arity 3

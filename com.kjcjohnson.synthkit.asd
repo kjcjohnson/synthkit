@@ -22,6 +22,7 @@
   :license "MIT"
   :depends-on ("cl-smt-lib"
                "closer-mop"
+               "com.inuoe.jzon"
                "str"
                "bit-smasher"
                "trivial-garbage"
@@ -47,6 +48,7 @@
                (:file "protocol-solver")
                (:file "solver")
                (:file "smt")
+               (:file "rank")
                (:file "declarations")
                (:file "native")
                (:file "theory-dispatch")
@@ -54,6 +56,7 @@
                (:file "theory-bitvectors")
                (:file "theory-strings")
                (:file "datatypes")
+               (:file "match")
                (:file "types")
                (:file "theory-core")
                (:file "context")
@@ -167,6 +170,13 @@
                              (:file "constraints")
                              (:file "semantics")
                              (:file "reader")))
+               (:file "protocol-writer")
+               (:module "writer"
+                :serial t
+                :components ((:file "package")
+                             (:file "json-serializers")
+                             (:file "json-events")
+                             (:file "json-writer")))
                (:file "verifier")
                (:module "verifiers"
                 :serial t
@@ -205,7 +215,7 @@
                     (symbol-call :fiveam :run! :synthkit-tests))
   :depends-on ("fiveam"
                "com.kjcjohnson.synthkit")
-  :pathname "t"
+  :pathname "t/unit"
   :serial "t"
   :components ((:file "patch")
                (:file "package")
@@ -227,3 +237,13 @@
                              (:file "leaf-program-node")
                              (:file "union-program-node")
                              (:file "cross-program-node")))))
+
+(asdf:defsystem "com.kjcjohnson.synthkit/test.json-export"
+  :description "Integration test application for JSON exports"
+  :version (:read-file-form "version.sexpr")
+  :build-operation "program-op"
+  :build-pathname "bin/synthkit-json-export"
+  :entry-point "TEST.JSON-EXPORT:MAIN"
+  :pathname "t/integration"
+  :depends-on ("com.kjcjohnson.synthkit")
+  :components ((:file "json-export")))

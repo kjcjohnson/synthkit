@@ -6,13 +6,20 @@
 ;;;
 ;;; Term types
 ;;;
-(defun com.kjcjohnson.synthkit.semgus.reader.user::declare-term-types (&rest stuff)
-  "N/A"
-  (declare (ignore stuff)))
+(defun com.kjcjohnson.synthkit.semgus.reader.user::declare-term-types (&rest types)
+  "Adds the list of term types used in this problem"
+  (loop for tt in types
+        if (typep tt 'semgus:term-type)
+          do (semgus:reset-term-type-constructors tt)
+        else
+          do (change-class tt 'semgus:term-type :constructors nil))
+  (setf (semgus:term-types semgus:*semgus-context*) types))
 
-(defun com.kjcjohnson.synthkit.semgus.reader.user::add-constructor (&rest stuff)
-  "N/A"
-  (declare (ignore stuff)))
+(defun com.kjcjohnson.synthkit.semgus.reader.user::add-constructor
+    (term-type &key operator children)
+  "Adds a term type constructor to the context"
+  (declare (type semgus:term-type term-type))
+  (semgus:add-term-type-constructor term-type operator children))
 
 ;;;
 ;;; Datatypes
