@@ -101,6 +101,21 @@
     (jzon:write-key writer "returnSort")
     (jzon:write-value writer (smt:return-sort rank))))
 
+(defmethod jzon:write-value ((writer jzon:writer) (node ast:program-node))
+  "Writes a program node"
+  (jzon:with-object writer
+    (jzon:write-key writer "root")
+    (jzon:write-value writer (smt:identifier-smt (g:name
+                                                  (ast:operator node))))
+    (jzon:write-key writer "Sort")
+    (jzon:write-value writer (smt:identifier-smt (smt:name
+                                                  (g:term-type
+                                                   (g:instance
+                                                    (ast:production node))))))
+    (jzon:write-key writer "children")
+    (jzon:with-array writer
+      (loop for child in (ast:children node) doing (jzon:write-value writer child)))))
+
 ;;;
 ;;; Term serializers
 ;;;

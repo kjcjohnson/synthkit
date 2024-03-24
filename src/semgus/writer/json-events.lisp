@@ -93,6 +93,11 @@
   (:default-initargs :type "smt")
   (:documentation "Superclass for smt-type events"))
 
+(define-event verifier-event (json-event) nil
+  ()
+  (:default-initargs :type "verifier")
+  (:documentation "Superclass for verifier-type events"))
+
 ;;;
 ;;; Event implementations
 ;;;
@@ -180,3 +185,10 @@
 (define-event end-of-stream-event (meta-event) "end-of-stream"
   ()
   (:documentation "Event for the end of the JSON stream"))
+
+(define-event solution-event (verifier-event) "solution"
+  ((solution :reader solution
+             :initarg :solution
+             :type hash-table
+             :documentation "Hash of function names to ASTs"))
+  (:documentation "Event for sending solutions to a verifier"))

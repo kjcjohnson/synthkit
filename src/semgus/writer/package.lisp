@@ -7,6 +7,7 @@
                     (#:spec #:com.kjcjohnson.synthkit.specification)
                     (#:smt #:com.kjcjohnson.synthkit.smt)
                     (#:chc #:com.kjcjohnson.synthkit.semgus.chc)
+                    (#:ast #:com.kjcjohnson.synthkit.ast)
                     (#:g #:com.kjcjohnson.synthkit.grammar)
                     (#:u #:com.kjcjohnson.synthkit.utilities)
                     (#:? #:trivia)

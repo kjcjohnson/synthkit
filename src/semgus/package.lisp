@@ -94,7 +94,7 @@
            #:register-load-processor)
 
   ;; Writer protocol
-  (:export #:write-problem)
+  (:export #:write-problem #:write-program)
 
   ;; Operationalizer protocol
   (:export #:operationalize-chc)

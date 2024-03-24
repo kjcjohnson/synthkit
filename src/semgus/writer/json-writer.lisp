@@ -62,3 +62,18 @@
     ;; NOTE: Technically, auxiliaries could be anywhere. But 🤷‍♂️
 
   problem)
+
+(defmethod semgus:write-program (stream names programs (writer (eql :json)))
+  "Writes PROGRAM to STREAM in JSON format"
+  (let ((names (*:ensure-list names))
+        (programs (*:ensure-list programs))
+        (solution (make-hash-table :test 'equal)))
+    (unless (= (length names) (length programs))
+      (error "NAMES and PROGRAMS with different lengths"))
+
+    (loop for name in names
+          for program in programs
+          do (setf (gethash (smt:identifier-smt name) solution) program))
+
+    (jzon:with-writer* (:stream stream :pretty t)
+      (jzon:write-value* (make-instance 'solution-event :solution solution)))))
