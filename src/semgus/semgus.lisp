@@ -27,6 +27,10 @@
   "Gets metadata from a SemGuS problem's context"
   (metadata (context problem)))
 
+(defmethod term-name ((problem semgus-problem))
+  "Gets the term name from the SemGuS context"
+  (term-name (context problem)))
+
 (defun replace-specification (semgus-problem new-specification)
   "Returns a possibly-new SemGuS problem, identical to SEMGUS-PROBLEM except with the
 specification replaced by NEW-SPECIFICATION. If NEW-SPECIFICATION is EQL to the
