@@ -135,3 +135,22 @@
   "Resets the list of constructors on TERM-TYPE"
   (declare (type term-type term-type))
   (setf (slot-value term-type 'constructors) nil))
+
+(defun is-term-type? (object)
+  "Checks if OBJECT is a term type or no"
+  (typep object 'term-type))
+
+;;;
+;;; Here follows a few "hacks" to make term types act like datatypes
+;;;
+(defmethod smt:lookup-datatype-constructor ((datatype term-type) name)
+  "Looks up a term type constructor (pretending to be a datatype)"
+  (find name (term-type-constructors datatype) :key #'operator :test #'eql))
+
+(defmethod smt:children ((cons term-type-constructor))
+  "Returns the constructor children of CONS"
+  (children cons))
+
+(defmethod smt:name ((cons term-type-constructor))
+  "Returns the operator name of CONS"
+  (operator cons))

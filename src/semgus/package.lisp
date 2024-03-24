@@ -67,6 +67,7 @@
            #:input-names
            #:input-indices
            #:term-type
+           #:is-term-type?
            #:term-name
            #:term-index)
 
