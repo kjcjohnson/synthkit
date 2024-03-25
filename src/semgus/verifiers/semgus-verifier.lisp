@@ -124,6 +124,9 @@ may point to the same physical directory but with different names"))
   "Filters a specification to an inductive specification"
   (spec:filter-examples spec #'spec:is-only-inductive? :key #'identity))
 
+(defparameter *quick-check-count* 0)
+(defparameter *full-check-count* 0)
+
 (defmethod semgus:verify-program ((verifier semgus-verifier) spec problem program
                                   &key produce-cex)
   "Verifies a semgus problem"
@@ -134,8 +137,14 @@ may point to the same physical directory but with different names"))
   (let ((io (%filter-specification spec)))
     (let ((semgus:*force-semgus-verifier* nil))
       (unless (semgus:check-program problem program :specification io)
+        (incf *quick-check-count*)
         (return-from semgus:verify-program :invalid))))
   ;;
   ;; Otherwise fall back to the full verifier
   ;;
-  (%run-semgus-verifier verifier problem program))
+  (incf *full-check-count*)
+  (let ((res (%run-semgus-verifier verifier problem program)))
+    (when (eql res :valid)
+      (format t "~&; --- FOUND VALID [~a quick checks, ~a full checks]~%"
+              *quick-check-count* *full-check-count*))
+    res))
