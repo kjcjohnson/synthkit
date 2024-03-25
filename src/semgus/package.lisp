@@ -77,6 +77,8 @@
            #:verifier-for-specification
            #:check-program
            #:unknown-verifier-result
+           #:forced-semgus-verifier
+           #:*force-semgus-verifier*
            #:*check-program-time*)
 
   ;; CEGIS

@@ -183,7 +183,8 @@
                 :components ((:file "package")
                              (:file "glue")
                              (:file "concretizing")
-                             (:file "operational")))
+                             (:file "operational")
+                             (:file "semgus-verifier")))
                (:file "cegis")))
 
 (asdf:defsystem "com.kjcjohnson.synthkit/vsa"
