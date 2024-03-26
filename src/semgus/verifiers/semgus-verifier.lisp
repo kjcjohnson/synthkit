@@ -147,6 +147,8 @@ may point to the same physical directory but with different names"))
 (defparameter *quick-check-count* 0)
 (defparameter *full-check-count* 0)
 
+(u:declare-timed-section *full-check-section* "Timing for calling the full verifier")
+
 (defmethod semgus:verify-program ((verifier semgus-verifier) spec problem program
                                   &key produce-cex)
   "Verifies a semgus problem"
@@ -163,10 +165,14 @@ may point to the same physical directory but with different names"))
   ;; Otherwise fall back to the full verifier
   ;;
   (incf *full-check-count*)
-  (let ((res (%run-semgus-verifier verifier problem program)))
+  (let ((res (u:with-timed-section (*full-check-section*)
+               (%run-semgus-verifier verifier problem program))))
     (if (eql res :valid)
-        (format t "~&; --- FOUND VALID [~a quick checks, ~a full checks]~%"
-                *quick-check-count* *full-check-count*)
+        (progn
+          (format t "~&; --- FOUND VALID [~a quick checks, ~a full checks]~%"
+                  *quick-check-count* *full-check-count*)
+          (format t "~&;      ~~~~ ~,2fs in full verifier~%"
+                  (u:get-timed-section-real-time *full-check-section*)))
         (when (semgus-verifier-print-invalid verifier)
           (format t "~&; --- FOUND INVALID: ~a~%" program)))
     res))

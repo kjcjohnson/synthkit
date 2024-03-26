@@ -63,7 +63,8 @@
   "Contains information about performance data for a section"
   (real-time 0 :type integer)
   (gc-time 0 :type integer)
-  (cons-count 0 :type integer))
+  (cons-count 0 :type integer)
+  (in-section nil :type boolean))
 
 (defmacro declare-timed-section (name &optional (doc ""))
   "Declares the name of a timed section"
@@ -81,20 +82,26 @@
   (let ((real-time-start-var (gensym))
         (gc-time-start-var (gensym))
         (cons-count-start-var (gensym)))
-    `(let ((,real-time-start-var (get-internal-real-time))
-           (,gc-time-start-var sb-ext:*gc-run-time*)
-           (,cons-count-start-var (sb-ext:get-bytes-consed)))
-       (declare (integer ,real-time-start-var
-                         ,gc-time-start-var
-                         ,cons-count-start-var))
-       (unwind-protect
-            (progn ,@body)
-         (incf (section-timing-data-real-time ,timing-place)
-               (- (get-internal-real-time) ,real-time-start-var))
-         (incf (section-timing-data-gc-time ,timing-place)
-               (- sb-ext:*gc-run-time* ,gc-time-start-var))
-         (incf (section-timing-data-cons-count ,timing-place)
-               (- (sb-ext:get-bytes-consed) ,cons-count-start-var))))))
+    `(flet ((body-fn () ,@body))
+       (if (section-timing-data-in-section ,timing-place)
+           (funcall #'body-fn)
+           (let ((,real-time-start-var (get-internal-real-time))
+                 (,gc-time-start-var sb-ext:*gc-run-time*)
+                 (,cons-count-start-var (sb-ext:get-bytes-consed)))
+             (declare (integer ,real-time-start-var
+                               ,gc-time-start-var
+                               ,cons-count-start-var))
+             (unwind-protect
+                  (progn
+                    (setf (section-timing-data-in-section ,timing-place) t)
+                    (funcall #'body-fn))
+               (setf (section-timing-data-in-section ,timing-place) nil)
+               (incf (section-timing-data-real-time ,timing-place)
+                     (- (get-internal-real-time) ,real-time-start-var))
+               (incf (section-timing-data-gc-time ,timing-place)
+                     (- sb-ext:*gc-run-time* ,gc-time-start-var))
+               (incf (section-timing-data-cons-count ,timing-place)
+                     (- (sb-ext:get-bytes-consed) ,cons-count-start-var))))))))
 
 #-sbcl
 (defmacro with-timed-section ((timing-place) &body body)
