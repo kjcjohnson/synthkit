@@ -666,6 +666,9 @@
                                                index-table
                                                name
                                                child-signatures)))
+      (semgus:when-debug-compile (pprint-opgraph *trace-output* opgraph))
+      (semgus:when-debug-compile (format *trace-output* "; GFn: ~&~s~%" opfun))
+
       ;;(format *trace-output* "; GFn: ~&~s~%" opfun)
       (let ((semfn (compile nil opfun)))
         (make-instance 'ast:calling-card
@@ -729,13 +732,24 @@
                      :head-symbol (chc:name head)
                      :is-head-input? (every #'eql inputs-a inputs-f)))))
 
+(defun %compute-term-symbols (symbol-table)
+  "Computes the list of term symbols from SYMBOL-TABLE"
+  (let ((parent-term (chc:symbol-name (chc:term-symbol symbol-table)))
+        (child-terms (map 'list #'chc:symbol-name (chc:child-symbols symbol-table))))
+    ;;
+    ;; IMPORTANT! There is a nasty edge case where the CHC term is shadowed by a child
+    ;;   It's not accessible, but we still need to keep it around, so we put in NIL
+    ;;
+    (if (find parent-term child-terms :test #'eql)
+        (cons nil child-terms)
+        (cons parent-term child-terms))))
+
 (defmethod semgus:operationalize-chc (chc smt-ctx semgus-ctx)
   (let* ((symbol-table (chc:symbol-table chc))
          (is (map 'list #'chc:symbol-name (chc:input-symbols symbol-table)))
          (os (map 'list #'chc:symbol-name (chc:output-symbols symbol-table)))
          (as (map 'list #'chc:symbol-name (chc:auxiliary-symbols symbol-table)))
-         (ts (cons (chc:symbol-name (chc:term-symbol symbol-table))
-                   (map 'list #'chc:symbol-name (chc:child-symbols symbol-table)))))
+         (ts (%compute-term-symbols symbol-table)))
 
     (operationalize
      (%extract-conjuncts (chc:constraint chc) smt-ctx)
