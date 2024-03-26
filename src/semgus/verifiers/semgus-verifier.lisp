@@ -31,10 +31,13 @@
               :documentation "Whether or not to launch in Bash")
    (options :initarg :options
             :reader semgus-verifier-options
-            :documentation "Other options to use in the verifier"))
+            :documentation "Other options to use in the verifier")
+   (print-invalid :initarg :print-invalid
+                  :reader semgus-verifier-print-invalid
+                  :documentation "Whether or not to print out invalid solutions"))
   (:default-initargs :problem-filename "VER_PROBLEM.json"
                      :solution-filename "VER_SOLUTION.json"
-                     :options '("--const-prop" "prog"))
+                     :options '("--const-prop" "prog" "--qe"))
   (:documentation "A verifier implementation using the 'SemGuS Verifier' program. There
 are directory configurations for both the solver and the verifier; on a homogeneous
 system, these would be the same, but on (e.g.) Windows and WSL, these files paths
@@ -57,14 +60,20 @@ may point to the same physical directory but with different names"))
          (v-json-dir (or (uiop:getenv "SEMGUS_VERIFIER_VERIFIER_JSON_DIR")
                          (uiop:getenv "SEMGUS_VERIFIER_JSON_DIR")
                          +verifier-temp-location+))
-         (use-shell (or (uiop:getenv "SEMGUS_VERIFIER_USE_SHELL")
-                        (not (uiop:getenv "SEMGUS_VERIFIER_NO_SHELL")))))
+         (yes-use-shell (uiop:getenv "SEMGUS_VERIFIER_USE_SHELL"))
+         (no-no-shell (uiop:getenv "SEMGUS_VERIFIER_NO_SHELL"))
+         (use-shell (cond (yes-use-shell)
+                          (no-no-shell nil)
+                          ((uiop:os-windows-p)) ; Verifier run through WSL
+                          (t nil)))
+         (print-invalid (*:true (uiop:getenv "SEMGUS_VERIFIER_PRINT_INVALID"))))
 
     (u:set-slot-if-unbound v 'program-name executable)
     (u:set-slot-if-unbound v 'program-dir directory)
     (u:set-slot-if-unbound v 'solver-json-dir s-json-dir)
     (u:set-slot-if-unbound v 'verifier-json-dir v-json-dir)
-    (u:set-slot-if-unbound v 'use-shell use-shell)))
+    (u:set-slot-if-unbound v 'use-shell use-shell)
+    (u:set-slot-if-unbound v 'print-invalid print-invalid)))
 
 (defparameter *semgus-verifier-instance* nil)
 
@@ -107,17 +116,28 @@ may point to the same physical directory but with different names"))
     (semgus:write-problem pf problem :json)
     (semgus:write-program sf (semgus:term-name problem) program :json))
 
-  (let* ((output (uiop:run-program (%build-verifier-command verifier)
-                                   :directory (semgus-verifier-program-dir verifier)
-                                   :output :string))
-         (split (str:split #\Newline output :omit-nulls t)))
-    (when (zerop (length split))
+  (let ((output)
+        (proc))
+    (unwind-protect
+         (progn
+           (setf proc
+                 (uiop:launch-program (%build-verifier-command verifier)
+                                      :directory (semgus-verifier-program-dir verifier)
+                                      :output :stream))
+           (loop for line = (read-line (uiop:process-info-output proc) nil :eof)
+                 until (eql line :eof)
+                 doing (push line output))
+           (uiop:wait-process proc))
+      (when (and proc (uiop:process-alive-p proc))
+        (uiop:terminate-process proc :urgent t)))
+
+    (when (zerop (length output))
       (error 'semgus-verifier-process-error "Verifier did not produce a response"))
 
-    (str:string-case (str:downcase (car (last split)))
+    (str:string-case (str:downcase (first output))
       ("valid" :valid)
       ("invalid" :invalid)
-      (otherwise (format *error-output* "; Bad response from verifier: ~a" split)
+      (otherwise (format *trace-output* "; Bad response from verifier: ~a" output)
                  :unknown))))
 
 (defun %filter-specification (spec)
@@ -144,7 +164,9 @@ may point to the same physical directory but with different names"))
   ;;
   (incf *full-check-count*)
   (let ((res (%run-semgus-verifier verifier problem program)))
-    (when (eql res :valid)
-      (format t "~&; --- FOUND VALID [~a quick checks, ~a full checks]~%"
-              *quick-check-count* *full-check-count*))
+    (if (eql res :valid)
+        (format t "~&; --- FOUND VALID [~a quick checks, ~a full checks]~%"
+                *quick-check-count* *full-check-count*)
+        (when (semgus-verifier-print-invalid verifier)
+          (format t "~&; --- FOUND INVALID: ~a~%" program)))
     res))

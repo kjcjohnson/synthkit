@@ -10,4 +10,5 @@
                     (#:chc #:com.kjcjohnson.synthkit.semgus.chc)
                     (#:spec #:com.kjcjohnson.synthkit.specification)
                     (#:u #:com.kjcjohnson.synthkit.utilities)
-                    (#:a #:alexandria)))
+                    (#:a #:alexandria)
+                    (#:* #:serapeum/bundle)))
