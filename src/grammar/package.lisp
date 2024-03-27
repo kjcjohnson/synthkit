@@ -10,6 +10,7 @@
            #:term-type
            #:non-terminal
            #:non-terminals
+           #:do-non-terminals
            #:operator
            #:arity
            #:production
