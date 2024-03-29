@@ -39,6 +39,10 @@
            #:copy-program
            #:compile-program
            #:execute-program
+           #:no-applicable-semantics
+           #:descriptor
+           #:node
+           #:state
            #:as-smt-query)
   ;; Debugging controls - EXPORTED BUT UNSTABLE
   (:export #:*exe-debug*

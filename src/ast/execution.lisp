@@ -4,6 +4,26 @@
 (in-package #:com.kjcjohnson.synthkit.ast)
 
 ;;;
+;;; Signalled when the program is semantically invalid (or problem is wrong)
+;;;
+(define-condition no-applicable-semantics (error)
+  ((state :reader state
+          :initarg :state
+          :documentation "The state that had no applicable semantics")
+   (descriptor :reader descriptor
+               :initarg :descriptor
+               :documentation "The descriptor that had no applicable semantics")
+   (node :reader node
+         :initarg :node
+         :documentation "The node that had no applicable semantics"))
+  (:report (lambda (condition stream)
+             (format stream
+                     "No applicable semantics for state: ~a [~a] and node: ~a~&"
+                     (state condition)
+                     (smt:identifier-smt (descriptor condition))
+                     (print-program (node condition) nil)))))
+
+;;;
 ;;; Public execution interface
 ;;;
 (defun execute-program (semantics descriptor node input-state)
@@ -129,5 +149,7 @@
         (when *exe-debug* (format *trace-output* "~aRETN: ~a [~:[INVALID~;VALID~]]~%" (make-string *exe-level* :initial-element #\Space) result valid))
         (when (or (not (null result)) valid)
           (return-from %execute-program (values result t)))))
-  (error "No applicable semantics: ~a [descriptor: ~a]"
-         (g:name (operator node)) descriptor))
+  (error 'no-applicable-semantics
+         :node node
+         :descriptor descriptor
+         :state input-state))
