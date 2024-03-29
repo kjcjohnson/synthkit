@@ -16,6 +16,10 @@
                 :documentation "Descriptors used in this specification"))
   (:documentation "A specification from an SMT expression"))
 
+(defun is-relational? (spec)
+  "Checks if SPEC is a relational specification"
+  (typep spec 'relational-specification))
+
 (defclass universal-specification (relational-specification)
   ((input-symbols :reader input-symbols
                   :initarg :input-symbols

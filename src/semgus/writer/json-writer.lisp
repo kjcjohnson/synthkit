@@ -50,8 +50,10 @@
                                           :grammar (semgus:grammar ctx)))
 
         ;; N-1. CONSTRAINTS
-        (loop for constraint in (semgus:constraints ctx)
-              for ev = (make-instance 'constraint-event :constraint constraint)
+        (loop for constraint in (spec:leaves (semgus:specification problem))
+                                        ; BUGGY? - assumes intersection spec
+              for ev = (make-instance 'constraint-event
+                                      :constraint (spec:expression constraint))
               do (jzon:write-value* ev))
 
         ;; N. CHECK-SYNTH

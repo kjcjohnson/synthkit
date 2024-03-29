@@ -105,7 +105,7 @@ may point to the same physical directory but with different names"))
         (list "bash" "-c" (str:join #\Space cmd))
         cmd)))
 
-(defun %run-semgus-verifier (verifier problem program)
+(defun %run-semgus-verifier (verifier problem program spec)
   "Runs the SemGuS Verifier"
   ;;
   ;; RUN SYNCHRONOUSLY - we were seeing a memory leak that made interactive mode fail
@@ -113,7 +113,7 @@ may point to the same physical directory but with different names"))
   (let* ((tmpdir (semgus-verifier-solver-json-dir verifier))
          (pf (merge-pathnames (semgus-verifier-problem-filename verifier) tmpdir))
          (sf (merge-pathnames (semgus-verifier-solution-filename verifier) tmpdir)))
-    (semgus:write-problem pf problem :json)
+    (semgus:write-problem pf (semgus:replace-specification problem spec) :json)
     (semgus:write-program sf (semgus:term-name problem) program :json))
 
   (let ((output)
@@ -140,9 +140,13 @@ may point to the same physical directory but with different names"))
       (otherwise (format *trace-output* "; Bad response from verifier: ~a" output)
                  :unknown))))
 
-(defun %filter-specification (spec)
+(defun %filter-specification-inductive (spec)
   "Filters a specification to an inductive specification"
   (spec:filter-examples spec #'spec:is-only-inductive? :key #'identity))
+
+(defun %filter-specification-relational (spec)
+  "Filters a specification to a relational specification"
+  (spec:filter-examples spec #'spec:is-relational? :key #'identity))
 
 (defparameter *quick-check-count* 0)
 (defparameter *full-check-count* 0)
@@ -156,7 +160,7 @@ may point to the same physical directory but with different names"))
   ;;
   ;; Check IO specs first for invalid, because those are fast
   ;;
-  (let ((io (%filter-specification spec)))
+  (let ((io (%filter-specification-inductive spec)))
     (let ((semgus:*force-semgus-verifier* nil))
       (unless (semgus:check-program problem program :specification io)
         (incf *quick-check-count*)
@@ -166,7 +170,9 @@ may point to the same physical directory but with different names"))
   ;;
   (incf *full-check-count*)
   (let ((res (u:with-timed-section (*full-check-section*)
-               (%run-semgus-verifier verifier problem program))))
+               (%run-semgus-verifier verifier problem program
+                                     (%filter-specification-relational
+                                      (semgus:specification problem))))))
     (if (eql res :valid)
         (progn
           (format t "~&; --- FOUND VALID [~a quick checks, ~a full checks]~%"

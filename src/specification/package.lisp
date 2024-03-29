@@ -32,11 +32,11 @@
            #:constraint
            #:cegis-examples
            #:predicate)
-  
+
   ;; Methods
   (:export #:leaf-specification-types
            #:compound-specification-types
-           
+
            #:is-only?
            #:is-only-inductive?
            #:is-only-io?
@@ -44,7 +44,7 @@
            #:with-only-intersection?
            #:with-only-union?
 
-           #:is-pbe? #:is-universal? #:is-existential?
+           #:is-pbe? #:is-universal? #:is-existential? #:is-relational?
 
            #:examples
            #:leaves
