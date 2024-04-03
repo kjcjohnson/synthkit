@@ -109,6 +109,12 @@
 (defvar *last-regex-executed* nil "The last regex that the engine attempted")
 (defvar *last-string-scanned* nil "The last string that the engine attempted to match")
 
+;; Regex filter that always fails to match
+(defun %empty-set-filter (pos)
+  "Matches the empty set. Always fail."
+  (declare (ignore pos))
+  nil)
+
 ;;;
 ;;; Patterns for matching regular expression constructs
 ;;;
@@ -128,11 +134,12 @@
   "Matches a two-element sequence"
   `(list :sequence ,left ,right ,@rest))
 
-;; Regex filter that always fails to match
-(defun %empty-set-filter (pos)
-  "Matches the empty set. Always fail."
-  (declare (ignore pos))
-  nil)
+(?:defpattern re.none ()
+  "Matches the empty set filter"
+  (let ((fn-filter (gensym)))
+    `(?:guard (list :filter ,fn-filter)
+              (eql (nth-value 2 (function-lambda-expression ,fn-filter))
+                   '%empty-set-filter))))
 
 ;;;
 ;;; Definitions
@@ -173,25 +180,104 @@
   "The set of all single-character strings"
   (%reglan :everything))
 
+(defun rewrite-++-children (&rest reglan-pts)
+  "Rewrites concatenation children"
+  (let ((original reglan-pts))
+    (declare (ignorable original))
+    (flet ((rewrite (reglan-pts)
+             (setf reglan-pts (remove :void reglan-pts))
+             (?:match reglan-pts
+               ((?:guard (list (re.* x) (re.* y))
+                         (equal x y))
+                (list (first reglan-pts)))
+               ((?:guard (or (list (re.* x) (re.opt y))
+                             (list (re.opt x) (re.* y)))
+                         (equal x y))
+                (list (rewrite-*-child x)))
+               (_ reglan-pts))))
+      (loop for new-rewrite = (rewrite reglan-pts)
+            for i from 0
+            until (or (atom new-rewrite)
+                      (equalp new-rewrite reglan-pts))
+            when (< 100 i) do (break)
+              do (setf reglan-pts new-rewrite)
+            finally (setf reglan-pts new-rewrite))
+      ;;(unless (equalp original reglan-pts)
+      ;;  (format t "~&;REWRITE: ~a --> ~a~%" original reglan-pts))
+      (cond ((endp reglan-pts)
+             :void)
+            ((atom reglan-pts)
+             reglan-pts)
+            ((= 1 (length reglan-pts))
+             (first reglan-pts))
+            (t
+             `(:sequence ,@reglan-pts))))))
+
 (defsmtfun "re.++" :strings (reglan1 reglan2 &rest reglans)
   "Concatentates regular languages in sequence"
   (let ((reglan-pts
           `(,(%parse-tree reglan1)
             ,(%parse-tree reglan2)
             ,@(map 'list #'%parse-tree reglans))))
-    (setf reglan-pts (delete :void reglan-pts))
-    (?:match reglan-pts
-      ((?:guard (list (re.* x) (re.* y))
-                (equal x y))
-       (%reglan (first reglan-pts)))
-      (_
-       (%reglan
-        (cond ((endp reglan-pts)
+    (%reglan (apply #'rewrite-++-children reglan-pts))))
+
+(defun rewrite-U-children (&rest reglan-pts)
+  "Rewrites alternation children"
+  (flet ((rewrite (reglan-pts)
+           (cond ((endp reglan-pts)
+                  :void)
+                 ((let ((first (first reglan-pts)))
+                    (every #'(lambda (x) (equal x first)) reglan-pts))
+                  (list (first reglan-pts)))
+                 ((find '(:greedy-repetition 0 nil :everything) reglan-pts
+                        :test #'equal)
+                  (list (rewrite-*-child :everything)))
+                 ((and (some #'(lambda (x) (?:match x ((re.* _) t))) reglan-pts)
+                       (find :void reglan-pts))
+                  (remove :void reglan-pts))
+                 ;; Remove voids and turn into optionals
+                 ((find :void reglan-pts)
+                  (remove :void
+                          (map 'list #'(lambda (x)
+                                         (if (eql x :void)
+                                             :void
+                                             (rewrite-?-child x)))
+                               reglan-pts)))
+                 ;; Somewhat of a generalization of the above
+                 ;; We want to "deal with" <x>*|<x>
+                 ((and (= 2 (length reglan-pts))
+                       (?:match reglan-pts
+                         ((?:guard (or (list (re.opt x) y)
+                                       (list x (re.opt y)))
+                                   (equal x y))
+                          (list (rewrite-?-child x)))
+                         ((?:guard (or (list (re.* rep-child) child)
+                                       (list child (re.* rep-child)))
+                                   (equal child rep-child))
+                          (list (rewrite-*-child child))))))
+
+                 ((find `(:filter ,#'%empty-set-filter) reglan-pts :test #'equal)
+                  (remove `(:filter ,#'%empty-set-filter) reglan-pts :test #'equal))
+                 (t reglan-pts))))
+    (loop for new-rewrite = (rewrite reglan-pts)
+          for i from 0
+          until (or (and (atom new-rewrite) (not (null new-rewrite)))
+                    (equalp new-rewrite reglan-pts))
+          when (< 100 i) do (break)
+          do (setf reglan-pts new-rewrite)
+          finally (setf reglan-pts new-rewrite))
+    (let ((res
+            (cond
+              ((atom reglan-pts)
+               reglan-pts)
+              ((zerop (length reglan-pts))
                :void)
               ((= 1 (length reglan-pts))
                (first reglan-pts))
               (t
-               `(:sequence ,@reglan-pts))))))))
+               `(:alternation ,@reglan-pts)))))
+      (when (null res) (break))
+      res)))
 
 (defsmtfun "re.union" :strings (reglan1 reglan2 &rest reglans)
   "Union of regular languages"
@@ -200,26 +286,16 @@
             ,(%parse-tree reglan2)
             ,@(map 'list #'%parse-tree reglans))))
     (setf reglan-pts (delete :HYAAAAAAAA!!!! reglan-pts))
-    (%reglan
-     (cond ((endp reglan-pts)
-            :void)
-           ((= 1 (length reglan-pts))
-            (first reglan-pts))
-           ((let ((first (first reglan-pts)))
-              (every #'(lambda (x) (equal x first)) reglan-pts))
-            (first reglan-pts))
-           (t
-            `(:alternation ,@reglan-pts))))))
+
+    (%reglan (apply #'rewrite-U-children reglan-pts))))
 
 (defsmtfun "re.intersection" :strings (reglan1 reglan2 &rest reglans)
   "Intersection of regular languages"
   (declare (ignore reglan1 reglan2 reglans))
   (error "Huh?"))
 
-(defsmtfun "re.*" :strings (reglan)
-  "Kleene closure"
-  ;; Apparent bug in CL-PPCRE causes stack overflow on some nested repetitions
-  ;; so match and rewrite dangerous patterns into equivalent patterns
+(defun rewrite-*-child (child-tree)
+  "Rewrites a parse tree to be the child of a *"
   (labels ((rewrite (child-tree)
              "Rewrites a tree to be applied to *. Returns the tree and t if no changes"
              (?:match child-tree
@@ -230,11 +306,14 @@
                ;; ((<x>)*|(<y>)*)* --> (<x>|<y>)*
                ;; (<x>|(<y>)*)* --> (<x>|<y>)* [and variants]
                ((re.union _ _)
-                (values (rewrite-alternation child-tree) t))
+                (let ((alt (rewrite-alternation child-tree)))
+                  (values alt (?:match alt ((re.union _ _) t)))))
                ;; Certain sequences
                ((?:guard (re.++ _ _)
                          (sequence-of-repetitions? child-tree))
                 (rewrite-sequence child-tree))
+               ;; * of nothing
+               ((re.none) :void)
                ;; Anything else is fine for now
                (otherwise
                 (values child-tree t))))
@@ -259,32 +338,45 @@
              (?:match child-tree
                ((re.++ (or (re.* x) (re.opt x))
                        (or (re.* y) (re.opt y)))
-                `(:alternation ,x ,y))
+                (rewrite-U-children x y))
                ((re.++ (or (re.* x) (re.opt x)) y)
-                `(:alternation ,x ,(rewrite-sequence y)))
+                (rewrite-U-children x (rewrite-sequence y)))
                ((re.++ x (or (re.* y) (re.opt y)))
-                `(:alternation ,(rewrite-sequence x) ,y))
+                (rewrite-U-children (rewrite-sequence x) y))
                (otherwise
                 (values child-tree t))))
            ;; (<foo>*|<bar>|...|<bat>)* --> (<foo>|<bar>|...|<bat>)*
            (rewrite-alternation (child-tree)
              "Rewrites an alternation of repetitions in CHILD-TREE"
              (?:match child-tree
+               ;;((or (re.union (re.++ (re.* x) (re.* y)) z)
+               ;;     (re.union x (re.++ (re.* y) (re.* z))))
+               ;; (rewrite-U-children x y z))
                ((re.union (or (re.* x) (re.opt x) x)
                           (or (re.* y) (re.opt y) y))
-                `(:alternation ,(rewrite-alternation x)
-                               ,(rewrite-alternation y)))
+                (rewrite-U-children
+                        (rewrite-alternation x)
+                        (rewrite-alternation y)))
                (otherwise
                 child-tree)))
-           (rewrite-loop (reglan)
-             "Rewrites REGLAN in a loop, until reaching a fixpoint"
-             (loop with child-tree = (%parse-tree reglan)
-                   with done = nil
+           (rewrite-loop (child-tree)
+             "Rewrites CHILD-TREE in a loop, until reaching a fixpoint"
+             (loop with done = nil
+                   for i from 0
                    until done
+                   when (< 100 i) do (break)
                    do (setf (values child-tree done) (rewrite child-tree))
                    finally (return child-tree))))
+    (let ((rewritten (rewrite-loop child-tree)))
+      (if (eql rewritten :void)
+          :void
+          `(:greedy-repetition 0 nil ,rewritten)))))
 
-    (%reglan `(:greedy-repetition 0 nil ,(rewrite-loop reglan)))))
+(defsmtfun "re.*" :strings (reglan)
+  "Kleene closure"
+  ;; Apparent bug in CL-PPCRE causes stack overflow on some nested repetitions
+  ;; so match and rewrite dangerous patterns into equivalent patterns
+  (%reglan (rewrite-*-child (%parse-tree reglan))))
 
 ;; re.diff
 
@@ -293,17 +385,25 @@
   (%reglan
    `(:greedy-repetition 1 nil ,(%parse-tree reglan))))
 
+(defun rewrite-?-child (child-tree)
+  "Rewrites a ? child"
+  (let ((res
+          (?:match child-tree
+            ;; ((<x>)?)? --> (<x>)?
+            ((re.opt _) child-tree)
+            ;; ((<x>)*)? --> (<x>)*
+            ((re.* _) child-tree)
+            ;; Optional empty set is empty string
+            ((re.none) :void)
+            ;; Anything else is fine for now
+            (_
+             `(:greedy-repetition 0 1 ,child-tree)))))
+    (when (null res) (break))
+    res))
+
 (defsmtfun "re.opt" :strings (reglan)
   "Optional element"
-  (let ((child-tree (%parse-tree reglan)))
-    (?:match child-tree
-      ;; ((<x>)?)? --> (<x>)?
-      ((re.opt _) reglan)
-      ;; ((<x>)*)? --> (<x>)*
-      ((re.* _) reglan)
-      ;; Anything else is fine for now
-      (otherwise
-       (%reglan `(:greedy-repetition 0 1 ,(%parse-tree reglan)))))))
+  (%reglan (rewrite-?-child (%parse-tree reglan))))
 
 (defsmtfun "re.range" :strings (strl stru)
   "Character class from strl to stru"
