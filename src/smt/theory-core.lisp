@@ -56,7 +56,8 @@
     (bit-vector (equal left right))
     (regular-language (equal (regular-language-parse-tree left)
                              (regular-language-parse-tree right)))
-    (datatype-instance (datatype= left right))))
+    (datatype-instance (datatype= left right))
+    (symbol (eql left right)))) ; Used for some extensions
 
 (defun core-= (left right)
   (call-smt "=" left right))
