@@ -237,7 +237,7 @@
               ((string-equal val "true") "true")
               ((string-equal val "false")"false")
               (t (error "Illegal Boolean value: ~a" val))))
-          (error "Unhandled pprint literal: ~a" lit))
+          (to-smt (value lit) :pprint pprint))
       (value lit)))
 
 (defclass smt-bv-wrapper ()
