@@ -4,6 +4,11 @@
 (in-package #:com.kjcjohnson.synthkit.semgus.reader)
 
 ;;;
+;;; We should put together a better core config mechanism at some point...
+;;;
+(defparameter *force-no-pbe-constraints* nil "Set to not produce PBE constraints")
+
+;;;
 ;;; Attempts to derive the most specific specification type for a problem
 ;;;
 ;;; 1. If all constraints can be turned into PBE constraints, it
@@ -19,7 +24,10 @@
 (defun try-derive-pbe-constraint (constraint
                                   &optional (context semgus:*semgus-context*))
   "Attempts to derive a PBE constraint from CONSTRAINT. Returns NIL if not possible."
-    (let* ((appl-name (if (typep constraint 'smt:application)
+  (when *force-no-pbe-constraints*
+    (return-from try-derive-pbe-constraint nil))
+
+  (let* ((appl-name (if (typep constraint 'smt:application)
                         (smt:name constraint)
                         nil))
          (root-rels (semgus:root-relations context))

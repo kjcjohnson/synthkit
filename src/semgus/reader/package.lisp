@@ -11,7 +11,8 @@
                     (#:u #:com.kjcjohnson.synthkit.utilities)
                     (#:? #:trivia)
                     (#:* #:serapeum/bundle)
-                    (#:a #:alexandria)))
+                    (#:a #:alexandria))
+  (:export *force-no-pbe-constraints*))
 
 ;;;
 ;;; Package for problem file symbols
