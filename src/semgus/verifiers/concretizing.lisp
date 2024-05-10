@@ -247,6 +247,7 @@ first value, and the concrete function name as the second value."
                                   program
                                   &key produce-cex)
   "Verifies PROGRAM against SEMGUS-PROBLEM"
+  (incf ast:*execution-counter*)
   (if produce-cex
       (%verify-with-cex specification semgus-problem program)
       (%verify-without-cex specification semgus-problem program)))
