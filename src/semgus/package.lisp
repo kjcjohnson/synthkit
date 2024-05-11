@@ -85,6 +85,7 @@
   (:export #:cegis-supported-for-specification?
            #:cegis-supported?
            #:cegis-wrapper
+           #:*cegis-time*
            #:maybe-with-cegis
            #:cegis-next-example)
 

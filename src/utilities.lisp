@@ -64,6 +64,7 @@
   (real-time 0 :type integer)
   (gc-time 0 :type integer)
   (cons-count 0 :type integer)
+  (hit-count 0 :type integer)
   (in-section nil :type boolean))
 
 (defmacro declare-timed-section (name &optional (doc ""))
@@ -94,6 +95,7 @@
              (unwind-protect
                   (progn
                     (setf (section-timing-data-in-section ,timing-place) t)
+                    (incf (section-timing-data-hit-count ,timing-place))
                     (funcall #'body-fn))
                (setf (section-timing-data-in-section ,timing-place) nil)
                (incf (section-timing-data-real-time ,timing-place)
@@ -133,6 +135,10 @@
                        ("gib" (* 1024 1024 1024))
                        (otherwise (error "Unknown unit: ~a" unit)))))
         (/ (section-timing-data-cons-count timing-place) divisor))))
+
+(defun get-timed-section-hit-count (timing-place)
+  "Gets the number of times the timed section has been entered"
+  (section-timing-data-hit-count timing-place))
 
 (defun reset-timed-section-time (timing-place)
   "Resets the timing data from TIMING-PLACE"

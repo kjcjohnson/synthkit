@@ -18,4 +18,5 @@
            #:get-timed-section-real-time
            #:get-timed-section-gc-time
            #:get-timed-section-bytes-consed
+           #:get-timed-section-hit-count
            #:reset-timed-section-time))

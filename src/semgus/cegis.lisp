@@ -99,6 +99,63 @@
   (:documentation "Called on a new CEGIS example")
   (:method (thing problem cegis-spec descriptor input-state output-state) (values)))
 
+(u:declare-timed-section *cegis-time*)
+
+(defun %cegis-check-and-get-cex (semgus-problem solver verifier
+                                 spec cegis-spec candidate)
+  "Verifies a candidate, and generates a counter-example if necessary"
+  (multiple-value-bind (result cex)
+      (verify-program verifier spec semgus-problem candidate :produce-cex t)
+    (when (eql result :valid)
+      (return-from %cegis-check-and-get-cex candidate))
+    (when (eql result :unknown)
+      (error "Unknown CEGIS verification!"))
+    ;; Convert to state
+    (let ((rootrel (lookup-root (first (spec:descriptors spec))
+                                (context semgus-problem)))
+          (input-vars)
+          (output-vars))
+      (loop for formal across (chc:formals rootrel)
+            for role across (chc:roles rootrel)
+            for actual in (smt:children (spec:relation spec))
+            when (eql role :input) do
+              (push (cons formal (cdr (assoc (smt:name actual)
+                                             cex
+                                             :key #'smt:name)))
+                    input-vars)
+            end
+            when (eql role :output) do
+              (push (cons formal (cdr (assoc (smt:name actual)
+                                             cex
+                                             :key #'smt:name)))
+                    output-vars)
+            end)
+      (flet ((pp-varlist (varlist)
+               (format nil "[~{~a~^, ~}]"
+                       (map 'list
+                            #'(lambda (x)
+                                (format nil "~a: ~a"
+                                        (smt:identifier-string (car x))
+                                        (cdr x)))
+                            varlist))))
+        (format *trace-output*
+                "~&~%------------- CEGIS -------------
+input ---> ~a
+output --> ~a
+---------------------------------~%~%"
+                (pp-varlist input-vars)
+                (pp-varlist output-vars)))
+      (let ((new-input-state (smt:make-state input-vars))
+            (new-output-state (smt:make-state output-vars))
+            (descriptor (first (spec:descriptors spec))))
+        (spec:add-example
+         cegis-spec
+         descriptor
+         new-input-state
+         new-output-state)
+        (cegis-next-example solver semgus-problem cegis-spec descriptor
+                            new-input-state new-output-state)))))
+
 (defun cegis-wrapper (solver semgus-problem synth-fun)
   "Does CEGIS. SYNTH-FUN should be a function taking a semgus problem as the only arg."
   (assert (cegis-supported? semgus-problem))
@@ -115,57 +172,10 @@
           when (listp candidate) do
             (setf candidate (first candidate))
           end
-          do (multiple-value-bind (result cex)
-                 (verify-program verifier spec semgus-problem candidate :produce-cex t)
-               (when (eql result :valid)
-                 (return-from cegis-wrapper candidate))
-               (when (eql result :unknown)
-                 (error "Unknown CEGIS verification!"))
-               ;; Convert to state
-               (let ((rootrel (lookup-root (first (spec:descriptors spec))
-                                           (context semgus-problem)))
-                     (input-vars)
-                     (output-vars))
-                 (loop for formal across (chc:formals rootrel)
-                       for role across (chc:roles rootrel)
-                       for actual in (smt:children (spec:relation spec))
-                       when (eql role :input) do
-                         (push (cons formal (cdr (assoc (smt:name actual)
-                                                        cex
-                                                        :key #'smt:name)))
-                               input-vars)
-                       end
-                       when (eql role :output) do
-                         (push (cons formal (cdr (assoc (smt:name actual)
-                                                        cex
-                                                        :key #'smt:name)))
-                               output-vars)
-                       end)
-                 (flet ((pp-varlist (varlist)
-                          (format nil "[~{~a~^, ~}]"
-                                  (map 'list
-                                       #'(lambda (x)
-                                           (format nil "~a: ~a"
-                                                   (smt:identifier-string (car x))
-                                                   (cdr x)))
-                                       varlist))))
-                   (format *trace-output*
-                           "~&~%------------- CEGIS -------------
-input ---> ~a
-output --> ~a
----------------------------------~%~%"
-                           (pp-varlist input-vars)
-                           (pp-varlist output-vars)))
-                 (let ((new-input-state (smt:make-state input-vars))
-                       (new-output-state (smt:make-state output-vars))
-                       (descriptor (first (spec:descriptors spec))))
-                   (spec:add-example
-                    cegis-spec
-                    descriptor
-                    new-input-state
-                    new-output-state)
-                   (cegis-next-example solver semgus-problem cegis-spec descriptor
-                                       new-input-state new-output-state)))))))
+          do (u:with-timed-section (*cegis-time*)
+               (let ((res (%cegis-check-and-get-cex semgus-problem solver verifier
+                                                    spec cegis-spec candidate)))
+                 (when res (return res)))))))
 
 (defmacro maybe-with-cegis ((solver problem &optional (problem-var problem)) &body body)
   "Runs BODY, maybe with CEGIS if PROBLEM has a CEGIS specification. PROBLEM is
